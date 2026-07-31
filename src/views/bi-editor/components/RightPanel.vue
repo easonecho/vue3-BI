@@ -235,7 +235,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useBiEditorStore } from '@/stores/biEditor'
+import { useBiEditorStore } from '@/stores/bi-editor'
 
 const store = useBiEditorStore()
 

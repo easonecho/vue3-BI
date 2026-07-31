@@ -2,14 +2,8 @@
   <div class="bi-editor">
     <HeaderToolbar />
     <div class="editor-body">
-      <LeftPanel
-        @drag-start="handleDragStart"
-        @add-component="handleAddComponent"
-      />
-      <CanvasArea
-        :zoom="store.canvas.zoom"
-        @select-component="handleSelectComponent"
-      />
+      <LeftPanel @drag-start="handleDragStart" @add-component="handleAddComponent" />
+      <CanvasArea @select-component="handleSelectComponent" />
       <RightPanel />
     </div>
   </div>
@@ -21,7 +15,7 @@ import HeaderToolbar from './components/HeaderToolbar.vue'
 import LeftPanel from './components/LeftPanel.vue'
 import CanvasArea from './components/CanvasArea.vue'
 import RightPanel from './components/RightPanel.vue'
-import { useBiEditorStore } from '@/stores/biEditor'
+import { useBiEditorStore } from '@/stores/bi-editor'
 import { useKeyboardShortcuts } from './composables/useCanvas'
 import type { ComponentMeta } from './types'
 

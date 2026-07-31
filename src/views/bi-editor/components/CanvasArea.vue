@@ -1,107 +1,90 @@
 <template>
-  <div ref="containerRef" class="canvas-container">
-    <div ref="viewportRef" class="canvas-viewport" @wheel="handleWheel">
-      <!-- 标尺 -->
-      <div v-if="store.canvas.showRuler" class="ruler-container">
-        <div class="ruler ruler-horizontal">
-          <div
-            v-for="mark in horizontalMarks"
-            :key="mark"
-            class="ruler-mark"
-            :style="{ left: mark * zoom + 'px' }"
-          >
-            <span class="mark-label">{{ Math.round(mark) }}</span>
-          </div>
-        </div>
-        <div class="ruler ruler-vertical">
-          <div
-            v-for="mark in verticalMarks"
-            :key="mark"
-            class="ruler-mark"
-            :style="{ top: mark * zoom + 'px' }"
-          >
-            <span class="mark-label">{{ Math.round(mark) }}</span>
-          </div>
-        </div>
-      </div>
+  <div
+    ref="containerRef"
+    class="canvas-container"
+    :class="{ 'pan-cursor': isSpacePressed || isMiddlePressed }"
+    @wheel.capture="handleWheel"
+    @mousedown="handleContainerMouseDown"
+  >
+    <SketchRuler
+      ref="sketchRef"
+      :width="viewportWidth"
+      :height="viewportHeight"
+      :canvas-width="canvasWidth"
+      :canvas-height="canvasHeight"
+      :scale="localScale"
+      :offset="localOffset"
+      :show-ruler="store.canvas.showRuler"
+      :is-show-refer-line="store.canvas.showGuides"
+      :lines="linesRef"
+      :min-zoom="0.1"
+      :max-zoom="5"
+      :palette="rulerPalette"
+      @update:scale="handleScaleUpdate"
+      @update:offset="handleOffsetUpdate"
+      @update:lines="handleLinesChange"
+      @zoomchange="handleZoomChange"
+    >
+      <template #default>
+        <div
+          class="canvas-content"
+          :style="{
+            width: canvasWidth + 'px',
+            height: canvasHeight + 'px',
+            backgroundColor: store.canvas.backgroundColor,
+          }"
+          @click.self="store.selectComponent(null)"
+          @drop="handleDrop"
+          @dragover.prevent
+        >
+          <div v-if="store.canvas.showGrid" class="grid-background" />
 
-      <!-- 画布内容 -->
-      <div
-        class="canvas-content"
-        :style="{
-          width: store.canvas.width * zoom + 'px',
-          height: store.canvas.height * zoom + 'px',
-          transform: 'scale(' + zoom + ')',
-          transformOrigin: '0 0',
-        }"
-        @click.self="store.selectComponent(null)"
-        @drop="handleDrop"
-        @dragover.prevent
-      >
-        <!-- 网格背景 -->
-        <div v-if="store.canvas.showGrid" class="grid-background"></div>
-
-        <!-- 画布背景 -->
-        <div class="canvas-bg" :style="{ backgroundColor: store.canvas.backgroundColor }"></div>
-
-        <!-- 辅助线 -->
-        <template v-if="store.canvas.showGuides">
-          <div
-            v-for="guide in horizontalGuides"
-            :key="guide.id"
-            class="guide-line guide-horizontal"
-            :style="{ top: guide.position + 'px' }"
-          ></div>
-          <div
-            v-for="guide in verticalGuides"
-            :key="guide.id"
-            class="guide-line guide-vertical"
-            :style="{ left: guide.position + 'px' }"
-          ></div>
-        </template>
-
-        <!-- 画布组件 -->
-        <template v-for="comp in visibleComponents" :key="comp.id">
-          <div
-            v-show="comp.visible"
-            class="canvas-component"
-            :class="{ selected: comp.id === store.selectedId, locked: comp.locked }"
-            :style="{
-              left: comp.x + 'px',
-              top: comp.y + 'px',
-              width: comp.width + 'px',
-              height: comp.height + 'px',
-              zIndex: comp.zIndex,
-            }"
-            @click.stop="handleSelect(comp.id)"
-          >
-            <div v-if="comp.id === store.selectedId" class="selection-border">
-              <div
-                v-for="handle in resizeHandles"
-                :key="handle.position"
-                class="resize-handle"
-                :class="handle.position"
-                @mousedown.stop="handleResizeStart($event, comp.id, handle.position)"
-              ></div>
+          <template v-for="comp in store.components" :key="comp.id">
+            <div
+              v-show="comp.visible"
+              class="canvas-component"
+              :class="{
+                selected: comp.id === store.selectedId,
+                locked: comp.locked,
+                'drag-disabled': isSpacePressed,
+              }"
+              :style="{
+                left: comp.x + 'px',
+                top: comp.y + 'px',
+                width: comp.width + 'px',
+                height: comp.height + 'px',
+                zIndex: comp.zIndex,
+              }"
+              @click.stop="handleSelect(comp.id)"
+              @mousedown.stop="handleComponentMouseDown($event, comp.id)"
+            >
+              <div v-if="comp.id === store.selectedId" class="selection-border">
+                <div
+                  v-for="handle in resizeHandles"
+                  :key="handle.position"
+                  class="resize-handle"
+                  :class="handle.position"
+                  @mousedown.stop="handleResizeStart($event, comp.id, handle.position)"
+                />
+              </div>
+              <div class="component-content">
+                <component-renderer :component="comp" />
+              </div>
             </div>
-            <div class="component-content">
-              <component-renderer :component="comp" />
-            </div>
-          </div>
-        </template>
-      </div>
+          </template>
+        </div>
+      </template>
+    </SketchRuler>
 
-      <div v-if="store.components.length === 0" class="empty-canvas">
-        <el-icon :size="64" color="#9ca3af"><Plus /></el-icon>
-        <p>拖拽组件到画布，或点击左侧组件库添加</p>
-      </div>
+    <div v-if="store.components.length === 0" class="empty-canvas">
+      <el-icon :size="64" color="#9ca3af"><Plus /></el-icon>
+      <p>拖拽组件到画布，或点击左侧组件库添加</p>
     </div>
 
-    <!-- 信息栏 -->
     <div class="canvas-info-bar">
       <span>画布: {{ store.canvas.width }} × {{ store.canvas.height }}</span>
       <el-divider direction="vertical" />
-      <span>缩放: {{ Math.round(zoom * 100) }}%</span>
+      <span>缩放: {{ Math.round(localScale * 100) }}%</span>
       <el-divider direction="vertical" />
       <span>
         选中:
@@ -121,13 +104,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useBiEditorStore } from '@/stores/biEditor'
+import { ref, computed, watch, onMounted, onBeforeUnmount, shallowRef } from 'vue'
+import { SketchRuler } from 'vue3-sketch-ruler'
+import type { GuideLine } from '@/views/bi-editor/types'
+import { useBiEditorStore } from '@/stores/bi-editor'
 import ComponentRenderer from './ComponentRenderer.vue'
-
-const props = defineProps<{
-  zoom: number
-}>()
+import 'vue3-sketch-ruler/lib/style.css'
 
 const emit = defineEmits<{
   (e: 'select-component', id: string | null): void
@@ -135,36 +117,240 @@ const emit = defineEmits<{
 
 const store = useBiEditorStore()
 
+// ========== Viewport dimensions ==========
 const containerRef = ref<HTMLElement | null>(null)
-const viewportRef = ref<HTMLElement | null>(null)
+const viewportWidth = ref(1400)
+const viewportHeight = ref(800)
 
-const zoom = computed(() => props.zoom || store.canvas.zoom)
-const gridSize = computed(() => store.canvas.gridSize)
+let resizeObserver: ResizeObserver | null = null
 
-const horizontalMarks = computed(() => {
-  const marks: number[] = []
-  const step = 50
-  const width = store.canvas.width
-  for (let i = 0; i <= width; i += step) {
-    marks.push(i)
-  }
-  return marks
+// ========== SketchRuler refs ==========
+const sketchRef = shallowRef<InstanceType<typeof SketchRuler> | null>(null)
+const localScale = ref(store.canvas.zoom)
+const localOffset = ref({ x: 0, y: 0 })
+
+// ========== Infinite canvas dimensions ==========
+// Padding around content for scrolling beyond components
+const INFINITE_PADDING = 10000
+const BASE_CANVAS_SIZE = 10000
+
+const canvasWidth = computed(() => {
+  const rightEdge = store.components.reduce((max, c) => Math.max(max, c.x + c.width), 0)
+  return Math.max(
+    store.canvas.width + INFINITE_PADDING,
+    rightEdge + INFINITE_PADDING,
+    BASE_CANVAS_SIZE,
+  )
 })
 
-const verticalMarks = computed(() => {
-  const marks: number[] = []
-  const step = 50
-  const height = store.canvas.height
-  for (let i = 0; i <= height; i += step) {
-    marks.push(i)
-  }
-  return marks
+const canvasHeight = computed(() => {
+  const bottomEdge = store.components.reduce((max, c) => Math.max(max, c.y + c.height), 0)
+  return Math.max(
+    store.canvas.height + INFINITE_PADDING,
+    bottomEdge + INFINITE_PADDING,
+    BASE_CANVAS_SIZE,
+  )
 })
 
-const horizontalGuides = computed(() => store.guides.filter((g) => g.direction === 'horizontal'))
+// ========== Pan mode state ==========
+const isSpacePressed = ref(false)
+const isMiddlePressed = ref(false)
+let isPanning = false
+let panStartPos = { x: 0, y: 0 }
+let panStartOffset = { x: 0, y: 0 }
+let panMouseMoveHandler: ((e: MouseEvent) => void) | null = null
+let panMouseUpHandler: ((e?: MouseEvent) => void) | null = null
 
-const verticalGuides = computed(() => store.guides.filter((g) => g.direction === 'vertical'))
+// ========== Scale sync ==========
+watch(
+  () => store.canvas.zoom,
+  (val) => {
+    if (Math.abs(val - localScale.value) > 0.001) {
+      localScale.value = val
+    }
+  },
+)
 
+function handleScaleUpdate(scale: number) {
+  localScale.value = scale
+  if (Math.abs(scale - store.canvas.zoom) > 0.001) {
+    store.setZoom(scale)
+  }
+}
+
+function handleOffsetUpdate(offset: { x: number; y: number }) {
+  localOffset.value = { ...offset }
+}
+
+function handleZoomChange(detail: { scale: number; x: number; y: number }) {
+  localScale.value = detail.scale
+  localOffset.value = { x: detail.x, y: detail.y }
+}
+
+// ========== Wheel pan ==========
+function handleWheel(e: WheelEvent) {
+  if (e.ctrlKey || e.metaKey) {
+    // Let SketchRuler handle zoom with Ctrl/Cmd + wheel
+    return
+  }
+
+  // Stop propagation so SketchRuler doesn't try to handle wheel for zoom
+  e.preventDefault()
+  e.stopPropagation()
+
+  const scrollSpeed = 1.5 / localScale.value
+
+  if (e.shiftKey) {
+    localOffset.value = {
+      ...localOffset.value,
+      x: localOffset.value.x - e.deltaY * scrollSpeed,
+    }
+  } else {
+    localOffset.value = {
+      ...localOffset.value,
+      y: localOffset.value.y - e.deltaY * scrollSpeed,
+    }
+  }
+}
+
+// ========== Pan mode (Space + drag or Middle-click drag) ==========
+function startPan(e: MouseEvent) {
+  e.preventDefault()
+  isPanning = true
+  isMiddlePressed.value = true
+  panStartPos = { x: e.clientX, y: e.clientY }
+  panStartOffset = { ...localOffset.value }
+
+  panMouseMoveHandler = (ev: MouseEvent) => {
+    if (!isPanning) return
+    const deltaX = ev.clientX - panStartPos.x
+    const deltaY = ev.clientY - panStartPos.y
+    localOffset.value = {
+      x: panStartOffset.x + deltaX,
+      y: panStartOffset.y + deltaY,
+    }
+  }
+
+  panMouseUpHandler = () => {
+    isPanning = false
+    isMiddlePressed.value = false
+    if (panMouseMoveHandler) {
+      document.removeEventListener('mousemove', panMouseMoveHandler)
+      panMouseMoveHandler = null
+    }
+    if (panMouseUpHandler) {
+      document.removeEventListener('mouseup', panMouseUpHandler)
+      panMouseUpHandler = null
+    }
+  }
+
+  document.addEventListener('mousemove', panMouseMoveHandler)
+  document.addEventListener('mouseup', panMouseUpHandler)
+}
+
+function handleContainerMouseDown(e: MouseEvent) {
+  // Middle mouse button or Space + left mouse button = pan mode
+  if (e.button === 1 || (e.button === 0 && isSpacePressed.value)) {
+    startPan(e)
+  }
+}
+
+function handleComponentMouseDown(e: MouseEvent, id: string) {
+  // When Space is pressed, prevent component interaction (enable pan mode on canvas)
+  if (isSpacePressed.value) {
+    e.preventDefault()
+    e.stopPropagation()
+    startPan(e)
+    return
+  }
+  // Normal click - select the component
+  // Component move/drag is handled by existing handlers
+}
+
+// ========== Space key tracking ==========
+function handleKeyDown(e: KeyboardEvent) {
+  // Don't trigger pan shortcuts when typing in input fields
+  const tag = (e.target as HTMLElement)?.tagName
+  const isInput =
+    tag === 'INPUT' ||
+    tag === 'TEXTAREA' ||
+    tag === 'SELECT' ||
+    (e.target as HTMLElement)?.isContentEditable
+
+  if (e.code === 'Space' && !e.repeat && !isInput) {
+    isSpacePressed.value = true
+  }
+  // Escape to cancel pan/drag
+  if (e.code === 'Escape' && isPanning) {
+    panMouseUpHandler?.()
+  }
+}
+
+function handleKeyUp(e: KeyboardEvent) {
+  if (e.code === 'Space') {
+    isSpacePressed.value = false
+  }
+}
+
+// ========== Guide lines sync ==========
+const linesRef = ref(toRulerLines(store.guides))
+
+watch(
+  () => store.guides,
+  (newGuides) => {
+    const newRulerLines = toRulerLines(newGuides)
+    if (JSON.stringify(newRulerLines) !== JSON.stringify(linesRef.value)) {
+      linesRef.value = newRulerLines
+    }
+  },
+  { deep: true },
+)
+
+function toRulerLines(guides: GuideLine[]): { h: number[]; v: number[] } {
+  return {
+    h: guides.filter((g) => g.direction === 'horizontal').map((g) => g.position),
+    v: guides.filter((g) => g.direction === 'vertical').map((g) => g.position),
+  }
+}
+
+function fromRulerLines(lines: { h: number[]; v: number[] }): GuideLine[] {
+  const idPrefix = Date.now()
+  return [
+    ...lines.h.map(
+      (pos, i) =>
+        ({
+          id: `h_${idPrefix}_${i}`,
+          direction: 'horizontal' as const,
+          position: pos,
+        }) as GuideLine,
+    ),
+    ...lines.v.map(
+      (pos, i) =>
+        ({ id: `v_${idPrefix}_${i}`, direction: 'vertical' as const, position: pos }) as GuideLine,
+    ),
+  ]
+}
+
+function handleLinesChange(lines: { h: number[]; v: number[] }) {
+  linesRef.value = lines
+  store.setGuides(fromRulerLines(lines))
+}
+
+// ========== Ruler palette (dark theme) ==========
+const rulerPalette = {
+  bgColor: '#374151',
+  tickColor: '#9ca3af',
+  labelColor: '#d1d5db',
+  guideLineColor: '#409eff',
+  guideLineLockedColor: '#6b7280',
+  borderColor: '#4b5563',
+  shadowColor: 'rgba(64, 158, 255, 0.1)',
+  guideLineStyle: 'dashed' as const,
+  guideLineWidth: 1,
+  labelEnabled: true,
+}
+
+// ========== Resize handles ==========
 const resizeHandles = [
   { position: 'nw-cursor' },
   { position: 'n-cursor' },
@@ -176,33 +362,7 @@ const resizeHandles = [
   { position: 'w-cursor' },
 ]
 
-const visibleComponents = computed(() => {
-  if (!viewportRef.value) return store.components
-  const viewportRect = viewportRef.value.getBoundingClientRect()
-  const scrollLeft = viewportRef.value.scrollLeft
-  const scrollTop = viewportRef.value.scrollTop
-  const viewWidth = viewportRect.width / zoom.value
-  const viewHeight = viewportRect.height / zoom.value
-  return store.components.filter((comp) => {
-    const compRight = comp.x + comp.width
-    const compBottom = comp.y + comp.height
-    return (
-      compRight >= scrollLeft - 100 &&
-      comp.x <= scrollLeft + viewWidth + 100 &&
-      compBottom >= scrollTop - 100 &&
-      comp.y <= scrollTop + viewHeight + 100
-    )
-  })
-})
-
-function handleWheel(e: WheelEvent) {
-  if (e.ctrlKey || e.metaKey) {
-    e.preventDefault()
-    const delta = e.deltaY > 0 ? -0.1 : 0.1
-    store.setZoom(zoom.value + delta)
-  }
-}
-
+// ========== Component interactions ==========
 function handleSelect(id: string) {
   store.selectComponent(id)
   emit('select-component', id)
@@ -214,14 +374,13 @@ function handleDrop(e: DragEvent) {
   if (data) {
     try {
       const meta = JSON.parse(data)
-      const rect = viewportRef.value?.getBoundingClientRect()
-      if (rect) {
-        const x =
-          (e.clientX - rect.left + viewportRef.value!.scrollLeft) / zoom.value -
-          meta.defaultWidth / 2
-        const y =
-          (e.clientY - rect.top + viewportRef.value!.scrollTop) / zoom.value -
-          meta.defaultHeight / 2
+      const rect = containerRef.value?.getBoundingClientRect()
+      if (rect && sketchRef.value) {
+        const viewportX = e.clientX - rect.left
+        const viewportY = e.clientY - rect.top
+        const worldPoint = sketchRef.value.engine.toWorldPoint(viewportX, viewportY)
+        const x = worldPoint.x - meta.defaultWidth / 2
+        const y = worldPoint.y - meta.defaultHeight / 2
         store.addComponent(meta.type, x, y)
       }
     } catch {
@@ -236,13 +395,15 @@ function handleResizeStart(e: MouseEvent, id: string, handlePosition: string) {
   e.preventDefault()
   e.stopPropagation()
 
+  const state = sketchRef.value?.engine.getState()
+  const scale = state?.scale ?? localScale.value
   const startX = e.clientX
   const startY = e.clientY
   const startComp = { ...comp }
 
   function handleMouseMove(ev: MouseEvent) {
-    const deltaX = (ev.clientX - startX) / zoom.value
-    const deltaY = (ev.clientY - startY) / zoom.value
+    const deltaX = (ev.clientX - startX) / scale
+    const deltaY = (ev.clientY - startY) / scale
     let newX = startComp.x
     let newY = startComp.y
     let newWidth = startComp.width
@@ -276,12 +437,35 @@ function handleResizeStart(e: MouseEvent, id: string, handlePosition: string) {
   document.addEventListener('mouseup', handleMouseUp)
 }
 
+// ========== Lifecycle ==========
 onMounted(() => {
-  // init
+  if (containerRef.value) {
+    resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        viewportWidth.value = entry.contentRect.width
+        viewportHeight.value = entry.contentRect.height
+      }
+    })
+    resizeObserver.observe(containerRef.value)
+  }
+
+  window.addEventListener('keydown', handleKeyDown)
+  window.addEventListener('keyup', handleKeyUp)
 })
 
 onBeforeUnmount(() => {
-  // cleanup
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+    resizeObserver = null
+  }
+  window.removeEventListener('keydown', handleKeyDown)
+  window.removeEventListener('keyup', handleKeyUp)
+  if (panMouseMoveHandler) {
+    document.removeEventListener('mousemove', panMouseMoveHandler)
+  }
+  if (panMouseUpHandler) {
+    document.removeEventListener('mouseup', panMouseUpHandler)
+  }
 })
 </script>
 
@@ -293,17 +477,16 @@ onBeforeUnmount(() => {
   background: var(--bi-canvas-bg, #374151);
   overflow: hidden;
   position: relative;
+  cursor: default;
 }
-.canvas-viewport {
-  flex: 1;
-  overflow: auto;
-  position: relative;
-  scroll-behavior: auto;
+.canvas-container.pan-cursor {
+  cursor: grab;
+}
+.canvas-container.pan-cursor .canvas-component {
+  cursor: grab;
 }
 .canvas-content {
   position: relative;
-  transform-origin: 0 0;
-  will-change: transform;
 }
 .grid-background {
   position: absolute;
@@ -314,109 +497,14 @@ onBeforeUnmount(() => {
     linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
   background-size: 10px 10px;
 }
-.canvas-bg {
-  position: absolute;
-  inset: 0;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
-}
-.ruler-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  z-index: 100;
-}
-.ruler {
-  position: absolute;
-  background: var(--bi-ruler-bg, #f9fafb);
-}
-.ruler-horizontal {
-  top: 0;
-  left: 20px;
-  right: 0;
-  height: 20px;
-  border-bottom: 1px solid var(--bi-ruler-border, #d1d5db);
-}
-.ruler-vertical {
-  top: 20px;
-  left: 0;
-  width: 20px;
-  bottom: 0;
-  border-right: 1px solid var(--bi-ruler-border, #d1d5db);
-}
-.ruler-mark {
-  position: absolute;
-  display: flex;
-  align-items: flex-start;
-}
-.ruler-horizontal .ruler-mark {
-  top: 0;
-  width: 1px;
-  height: 6px;
-  background: var(--bi-ruler-tick, #9ca3af);
-}
-.ruler-horizontal .ruler-mark .mark-label {
-  position: absolute;
-  top: 8px;
-  left: -15px;
-  font-size: 10px;
-  color: var(--bi-ruler-text, #6b7280);
-  width: 30px;
-  text-align: center;
-}
-.ruler-vertical .ruler-mark {
-  left: 0;
-  height: 1px;
-  width: 6px;
-  background: var(--bi-ruler-tick, #9ca3af);
-}
-.ruler-vertical .ruler-mark .mark-label {
-  position: absolute;
-  left: 8px;
-  top: -8px;
-  font-size: 10px;
-  color: var(--bi-ruler-text, #6b7280);
-  width: 30px;
-  text-align: left;
-  transform: rotate(-90deg);
-  transform-origin: left center;
-}
-.guide-line {
-  position: absolute;
-  background: var(--bi-guide-color, #f59e0b);
-  pointer-events: none;
-  z-index: 50;
-}
-.guide-horizontal {
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: repeating-linear-gradient(
-    to right,
-    var(--bi-guide-color, #f59e0b) 0,
-    var(--bi-guide-color, #f59e0b) 5px,
-    transparent 5px,
-    transparent 10px
-  );
-}
-.guide-vertical {
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: repeating-linear-gradient(
-    to bottom,
-    var(--bi-guide-color, #f59e0b) 0,
-    var(--bi-guide-color, #f59e0b) 5px,
-    transparent 5px,
-    transparent 10px
-  );
-}
 .canvas-component {
   position: absolute;
   cursor: move;
   user-select: none;
+}
+.canvas-component.drag-disabled {
+  cursor: grab;
+  pointer-events: none;
 }
 .canvas-component.selected {
   z-index: 9999;
@@ -496,6 +584,7 @@ onBeforeUnmount(() => {
   justify-content: center;
   gap: 16px;
   pointer-events: none;
+  z-index: 10;
 }
 .empty-canvas p {
   color: var(--bi-text-muted, #9ca3af);
@@ -510,19 +599,5 @@ onBeforeUnmount(() => {
   border-top: 1px solid var(--bi-border-color, #374151);
   font-size: 12px;
   color: var(--bi-text-secondary, #9ca3af);
-}
-:deep(.canvas-viewport::-webkit-scrollbar) {
-  width: 10px;
-  height: 10px;
-}
-:deep(.canvas-viewport::-webkit-scrollbar-track) {
-  background: var(--bi-scrollbar-track, #1f2937);
-}
-:deep(.canvas-viewport::-webkit-scrollbar-thumb) {
-  background: var(--bi-scrollbar-thumb, #4b5563);
-  border-radius: 5px;
-}
-:deep(.canvas-viewport::-webkit-scrollbar-thumb:hover) {
-  background: var(--bi-scrollbar-thumb-hover, #6b7280);
 }
 </style>

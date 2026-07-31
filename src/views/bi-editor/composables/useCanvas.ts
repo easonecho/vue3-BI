@@ -1,5 +1,5 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { useBiEditorStore } from '@/stores/biEditor'
+import { useBiEditorStore } from '@/stores/bi-editor'
 
 /**
  * 画布缩放控制组合式函数

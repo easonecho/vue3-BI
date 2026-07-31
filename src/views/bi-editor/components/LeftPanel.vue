@@ -126,7 +126,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useBiEditorStore } from '@/stores/biEditor'
+import { useBiEditorStore } from '@/stores/bi-editor'
 import type { ComponentMeta, ComponentCategory } from '@/views/bi-editor/types'
 
 const emit = defineEmits<{

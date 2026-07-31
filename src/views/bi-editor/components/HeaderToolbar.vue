@@ -125,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { useBiEditorStore } from '@/stores/biEditor'
+import { useBiEditorStore } from '@/stores/bi-editor'
 import { useCanvasZoom } from '@/views/bi-editor/composables/useCanvas'
 
 const store = useBiEditorStore()
