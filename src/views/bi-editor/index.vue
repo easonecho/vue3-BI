@@ -42,7 +42,7 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="less">
 .bi-editor {
   width: 100vw;
   height: 100vh;

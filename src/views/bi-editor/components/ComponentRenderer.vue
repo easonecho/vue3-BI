@@ -65,7 +65,7 @@ defineProps<{
 }>()
 </script>
 
-<style scoped>
+<style scoped lang="less">
 .component-renderer {
   width: 100%;
   height: 100%;

@@ -25,7 +25,7 @@ interface Props {
 defineProps<Props>()
 </script>
 
-<style scoped>
+<style scoped lang="less">
 .snap-line {
   position: absolute;
   pointer-events: none;

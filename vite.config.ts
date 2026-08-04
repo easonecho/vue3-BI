@@ -13,6 +13,16 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  css: {
+    preprocessorOptions: {
+      less: {
+        // Less 3.x+ 默认 strictMath=off，兼容原生 CSS 写法；legacy math 写法按需放开
+        math: 'always',
+        // 禁止 IE 兼容模式下的 JavaScript 表达式求值，保持安全默认
+        javascriptEnabled: false,
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {

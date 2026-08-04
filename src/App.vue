@@ -6,7 +6,7 @@
 // App.vue 作为根组件，只渲染 router-view
 </script>
 
-<style>
+<style lang="less">
 html,
 body,
 #app {

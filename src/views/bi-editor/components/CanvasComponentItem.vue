@@ -114,7 +114,7 @@ const emit = defineEmits<{
 }>()
 </script>
 
-<style scoped>
+<style scoped lang="less">
 .canvas-component-wrapper-inner {
   position: relative;
   width: 100%;

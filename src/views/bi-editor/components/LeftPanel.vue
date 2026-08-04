@@ -116,7 +116,7 @@ function getLayerIcon(type: string): string {
 }
 </script>
 
-<style scoped>
+<style scoped lang="less">
 .left-panel {
   width: 240px;
   height: 100%;

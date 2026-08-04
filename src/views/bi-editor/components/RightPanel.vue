@@ -280,7 +280,7 @@ function mockFetchData() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="less">
 .right-panel {
   width: 300px;
   height: 100%;

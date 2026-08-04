@@ -173,7 +173,7 @@ function handleSave() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="less">
 .header-toolbar {
   display: flex;
   align-items: center;

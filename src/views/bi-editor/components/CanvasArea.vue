@@ -188,7 +188,7 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="less">
 .canvas-container {
   flex: 1;
   display: flex;
