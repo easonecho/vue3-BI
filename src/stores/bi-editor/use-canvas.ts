@@ -7,6 +7,8 @@ export interface CanvasOperationsApi {
   setZoom: (zoom: number) => void
   addGuide: (guide: Omit<GuideLine, 'id'>) => void
   setGuides: (guides: GuideLine[]) => void
+  /** 仅更新辅助线，不写入历史（用于拖拽过程中的实时刷新） */
+  setGuidesSilent: (guides: GuideLine[]) => void
   clearGuides: () => void
 }
 
@@ -35,6 +37,10 @@ export function useCanvasOperations(
     pushHistory()
   }
 
+  function setGuidesSilent(newGuides: GuideLine[]) {
+    guides.value = [...newGuides]
+  }
+
   function clearGuides() {
     guides.value = []
     pushHistory()
@@ -45,6 +51,7 @@ export function useCanvasOperations(
     setZoom,
     addGuide,
     setGuides,
+    setGuidesSilent,
     clearGuides,
   }
 }

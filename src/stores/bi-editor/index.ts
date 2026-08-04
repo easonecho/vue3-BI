@@ -55,11 +55,8 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
   } = useComponentOperations(components, selectedId, pushHistory)
 
   // ========== 画布操作 ==========
-  const { updateCanvas, setZoom, addGuide, setGuides, clearGuides } = useCanvasOperations(
-    canvas,
-    guides,
-    pushHistory,
-  )
+  const { updateCanvas, setZoom, addGuide, setGuides, setGuidesSilent, clearGuides } =
+    useCanvasOperations(canvas, guides, pushHistory)
 
   // ========== 导出 ==========
   return {
@@ -95,6 +92,7 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
     // 辅助线方法
     addGuide,
     setGuides,
+    setGuidesSilent,
     clearGuides,
     // 历史方法
     undo,

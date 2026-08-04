@@ -4,77 +4,25 @@
     <el-tabs v-model="activeTab" class="panel-tabs">
       <el-tab-pane label="组件库" name="components">
         <div class="component-library">
-          <!-- 基础组件 -->
-          <div class="component-group">
-            <div class="group-title">基础组件</div>
-            <div class="component-grid">
-              <div
-                v-for="comp in filteredComponents('basic')"
-                :key="comp.type"
-                class="component-item"
-                draggable="true"
-                @dragstart="handleDragStart($event, comp)"
-                @click="handleAddComponent(comp)"
-              >
-                <el-icon :size="20" class="component-icon"><component :is="comp.icon" /></el-icon>
-                <span class="component-name">{{ comp.name }}</span>
+          <!-- 组件分组：动态读取 metadata.ts 的 CATEGORY_GROUPS / CATEGORY_LABELS，单份配置 -->
+          <template v-for="(catLabel, catKey) in CATEGORY_LABELS" :key="catKey">
+            <div class="component-group" v-if="filteredComponents(catKey as any).length > 0">
+              <div class="group-title">{{ catLabel }}</div>
+              <div class="component-grid">
+                <div
+                  v-for="comp in filteredComponents(catKey as any)"
+                  :key="comp.type"
+                  class="component-item"
+                  draggable="true"
+                  @dragstart="handleDragStart($event, comp)"
+                  @click="handleAddComponent(comp)"
+                >
+                  <el-icon :size="20" class="component-icon"><component :is="comp.icon" /></el-icon>
+                  <span class="component-name">{{ comp.name }}</span>
+                </div>
               </div>
             </div>
-          </div>
-
-          <!-- 图表组件 -->
-          <div class="component-group">
-            <div class="group-title">图表组件</div>
-            <div class="component-grid">
-              <div
-                v-for="comp in filteredComponents('chart')"
-                :key="comp.type"
-                class="component-item"
-                draggable="true"
-                @dragstart="handleDragStart($event, comp)"
-                @click="handleAddComponent(comp)"
-              >
-                <el-icon :size="20" class="component-icon"><component :is="comp.icon" /></el-icon>
-                <span class="component-name">{{ comp.name }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 数据组件 -->
-          <div class="component-group">
-            <div class="group-title">数据组件</div>
-            <div class="component-grid">
-              <div
-                v-for="comp in filteredComponents('data')"
-                :key="comp.type"
-                class="component-item"
-                draggable="true"
-                @dragstart="handleDragStart($event, comp)"
-                @click="handleAddComponent(comp)"
-              >
-                <el-icon :size="20" class="component-icon"><component :is="comp.icon" /></el-icon>
-                <span class="component-name">{{ comp.name }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 信息组件 -->
-          <div class="component-group">
-            <div class="group-title">信息组件</div>
-            <div class="component-grid">
-              <div
-                v-for="comp in filteredComponents('info')"
-                :key="comp.type"
-                class="component-item"
-                draggable="true"
-                @dragstart="handleDragStart($event, comp)"
-                @click="handleAddComponent(comp)"
-              >
-                <el-icon :size="20" class="component-icon"><component :is="comp.icon" /></el-icon>
-                <span class="component-name">{{ comp.name }}</span>
-              </div>
-            </div>
-          </div>
+          </template>
         </div>
       </el-tab-pane>
 
@@ -89,10 +37,7 @@
             @click="store.selectComponent(layer.id)"
           >
             <div class="layer-info">
-              <el-icon
-                :size="16"
-                :color="layer.visible ? '#f3f4f6' : '#6b7280'"
-              >
+              <el-icon :size="16" :color="layer.visible ? '#f3f4f6' : '#6b7280'">
                 <component :is="getLayerIcon(layer.type)" />
               </el-icon>
               <span class="layer-name" :class="{ hidden: !layer.visible }">
@@ -127,6 +72,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
+// 🔑 统一使用 stores/bi-editor/metadata.ts 作为唯一元数据源，
+// 避免 LeftPanel.vue 本地再维护一份 componentMetas 导致 defaultWidth/defaultHeight 不一致。
+// 任何对组件默认尺寸、图标、分类的修改，只需要改 metadata.ts 一处即可全局生效。
+import {
+  CATEGORY_GROUPS,
+  CATEGORY_LABELS,
+  COMPONENT_META,
+  getMeta,
+} from '@/stores/bi-editor/metadata'
 import type { ComponentMeta, ComponentCategory } from '@/views/bi-editor/types'
 
 const emit = defineEmits<{
@@ -138,25 +92,9 @@ const store = useBiEditorStore()
 
 const activeTab = ref('components')
 
-/** 组件元数据列表 */
-const componentMetas: ComponentMeta[] = [
-  { type: 'text', name: '文本', category: 'basic', icon: 'Document', defaultWidth: 120, defaultHeight: 40, defaultProps: { text: '文本内容', fontSize: 14 }, defaultStyle: {} },
-  { type: 'image', name: '图片', category: 'basic', icon: 'Picture', defaultWidth: 160, defaultHeight: 120, defaultProps: { src: '' }, defaultStyle: {} },
-  { type: 'rect', name: '矩形', category: 'basic', icon: 'FullScreen', defaultWidth: 100, defaultHeight: 80, defaultProps: { borderRadius: 0 }, defaultStyle: {} },
-  { type: 'line', name: '直线', category: 'basic', icon: 'Minus', defaultWidth: 200, defaultHeight: 2, defaultProps: { direction: 'horizontal' }, defaultStyle: {} },
-  { type: 'bar-chart', name: '柱状图', category: 'chart', icon: 'DataLine', defaultWidth: 400, defaultHeight: 300, defaultProps: { title: '柱状图' }, defaultStyle: {} },
-  { type: 'line-chart', name: '折线图', category: 'chart', icon: 'TrendCharts', defaultWidth: 400, defaultHeight: 300, defaultProps: { title: '折线图' }, defaultStyle: {} },
-  { type: 'pie-chart', name: '饼图', category: 'chart', icon: 'PieChart', defaultWidth: 300, defaultHeight: 300, defaultProps: { title: '饼图' }, defaultStyle: {} },
-  { type: 'scatter-chart', name: '散点图', category: 'chart', icon: 'DataPoint', defaultWidth: 400, defaultHeight: 300, defaultProps: { title: '散点图' }, defaultStyle: {} },
-  { type: 'table', name: '表格', category: 'data', icon: 'Grid', defaultWidth: 500, defaultHeight: 200, defaultProps: { columns: [], data: [] }, defaultStyle: {} },
-  { type: 'number', name: '数字', category: 'info', icon: 'Odometer', defaultWidth: 100, defaultHeight: 60, defaultProps: { value: 0, fontSize: 24 }, defaultStyle: {} },
-  { type: 'gauge', name: '仪表盘', category: 'info', icon: 'Odometer', defaultWidth: 200, defaultHeight: 200, defaultProps: { value: 50, max: 100 }, defaultStyle: {} },
-  { type: 'progress', name: '进度条', category: 'info', icon: 'Loading', defaultWidth: 300, defaultHeight: 20, defaultProps: { value: 0, max: 100 }, defaultStyle: {} },
-  { type: 'indicator', name: '指标卡', category: 'info', icon: 'Flag', defaultWidth: 200, defaultHeight: 100, defaultProps: { title: '指标', value: 0 }, defaultStyle: {} },
-]
-
+/** 按分类筛选组件：直接复用 metadata.ts 预计算好的 CATEGORY_GROUPS（按 COMPONENT_META 查表生成，绝对同步） */
 function filteredComponents(category: ComponentCategory) {
-  return componentMetas.filter((c) => c.category === category)
+  return CATEGORY_GROUPS[category] ?? []
 }
 
 function handleDragStart(event: DragEvent, meta: ComponentMeta) {
@@ -172,22 +110,9 @@ function handleAddComponent(meta: ComponentMeta) {
 }
 
 function getLayerIcon(type: string): string {
-  const iconMap: Record<string, string> = {
-    text: 'Document',
-    image: 'Picture',
-    rect: 'FullScreen',
-    line: 'Minus',
-    'bar-chart': 'DataLine',
-    'line-chart': 'TrendCharts',
-    'pie-chart': 'PieChart',
-    'scatter-chart': 'DataPoint',
-    table: 'Grid',
-    number: 'Odometer',
-    gauge: 'Odometer',
-    progress: 'Loading',
-    indicator: 'Flag',
-  }
-  return iconMap[type] || 'Document'
+  // 🔑 直接从 COMPONENT_META 查表读取 icon，不再维护一份独立 iconMap，
+  // 未来新增组件类型或修改图标时只需要改 metadata.ts 一处。
+  return getMeta(type as any)?.icon ?? 'Document'
 }
 </script>
 
