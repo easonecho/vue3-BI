@@ -46,7 +46,7 @@
                   :model-value="store.selectedComponent.width"
                   size="small"
                   controls-position="right"
-                  :min="10"
+                  :min="1"
                   @update:model-value="(v: number) => updateField('width', v)"
                 />
               </div>
@@ -56,7 +56,7 @@
                   :model-value="store.selectedComponent.height"
                   size="small"
                   controls-position="right"
-                  :min="10"
+                  :min="1"
                   @update:model-value="(v: number) => updateField('height', v)"
                 />
               </div>
@@ -67,16 +67,32 @@
           <div class="section">
             <div class="section-title">层级</div>
             <div class="layer-actions">
-              <el-button size="small" @click="store.bringToFront(store.selectedComponent!.id)">
+              <el-button
+                size="small"
+                :disabled="!store.canBringToFront"
+                @click="store.bringToFront(store.selectedComponent!.id)"
+              >
                 置顶
               </el-button>
-              <el-button size="small" @click="store.moveUp(store.selectedComponent!.id)">
+              <el-button
+                size="small"
+                :disabled="!store.canMoveUp"
+                @click="store.moveUp(store.selectedComponent!.id)"
+              >
                 上移
               </el-button>
-              <el-button size="small" @click="store.moveDown(store.selectedComponent!.id)">
+              <el-button
+                size="small"
+                :disabled="!store.canMoveDown"
+                @click="store.moveDown(store.selectedComponent!.id)"
+              >
                 下移
               </el-button>
-              <el-button size="small" @click="store.sendToBack(store.selectedComponent!.id)">
+              <el-button
+                size="small"
+                :disabled="!store.canSendToBack"
+                @click="store.sendToBack(store.selectedComponent!.id)"
+              >
                 置底
               </el-button>
             </div>
@@ -129,7 +145,13 @@
               </div>
             </template>
 
-            <template v-else-if="['bar-chart', 'line-chart', 'pie-chart', 'scatter-chart'].includes(store.selectedComponent.type)">
+            <template
+              v-else-if="
+                ['bar-chart', 'line-chart', 'pie-chart', 'scatter-chart'].includes(
+                  store.selectedComponent.type,
+                )
+              "
+            >
               <div class="form-item">
                 <label>标题</label>
                 <el-input
@@ -165,11 +187,7 @@
         </div>
 
         <!-- 未选中状态 -->
-        <el-empty
-          v-else
-          description="请选择组件查看属性"
-          :image-size="100"
-        />
+        <el-empty v-else description="请选择组件查看属性" :image-size="100" />
       </el-tab-pane>
 
       <!-- 样式面板 -->
@@ -196,17 +214,19 @@
           </div>
         </div>
 
-        <el-empty
-          v-else
-          description="请选择组件查看样式"
-          :image-size="100"
-        />
+        <el-empty v-else description="请选择组件查看样式" :image-size="100" />
       </el-tab-pane>
 
       <!-- 数据面板 -->
       <el-tab-pane label="数据" name="data">
         <div v-if="store.selectedComponent" class="data-section">
-          <template v-if="['bar-chart', 'line-chart', 'pie-chart', 'scatter-chart'].includes(store.selectedComponent.type)">
+          <template
+            v-if="
+              ['bar-chart', 'line-chart', 'pie-chart', 'scatter-chart'].includes(
+                store.selectedComponent.type,
+              )
+            "
+          >
             <div class="section">
               <div class="section-title">数据源</div>
               <div class="form-item">
@@ -223,11 +243,7 @@
           </template>
         </div>
 
-        <el-empty
-          v-else
-          description="请选择组件配置数据"
-          :image-size="100"
-        />
+        <el-empty v-else description="请选择组件配置数据" :image-size="100" />
       </el-tab-pane>
     </el-tabs>
   </div>

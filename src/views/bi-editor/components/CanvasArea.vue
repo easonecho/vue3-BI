@@ -158,7 +158,6 @@ const {
 } = useCanvasInteraction({
   localScale,
   isSpacePressed,
-  isPanning,
   viewportRef,
   startPan,
   screenToWorld,
@@ -219,40 +218,52 @@ onMounted(async () => {
 
 .canvas-layout {
   position: absolute;
-  inset: 0 0 auto 0;
-  display: grid;
-  bottom: 28px;
+  inset: 0 0 28px 0;
   z-index: 1;
+  // --ruler 变量取值：标尺显示时 42px，隐藏时 0px。由 layoutStyle 注入。
+  // 所有子元素用绝对定位 + 该变量计算位置，完全不依赖兄弟元素的存在/显示，
+  // 彻底避免之前 display:grid 方案中 v-if/v-show 移除子元素后推断 1fr=0 的问题。
 }
 .ruler-corner {
-  grid-column: 1 / 2;
-  grid-row: 1 / 2;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--ruler, 0px);
+  height: var(--ruler, 0px);
   background: #1f2937;
   border-right: 1px solid #4b5563;
   border-bottom: 1px solid #4b5563;
+  z-index: 3;
 }
 .ruler-horizontal {
-  grid-column: 2 / 3;
-  grid-row: 1 / 2;
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: var(--ruler, 0px);
+  right: 0;
+  height: var(--ruler, 0px);
   border-bottom: 1px solid #4b5563;
   background: #374151;
+  z-index: 2;
 }
 .ruler-vertical {
-  grid-column: 1 / 2;
-  grid-row: 2 / 3;
-  position: relative;
+  position: absolute;
+  left: 0;
+  top: var(--ruler, 0px);
+  bottom: 0;
+  width: var(--ruler, 0px);
   border-right: 1px solid #4b5563;
   background: #374151;
+  z-index: 2;
 }
 .canvas-viewport {
-  grid-column: 2 / 3;
-  grid-row: 2 / 3;
-  position: relative;
+  position: absolute;
+  left: var(--ruler, 0px);
+  top: var(--ruler, 0px);
+  right: 0;
+  bottom: 0;
   overflow: hidden;
   background: transparent;
-  width: 100%;
-  height: 100%;
+  z-index: 1;
 }
 
 .canvas-transform-layer {

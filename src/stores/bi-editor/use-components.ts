@@ -22,6 +22,10 @@ export interface ComponentOperationsApi {
   toggleVisibility: (id: string) => void
   toggleLock: (id: string) => void
   selectComponent: (id: string | null) => void
+  canBringToFront: ReturnType<typeof computed<boolean>>
+  canSendToBack: ReturnType<typeof computed<boolean>>
+  canMoveUp: ReturnType<typeof computed<boolean>>
+  canMoveDown: ReturnType<typeof computed<boolean>>
 }
 
 export function useComponentOperations(
@@ -34,6 +38,30 @@ export function useComponentOperations(
   )
 
   const layerList = computed(() => [...components.value].sort((a, b) => b.zIndex - a.zIndex))
+
+  // 🔑 层级操作禁用状态：
+  //   - 只有一个组件时所有操作均禁用
+  //   - 组件在最顶层时 canBringToFront/canMoveUp 禁用
+  const maxZ = computed(() =>
+    components.value.length > 0 ? Math.max(...components.value.map((c) => c.zIndex)) : 0,
+  )
+  const minZ = computed(() =>
+    components.value.length > 0 ? Math.min(...components.value.map((c) => c.zIndex)) : 0,
+  )
+  const canBringToFront = computed(
+    () =>
+      !!selectedComponent.value &&
+      components.value.length > 1 &&
+      selectedComponent.value.zIndex < maxZ.value,
+  )
+  const canSendToBack = computed(
+    () =>
+      !!selectedComponent.value &&
+      components.value.length > 1 &&
+      selectedComponent.value.zIndex > minZ.value,
+  )
+  const canMoveUp = computed(() => canBringToFront.value)
+  const canMoveDown = computed(() => canSendToBack.value)
 
   function generateId(): string {
     return `comp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
@@ -98,27 +126,65 @@ export function useComponentOperations(
   }
 
   function bringToFront(id: string) {
-    const maxZ = Math.max(...components.value.map((c) => c.zIndex), 0)
-    setComponentZIndex(id, maxZ + 1)
+    const comp = components.value.find((c) => c.id === id)
+    if (!comp) return
+    // 🔑 与 z-index 最大的组件互换（而非重排所有组件）
+    const topComp = components.value.reduce(
+      (max, c) => (c.zIndex > max.zIndex ? c : max),
+      components.value[0],
+    )
+    if (!topComp || topComp.id === id) return
+    const temp = comp.zIndex
+    comp.zIndex = topComp.zIndex
+    topComp.zIndex = temp
+    pushHistory()
   }
 
   function sendToBack(id: string) {
-    const minZ = Math.min(...components.value.map((c) => c.zIndex), 0)
-    setComponentZIndex(id, minZ - 1)
+    const comp = components.value.find((c) => c.id === id)
+    if (!comp) return
+    // 🔑 与 z-index 最小的组件互换（而非重排所有组件）
+    const bottomComp = components.value.reduce(
+      (min, c) => (c.zIndex < min.zIndex ? c : min),
+      components.value[0],
+    )
+    if (!bottomComp || bottomComp.id === id) return
+    const temp = comp.zIndex
+    comp.zIndex = bottomComp.zIndex
+    bottomComp.zIndex = temp
+    pushHistory()
   }
 
   function moveUp(id: string) {
     const comp = components.value.find((c) => c.id === id)
-    if (comp) {
-      setComponentZIndex(id, comp.zIndex + 1)
-    }
+    if (!comp) return
+    // 🔑 找到 z-index 比当前组件大的最小组件（上一层），互换 zIndex
+    const upperComps = components.value.filter((c) => c.zIndex > comp.zIndex)
+    if (upperComps.length === 0) return
+    const nextUpper = upperComps.reduce(
+      (min, c) => (c.zIndex < min.zIndex ? c : min),
+      upperComps[0],
+    )
+    const temp = comp.zIndex
+    comp.zIndex = nextUpper.zIndex
+    nextUpper.zIndex = temp
+    pushHistory()
   }
 
   function moveDown(id: string) {
     const comp = components.value.find((c) => c.id === id)
-    if (comp) {
-      setComponentZIndex(id, comp.zIndex - 1)
-    }
+    if (!comp) return
+    // 🔑 找到 z-index 比当前组件小的最大组件（下一层），互换 zIndex
+    const lowerComps = components.value.filter((c) => c.zIndex < comp.zIndex)
+    if (lowerComps.length === 0) return
+    const nextLower = lowerComps.reduce(
+      (max, c) => (c.zIndex > max.zIndex ? c : max),
+      lowerComps[0],
+    )
+    const temp = comp.zIndex
+    comp.zIndex = nextLower.zIndex
+    nextLower.zIndex = temp
+    pushHistory()
   }
 
   function removeComponent(id: string) {
@@ -190,5 +256,9 @@ export function useComponentOperations(
     toggleVisibility,
     toggleLock,
     selectComponent,
+    canBringToFront,
+    canSendToBack,
+    canMoveUp,
+    canMoveDown,
   }
 }

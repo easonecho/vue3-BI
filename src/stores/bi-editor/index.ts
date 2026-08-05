@@ -5,13 +5,14 @@ import { getMeta, CATEGORY_GROUPS, CATEGORY_LABELS } from './metadata'
 import { useHistory } from './history'
 import { useComponentOperations } from './use-components'
 import { useCanvasOperations } from './use-canvas'
+import { DEFAULT_ZOOM, DEFAULT_VIEWPORT_OFFSET } from '@/views/bi-editor/constants/canvas-constants'
 
 export const useBiEditorStore = defineStore('bi-editor', () => {
   // ========== 共享状态 ==========
   const canvas = ref<CanvasState>({
     width: 1920,
     height: 1080,
-    zoom: 1,
+    zoom: DEFAULT_ZOOM,
     backgroundColor: '#FFFFFF',
     backgroundImage: '',
     showGrid: true,
@@ -19,18 +20,19 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
     snapToGrid: true,
     showRuler: true,
     showGuides: true,
-    scrollX: 0,
-    scrollY: 0,
+    scrollX: DEFAULT_VIEWPORT_OFFSET.x,
+    scrollY: DEFAULT_VIEWPORT_OFFSET.y,
   })
 
   const components = ref<ComponentInstance[]>([])
   const selectedId = ref<string | null>(null)
   const guides = ref<GuideLine[]>([])
 
-  // ========== 历史记录（依赖共享状态） ==========
+  // ========== 历史记录 ==========
   const { pushHistory, undo, redo, canUndo, canRedo, clearHistory } = useHistory(
     components,
     canvas,
+    guides,
     selectedId,
   )
 
@@ -52,11 +54,22 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
     toggleVisibility,
     toggleLock,
     selectComponent,
+    canBringToFront,
+    canSendToBack,
+    canMoveUp,
+    canMoveDown,
   } = useComponentOperations(components, selectedId, pushHistory)
 
   // ========== 画布操作 ==========
-  const { updateCanvas, setZoom, addGuide, setGuides, setGuidesSilent, clearGuides } =
-    useCanvasOperations(canvas, guides, pushHistory)
+  const {
+    updateCanvas,
+    setZoom,
+    addGuide,
+    setGuides,
+    setGuidesSilent,
+    clearGuides,
+    resetViewport,
+  } = useCanvasOperations(canvas, guides, pushHistory)
 
   // ========== 导出 ==========
   return {
@@ -86,9 +99,15 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
     toggleVisibility,
     toggleLock,
     selectComponent,
+    // 层级操作状态
+    canBringToFront,
+    canSendToBack,
+    canMoveUp,
+    canMoveDown,
     // 画布方法
     updateCanvas,
     setZoom,
+    resetViewport,
     // 辅助线方法
     addGuide,
     setGuides,

@@ -8,6 +8,16 @@ export const DISPLAY_OFFSET = 50000
 export const MIN_ZOOM = 0.1
 export const MAX_ZOOM = 5
 
+/** 默认缩放（1:1 实际大小），「还原画布」时使用 */
+export const DEFAULT_ZOOM = 1
+
+/**
+ * 默认视口偏移（业务 (0,0) 相对于 viewport 左上角的屏幕距离）。
+ * 必须与 useCanvasTransform 中 localOffset 的初始值 {x:50,y:50} 严格一致，
+ * 否则「还原画布」后标尺 0 刻度对齐会与初始状态不符。
+ */
+export const DEFAULT_VIEWPORT_OFFSET = { x: 50, y: 50 }
+
 /** Dark ruler theme (matches previous SketchRuler palette) */
 export const RULER_BG_COLOR = '#374151'
 export const RULER_LINE_COLOR = '#9ca3af'

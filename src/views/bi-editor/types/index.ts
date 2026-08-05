@@ -101,5 +101,6 @@ export interface GuideLine {
 export interface HistorySnapshot {
   components: ComponentInstance[]
   canvas: CanvasState
+  guides: GuideLine[]
   selectedId: string | null
 }

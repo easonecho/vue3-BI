@@ -17,7 +17,9 @@
                   @dragstart="handleDragStart($event, comp)"
                   @click="handleAddComponent(comp)"
                 >
-                  <el-icon :size="20" class="component-icon"><component :is="comp.icon" /></el-icon>
+                  <el-icon :size="20" class="component-icon"
+                    ><component :is="resolveIcon(comp.icon)"
+                  /></el-icon>
                   <span class="component-name">{{ comp.name }}</span>
                 </div>
               </div>
@@ -37,7 +39,7 @@
             @click="store.selectComponent(layer.id)"
           >
             <div class="layer-info">
-              <el-icon :size="16" :color="layer.visible ? '#f3f4f6' : '#6b7280'">
+              <el-icon :size="16" color="#f3f4f6">
                 <component :is="getLayerIcon(layer.type)" />
               </el-icon>
               <span class="layer-name" :class="{ hidden: !layer.visible }">
@@ -46,14 +48,14 @@
             </div>
             <div class="layer-actions">
               <el-tooltip :content="layer.visible ? '隐藏' : '显示'" placement="top">
-                <el-button size="small" text @click.stop="store.toggleVisibility(layer.id)">
-                  <el-icon><component :is="layer.visible ? 'Eye' : 'Hide'" /></el-icon>
-                </el-button>
+                <el-icon :size="16" @click.stop="store.toggleVisibility(layer.id)"
+                  ><component :is="layer.visible ? View : Hide"
+                /></el-icon>
               </el-tooltip>
               <el-tooltip :content="layer.locked ? '解锁' : '锁定'" placement="top">
-                <el-button size="small" text @click.stop="store.toggleLock(layer.id)">
-                  <el-icon><component :is="layer.locked ? 'Lock' : 'Unlock'" /></el-icon>
-                </el-button>
+                <el-icon :size="16" @click.stop="store.toggleLock(layer.id)">
+                  <component :is="layer.locked ? Lock : Unlock"
+                /></el-icon>
               </el-tooltip>
             </div>
           </div>
@@ -70,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, markRaw } from 'vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
 // 🔑 统一使用 stores/bi-editor/metadata.ts 作为唯一元数据源，
 // 避免 LeftPanel.vue 本地再维护一份 componentMetas 导致 defaultWidth/defaultHeight 不一致。
@@ -82,6 +84,47 @@ import {
   getMeta,
 } from '@/stores/bi-editor/metadata'
 import type { ComponentMeta, ComponentCategory } from '@/views/bi-editor/types'
+// Element Plus Icons：必须显式导入组件对象后，模板里的 <component :is="..." /> 才能正确渲染；
+// ❌ 直接传字符串（如 'Eye'/'Document'）给 :is 不会被解析为已导入的图标组件。
+import {
+  Document,
+  Picture,
+  FullScreen,
+  Minus,
+  DataLine,
+  TrendCharts,
+  PieChart,
+  Grid,
+  Odometer,
+  Loading,
+  Flag,
+  View,
+  Hide,
+  Lock,
+  Unlock,
+} from '@element-plus/icons-vue'
+import type { Component as VComponent } from 'vue'
+
+// icon 字符串 → 图标组件对象的映射；未命中时 fallback 到 Document（确认存在）
+const ICON_MAP: ReadonlyMap<string, VComponent> = new Map([
+  ['Document', markRaw(Document)],
+  ['Picture', markRaw(Picture)],
+  ['FullScreen', markRaw(FullScreen)],
+  ['Minus', markRaw(Minus)],
+  ['DataLine', markRaw(DataLine)],
+  ['TrendCharts', markRaw(TrendCharts)],
+  ['PieChart', markRaw(PieChart)],
+  ['Grid', markRaw(Grid)],
+  ['Odometer', markRaw(Odometer)],
+  ['Loading', markRaw(Loading)],
+  ['Flag', markRaw(Flag)],
+])
+
+/** 把 metadata.icon 的字符串名解析成真实的 Element Plus 图标组件对象，找不到则用 Document 兜底 */
+function resolveIcon(name?: string): VComponent {
+  if (!name) return Document
+  return (ICON_MAP.get(name) as VComponent) ?? Document
+}
 
 const emit = defineEmits<{
   (e: 'drag-start', event: DragEvent, meta: ComponentMeta): void
@@ -109,10 +152,10 @@ function handleAddComponent(meta: ComponentMeta) {
   emit('add-component', meta)
 }
 
-function getLayerIcon(type: string): string {
-  // 🔑 直接从 COMPONENT_META 查表读取 icon，不再维护一份独立 iconMap，
+function getLayerIcon(type: string): VComponent {
+  // 🔑 直接从 COMPONENT_META 查表读取 icon（字符串），再通过 resolveIcon 转成组件对象；
   // 未来新增组件类型或修改图标时只需要改 metadata.ts 一处。
-  return getMeta(type as any)?.icon ?? 'Document'
+  return resolveIcon(getMeta(type as any)?.icon)
 }
 </script>
 
@@ -262,25 +305,16 @@ function getLayerIcon(type: string): string {
 }
 
 .layer-name.hidden {
-  color: var(--bi-text-muted, #6b7280);
   text-decoration: line-through;
 }
 
 .layer-actions {
   display: flex;
-  gap: 2px;
+  gap: 8px;
 }
 
-:deep(.layer-actions .el-button) {
-  padding: 4px;
-}
-
-:deep(.layer-actions .el-button .el-icon) {
-  color: var(--bi-text-muted, #9ca3af);
-}
-
-:deep(.layer-actions .el-button:hover .el-icon) {
-  color: var(--bi-text-primary, #f3f4f6);
+:deep(.layer-actions .el-icon) {
+  color: var(--bi-icon-color, #ffffff);
 }
 
 /* 滚动条样式 */

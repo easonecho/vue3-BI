@@ -1,5 +1,6 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
+import { MIN_ZOOM, MAX_ZOOM } from '@/views/bi-editor/constants/canvas-constants'
 
 /**
  * 画布缩放控制组合式函数
@@ -7,36 +8,34 @@ import { useBiEditorStore } from '@/stores/bi-editor'
 export function useCanvasZoom() {
   const store = useBiEditorStore()
 
-  /** 缩放选项 */
+  /** 缩放选项（更丰富的常用档位） */
   const zoomOptions = [
+    { label: '25%', value: 0.25 },
     { label: '50%', value: 0.5 },
     { label: '75%', value: 0.75 },
     { label: '100%', value: 1 },
     { label: '125%', value: 1.25 },
     { label: '150%', value: 1.5 },
     { label: '200%', value: 2 },
+    { label: '400%', value: 4 },
   ]
 
-  /** 放大 */
+  /** 放大（按 0.1 步长，夹在 MIN/MAX_ZOOM 范围内） */
   function zoomIn() {
-    store.setZoom(store.canvas.zoom + 0.1)
+    const next = Math.min(MAX_ZOOM, +(store.canvas.zoom + 0.1).toFixed(2))
+    store.setZoom(next)
   }
 
-  /** 缩小 */
+  /** 缩小（按 0.1 步长，夹在 MIN/MAX_ZOOM 范围内） */
   function zoomOut() {
-    store.setZoom(store.canvas.zoom - 0.1)
-  }
-
-  /** 重置缩放 */
-  function resetZoom() {
-    store.setZoom(1)
+    const next = Math.max(MIN_ZOOM, +(store.canvas.zoom - 0.1).toFixed(2))
+    store.setZoom(next)
   }
 
   return {
     zoomOptions,
     zoomIn,
     zoomOut,
-    resetZoom,
   }
 }
 

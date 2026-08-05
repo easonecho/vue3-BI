@@ -1,7 +1,9 @@
-import { type Ref } from 'vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
-import type { RectLike, SnapResult } from '@/views/bi-editor/composables/useSmartGuides'
 
+/**
+ * ResizeHandle: 8 个方向的拉伸手柄（四角 + 四边）。
+ * position 对应 CSS cursor 类名，也决定了拉伸时宽高的变化方向。
+ */
 export interface ResizeHandle {
   position:
     | 'nw-cursor'
@@ -14,25 +16,38 @@ export interface ResizeHandle {
     | 'w-cursor'
 }
 
-export interface UseCanvasInteractionDeps {
-  localScale: Ref<number>
-  isSpacePressed: Ref<boolean>
-  isPanning: Ref<boolean>
-  viewportRef: Ref<HTMLElement | null>
+interface UseCanvasInteractionDeps {
+  localScale: { value: number }
+  isSpacePressed: { value: boolean }
+  viewportRef: { value: HTMLElement | null }
   startPan: (e: MouseEvent) => void
-  screenToWorld: (sx: number, sy: number) => { x: number; y: number }
-  snapRectToGuides: (id: string, rect: RectLike, threshold?: number) => SnapResult
+  screenToWorld: (clientX: number, clientY: number) => { x: number; y: number }
+  snapRectToGuides: (
+    id: string,
+    rect: { left: number; top: number; width: number; height: number },
+  ) => {
+    rect: { left: number; top: number; width: number; height: number }
+    hitsX: number[]
+    hitsY: number[]
+  }
   applySnapLines: (hitsX: number[], hitsY: number[]) => void
   clearSnapLines: () => void
   onSelectComponent?: (id: string | null) => void
 }
 
 /**
- * Canvas component interaction handlers:
- *  - Click / mousedown selection wrapper
- *  - VueDragResize dragging + dragstop (smart guides + grid snap + history commit)
- *  - Palette drop (new component creation)
- *  - Custom 8-direction resize handles
+ * 画布交互逻辑：
+ *  - 组件选中（click / vdr-activated / vdr-clicked）
+ *  - 组件拖拽（vue3-drag-resize 的 dragging / dragstop）
+ *  - 组件拉伸（自定义 8 方向 resize handles，mouseup 提交）
+ *  - 组件库 drop 添加
+ *  - 空格 / 中键平移
+ *  - Escape 取消拉伸
+ *
+ * 历史记录策略：
+ *  - 拖拽 / 拉伸过程中只更新组件位置，**不调用** pushHistory
+ *  - 拖拽结束（dragstop）/ 拉伸结束（mouseup）**才调用** pushHistory
+ *  - 纯点击（无实际移动）不调用 pushHistory
  */
 export function useCanvasInteraction(deps: UseCanvasInteractionDeps) {
   const store = useBiEditorStore()
@@ -60,8 +75,17 @@ export function useCanvasInteraction(deps: UseCanvasInteractionDeps) {
   ]
 
   let activeResizeAbort: (() => void) | null = null
+  /** 标记本次拖拽是否有实际移动（rect 与组件位置不同）。用于区分纯点击和真实拖拽。 */
+  let wasDragging = false
+  /**
+   * 标记是否正在拉伸组件。
+   * 拉伸期间 vue3-drag-resize 的 props watcher 会在 x/y/w/h 变化时
+   * 自动调用 bodyDown→bodyMove→bodyUp，产生虚假的 dragging/dragstop 事件。
+   * 此标志用于在 handleVdrDragging/handleVdrDragstop 中拦截这些虚假事件。
+   */
+  let isResizing = false
 
-  function handleSelect(id: string) {
+  function handleSelect(id: string | null) {
     store.selectComponent(id)
     onSelectComponent?.(id)
   }
@@ -69,7 +93,6 @@ export function useCanvasInteraction(deps: UseCanvasInteractionDeps) {
   function handleWrapperMouseDown(e: MouseEvent, id: string) {
     if (e.button === 1 || (e.button === 0 && isSpacePressed.value)) {
       startPan(e)
-      e.stopPropagation()
       return
     }
     handleSelect(id)
@@ -81,20 +104,33 @@ export function useCanvasInteraction(deps: UseCanvasInteractionDeps) {
   ) {
     const comp = store.components.find((c) => c.id === id)
     if (!comp || comp.locked) return
+
+    // 🔑 拉伸期间拦截：vue3-drag-resize 的 props watcher 会在 x/y/w/h 变化时
+    //   自动触发 bodyDown→bodyMove，产生虚假的 dragging 事件。此处直接跳过。
+    if (isResizing) return
+
+    // 检测是否为实际拖拽
+    if (Math.abs(rect.left - comp.x) > 0.01 || Math.abs(rect.top - comp.y) > 0.01) {
+      wasDragging = true
+    }
+
     let nx = rect.left
     let ny = rect.top
 
-    const snapResult = snapRectToGuides(id, rect)
-    nx = snapResult.rect.left
-    ny = snapResult.rect.top
-    applySnapLines(snapResult.hitsX, snapResult.hitsY)
-
-    if (store.canvas.snapToGrid) {
+    // 只在实际拖拽时应用网格吸附和智能吸附
+    if (store.canvas.snapToGrid && wasDragging) {
+      const snapResult = snapRectToGuides(id, rect)
+      nx = snapResult.rect.left
+      ny = snapResult.rect.top
+      applySnapLines(snapResult.hitsX, snapResult.hitsY)
       const gs = store.canvas.gridSize
       nx = Math.round(nx / gs) * gs
       ny = Math.round(ny / gs) * gs
+    } else {
+      clearSnapLines()
     }
 
+    // 只更新位置，不调用 pushHistory
     store.moveComponent(id, nx, ny)
   }
 
@@ -104,14 +140,23 @@ export function useCanvasInteraction(deps: UseCanvasInteractionDeps) {
   ) {
     const comp = store.components.find((c) => c.id === id)
     if (!comp || comp.locked) return
+
+    // 🔑 拉伸期间拦截：vue3-drag-resize 的 watcher 触发的虚假 dragstop 事件
+    if (isResizing) return
+
+    // 纯点击：不记录历史
+    if (!wasDragging) {
+      clearSnapLines()
+      return
+    }
+
     let nx = rect.left
     let ny = rect.top
 
-    const snapResult = snapRectToGuides(id, rect)
-    nx = snapResult.rect.left
-    ny = snapResult.rect.top
-
     if (store.canvas.snapToGrid) {
+      const snapResult = snapRectToGuides(id, rect)
+      nx = snapResult.rect.left
+      ny = snapResult.rect.top
       const gs = store.canvas.gridSize
       nx = Math.round(nx / gs) * gs
       ny = Math.round(ny / gs) * gs
@@ -120,7 +165,9 @@ export function useCanvasInteraction(deps: UseCanvasInteractionDeps) {
       store.moveComponent(id, nx, ny)
     }
     clearSnapLines()
+    // 拖拽结束 → 才记录历史
     store.pushHistory()
+    wasDragging = false
   }
 
   function handleDrop(e: DragEvent) {
@@ -131,9 +178,7 @@ export function useCanvasInteraction(deps: UseCanvasInteractionDeps) {
     try {
       const meta = JSON.parse(data)
       const rect = viewport.getBoundingClientRect()
-      const sx = e.clientX - rect.left
-      const sy = e.clientY - rect.top
-      const { x, y } = screenToWorld(sx, sy)
+      const { x, y } = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
       const cx = x - (meta.defaultWidth ?? 100) / 2
       const cy = y - (meta.defaultHeight ?? 100) / 2
       store.addComponent(meta.type, cx, cy)
@@ -147,6 +192,9 @@ export function useCanvasInteraction(deps: UseCanvasInteractionDeps) {
     if (!comp) return
     e.preventDefault()
     e.stopPropagation()
+
+    // 🔑 标记正在拉伸：阻止 vue3-drag-resize 的 props watcher 触发虚假事件
+    isResizing = true
 
     const scale = localScale.value
     const startX = e.clientX
@@ -177,27 +225,37 @@ export function useCanvasInteraction(deps: UseCanvasInteractionDeps) {
         newWidth = Math.round(newWidth / gs) * gs
         newHeight = Math.round(newHeight / gs) * gs
       }
+      // 只更新状态，不调用 pushHistory
       store.moveComponent(id, newX, newY)
       store.resizeComponent(id, newWidth, newHeight)
     }
+
     function handleMouseUp() {
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
       if (activeResizeAbort === abortFn) {
         activeResizeAbort = null
       }
+      // 🔑 拉伸结束，解除拦截
+      isResizing = false
+      // 拉伸结束 → 才记录历史
       store.pushHistory()
     }
+
     function abortFn() {
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
+      // 回滚到原始尺寸
       store.moveComponent(id, startComp.x, startComp.y)
       store.resizeComponent(id, startComp.width, startComp.height)
-      store.pushHistory()
+      // 🔑 拉伸中止，解除拦截
+      isResizing = false
       if (activeResizeAbort === abortFn) {
         activeResizeAbort = null
       }
+      // 注意：abort 时不调用 pushHistory，保持原状态
     }
+
     activeResizeAbort = abortFn
     document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseup', handleMouseUp)
