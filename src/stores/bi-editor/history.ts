@@ -6,10 +6,34 @@ import type {
   GuideLine,
 } from '@/views/bi-editor/types'
 
+/**
+ * 🔑 撤销/重做恢复期间的「写保护」标志。
+ *
+ * 为什么需要这个标志：
+ *   restoreSnapshot 会更新 components/canvas/guides/selectedId，
+ *   这些响应式变更会触发 vue3-drag-resize 的 x/y/w/h watcher（内部用 this.$nextTick
+ *   调用 bodyUp，emit 'dragstop'）以及 useRulerGuides 的 guides watcher，
+ *   它们最终都会回调 pushHistory。如果不拦截，撤销刚把 historyIndex 减 1，
+ *   紧接着的虚假 pushHistory 又把它加回去 → 撤销被立即抵消，表现为反复打印
+ *   [pushHistory] COMMITTED 且撤销无效。
+ *
+ * 为什么用 setTimeout(0) 重置而不是 nextTick：
+ *   vue3-drag-resize 的 watcher 里是 this.$nextTick(() => bodyUp())，bodyUp 才
+ *   emit dragstop → handleVdrDragstop → pushHistory。这是一条「nextTick 链」：
+ *     微任务1: Vue scheduler flush watchers → x/y watcher 调度 bodyUp 到 nextTick
+ *     微任务2: bodyUp emit dragstop → pushHistory
+ *   nextTick 是微任务，单层 nextTick 重置会在微任务1末尾就跑，早于微任务2的 pushHistory，
+ *   导致 isRestoring 已被重置为 false，拦截失效。
+ *   setTimeout(0) 是宏任务，会在所有微任务（整条 nextTick 链）跑完后才执行，
+ *   确保 isRestoring 在 pushHistory 被调用时仍为 true，可靠拦截。
+ */
+let isRestoring = false
+
 const MAX_HISTORY = 100
 
 export interface HistoryApi {
-  history: Ref<HistorySnapshot[]>
+  /** 历史栈：仅存储 JSON 字符串，彻底避免 Proxy/响应式对象污染 */
+  history: Ref<string[]>
   historyIndex: Ref<number>
   createSnapshot: () => HistorySnapshot
   restoreSnapshot: (snapshot: HistorySnapshot) => void
@@ -19,6 +43,8 @@ export interface HistoryApi {
   clearHistory: () => void
   canUndo: () => boolean
   canRedo: () => boolean
+  /** 是否正在恢复快照（undo/redo 期间）—— 供交互层拦截虚假事件用 */
+  isRestoringNow: () => boolean
 }
 
 export function useHistory(
@@ -27,27 +53,56 @@ export function useHistory(
   guides: Ref<GuideLine[]>,
   selectedId: Ref<string | null>,
 ): HistoryApi {
-  const history = ref<HistorySnapshot[]>([])
+  // 🔑 历史栈只存 JSON 字符串：
+  //   - 写入：JSON.stringify 快照对象 → 字符串
+  //   - 读取：JSON.parse 字符串 → 全新普通对象（无 Proxy/响应式引用）
+  //   这样彻底切断与 Vue 响应式系统的引用关系，避免 Proxy 对象被存入历史。
+  const history = ref<string[]>([])
   const historyIndex = ref(-1)
 
-  function createSnapshot(): HistorySnapshot {
-    return {
-      components: JSON.parse(JSON.stringify(components.value)),
-      canvas: JSON.parse(JSON.stringify(canvas.value)),
-      guides: JSON.parse(JSON.stringify(guides.value)),
+  /** 把当前状态序列化为 JSON 字符串（剥离所有 Proxy） */
+  function serializeState(): string {
+    return JSON.stringify({
+      components: components.value,
+      canvas: canvas.value,
+      guides: guides.value,
       selectedId: selectedId.value,
-    }
+    })
+  }
+
+  /** 把 JSON 字符串反序列化为快照对象（全新普通对象，无 Proxy） */
+  function deserializeState(json: string): HistorySnapshot {
+    return JSON.parse(json) as HistorySnapshot
+  }
+
+  function createSnapshot(): HistorySnapshot {
+    return deserializeState(serializeState())
   }
 
   function restoreSnapshot(snapshot: HistorySnapshot) {
-    const { zoom, scrollX, scrollY } = canvas.value
-    components.value = JSON.parse(JSON.stringify(snapshot.components))
-    canvas.value = JSON.parse(JSON.stringify(snapshot.canvas))
-    canvas.value.zoom = zoom
-    canvas.value.scrollX = scrollX
-    canvas.value.scrollY = scrollY
-    guides.value = JSON.parse(JSON.stringify(snapshot.guides))
-    selectedId.value = snapshot.selectedId
+    // 🔑 进入恢复期：阻止 restore 期间触发的 watcher（vue3-drag-resize 的 x/y watcher
+    //   emit dragstop → handleVdrDragstop → pushHistory；guides watcher → setGuides → pushHistory）
+    //   把 historyIndex 又加回去，抵消撤销/重做。
+    isRestoring = true
+    try {
+      const { zoom, scrollX, scrollY } = canvas.value
+      // 🔑 反序列化后再赋值：确保赋给 ref 的是全新普通对象，
+      //   Vue 会重新包装为 Proxy，但历史栈中存储的是字符串，不受影响。
+      components.value = JSON.parse(JSON.stringify(snapshot.components))
+      canvas.value = JSON.parse(JSON.stringify(snapshot.canvas))
+      canvas.value.zoom = zoom
+      canvas.value.scrollX = scrollX
+      canvas.value.scrollY = scrollY
+      guides.value = JSON.parse(JSON.stringify(snapshot.guides))
+      selectedId.value = snapshot.selectedId
+    } finally {
+      // 🔑 用 setTimeout(0)（宏任务）重置：必须晚于 vue3-drag-resize 的 nextTick 链
+      //   (watcher → this.$nextTick → bodyUp → dragstop → pushHistory)，
+      //   单层 nextTick（微任务）会在 bodyUp 之前就重置，拦截失效。
+      setTimeout(() => {
+        isRestoring = false
+      }, 0)
+    }
   }
 
   /**
@@ -68,8 +123,21 @@ export function useHistory(
   }
 
   function pushHistory() {
-    const snapshot = createSnapshot()
-    const currentSnapshot = history.value[historyIndex.value]
+    // 🔑 恢复期间拦截：restoreSnapshot 触发的 watcher（vue3-drag-resize x/y watcher
+    //   → dragstop → handleVdrDragstop → pushHistory；guides watcher → setGuides → pushHistory）
+    //   都是恢复的副作用，不是用户操作，必须丢弃，否则会立即抵消 undo/redo。
+    if (isRestoring) {
+      console.log('[pushHistory] SKIPPED — restoring snapshot (undo/redo in progress)')
+      return
+    }
+
+    // 🔑 序列化当前状态为字符串，彻底剥离 Proxy
+    const serialized = serializeState()
+    const snapshot = deserializeState(serialized)
+
+    // 与当前历史项比较（反序列化后再生成签名）
+    const currentSerialized = history.value[historyIndex.value]
+    const currentSnapshot = currentSerialized ? deserializeState(currentSerialized) : null
     const newSig = snapshotSignature(snapshot)
     const curSig = currentSnapshot ? snapshotSignature(currentSnapshot) : null
 
@@ -78,10 +146,12 @@ export function useHistory(
       return
     }
 
+    // 裁剪 redo 分支
     if (historyIndex.value < history.value.length - 1) {
       history.value = history.value.slice(0, historyIndex.value + 1)
     }
-    history.value.push(snapshot)
+    // 🔑 只存字符串，不存对象
+    history.value.push(serialized)
     if (history.value.length > MAX_HISTORY) {
       history.value.shift()
     }
@@ -98,20 +168,23 @@ export function useHistory(
   function undo() {
     if (historyIndex.value > 0) {
       historyIndex.value--
-      restoreSnapshot(history.value[historyIndex.value])
+      // 🔑 从字符串反序列化得到全新普通对象，再恢复状态
+      const snapshot = deserializeState(history.value[historyIndex.value])
+      restoreSnapshot(snapshot)
     }
   }
 
   function redo() {
     if (historyIndex.value < history.value.length - 1) {
       historyIndex.value++
-      restoreSnapshot(history.value[historyIndex.value])
+      const snapshot = deserializeState(history.value[historyIndex.value])
+      restoreSnapshot(snapshot)
     }
   }
 
   function clearHistory() {
-    const snap = createSnapshot()
-    history.value = [snap]
+    const serialized = serializeState()
+    history.value = [serialized]
     historyIndex.value = 0
   }
 
@@ -134,5 +207,6 @@ export function useHistory(
     clearHistory,
     canUndo,
     canRedo,
+    isRestoringNow: () => isRestoring,
   }
 }

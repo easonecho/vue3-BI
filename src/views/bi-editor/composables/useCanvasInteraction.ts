@@ -105,6 +105,11 @@ export function useCanvasInteraction(deps: UseCanvasInteractionDeps) {
     const comp = store.components.find((c) => c.id === id)
     if (!comp || comp.locked) return
 
+    // 🔑 撤销/重做恢复期间拦截：vue3-drag-resize 的 x/y watcher 会在 props 变化时
+    //   自动触发 bodyDown→bodyMove→bodyUp，产生虚假的 dragging 事件。此处直接跳过，
+    //   避免调用 moveComponent 导致刚恢复的位置被 snap-to-grid 拉偏。
+    if (store.isRestoringNow()) return
+
     // 🔑 拉伸期间拦截：vue3-drag-resize 的 props watcher 会在 x/y/w/h 变化时
     //   自动触发 bodyDown→bodyMove，产生虚假的 dragging 事件。此处直接跳过。
     if (isResizing) return
@@ -140,6 +145,11 @@ export function useCanvasInteraction(deps: UseCanvasInteractionDeps) {
   ) {
     const comp = store.components.find((c) => c.id === id)
     if (!comp || comp.locked) return
+
+    // 🔑 撤销/重做恢复期间拦截：vue3-drag-resize 的 x/y watcher 会在 this.$nextTick 中
+    //   调用 bodyUp → emit 'dragstop'，这是恢复副作用而非用户拖拽，必须跳过，
+    //   否则 pushHistory 会把 historyIndex 加回去，抵消 undo/redo。
+    if (store.isRestoringNow()) return
 
     // 🔑 拉伸期间拦截：vue3-drag-resize 的 watcher 触发的虚假 dragstop 事件
     if (isResizing) return

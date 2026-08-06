@@ -29,7 +29,7 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
   const guides = ref<GuideLine[]>([])
 
   // ========== 历史记录 ==========
-  const { pushHistory, undo, redo, canUndo, canRedo, clearHistory } = useHistory(
+  const { pushHistory, undo, redo, canUndo, canRedo, clearHistory, isRestoringNow } = useHistory(
     components,
     canvas,
     guides,
@@ -120,5 +120,6 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
     canRedo,
     pushHistory,
     clearHistory,
+    isRestoringNow,
   }
 })
