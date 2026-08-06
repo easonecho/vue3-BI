@@ -2,21 +2,18 @@
  * BI 编辑器类型定义
  */
 
-/** 组件类型 */
-export type ComponentType =
-  | 'text'
-  | 'image'
-  | 'rect'
-  | 'line'
-  | 'bar-chart'
-  | 'line-chart'
-  | 'pie-chart'
-  | 'scatter-chart'
-  | 'table'
-  | 'number'
-  | 'gauge'
-  | 'progress'
-  | 'indicator'
+/**
+ * 🔑 组件类型 —— 现为 string 别名，配合 registry.ts 自动扫描使用。
+ *   新增组件不再需要手动加联合字面量成员。
+ *
+ *   如需恢复强类型校验，只需改成：
+ *   ```ts
+ *   import type { componentDefinitions } from '@/views/bi-editor/component-defs'
+ *   export type ComponentType = keyof typeof componentDefinitions
+ *   ```
+ */
+import type { componentDefinitions } from '@/views/bi-editor/component-defs'
+export type ComponentType = keyof typeof componentDefinitions
 
 /** 组件分类 */
 export type ComponentCategory = 'basic' | 'chart' | 'data' | 'info'

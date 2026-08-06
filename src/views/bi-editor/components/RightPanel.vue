@@ -71,30 +71,26 @@
                 size="small"
                 :disabled="!store.canBringToFront"
                 @click="store.bringToFront(store.selectedComponent!.id)"
+                >置顶</el-button
               >
-                置顶
-              </el-button>
               <el-button
                 size="small"
                 :disabled="!store.canMoveUp"
                 @click="store.moveUp(store.selectedComponent!.id)"
+                >上移</el-button
               >
-                上移
-              </el-button>
               <el-button
                 size="small"
                 :disabled="!store.canMoveDown"
                 @click="store.moveDown(store.selectedComponent!.id)"
+                >下移</el-button
               >
-                下移
-              </el-button>
               <el-button
                 size="small"
                 :disabled="!store.canSendToBack"
                 @click="store.sendToBack(store.selectedComponent!.id)"
+                >置底</el-button
               >
-                置底
-              </el-button>
             </div>
           </div>
 
@@ -106,83 +102,37 @@
                 <el-checkbox
                   :model-value="store.selectedComponent.visible"
                   @update:model-value="(v: boolean) => updateField('visible', v)"
+                  >可见</el-checkbox
                 >
-                  可见
-                </el-checkbox>
               </div>
               <div class="form-check">
                 <el-checkbox
                   :model-value="store.selectedComponent.locked"
                   @update:model-value="(v: boolean) => updateField('locked', v)"
+                  >锁定</el-checkbox
                 >
-                  锁定
-                </el-checkbox>
               </div>
             </div>
           </div>
 
-          <!-- 组件属性 (根据类型动态显示) -->
-          <div class="section">
+          <!-- 🔑 Schema 驱动：按 group 分组渲染组件特有属性（统一使用 PropFieldRenderer，自带 visibleWhen） -->
+          <template v-if="currentDefinition">
+            <div v-for="group in fieldGroups" :key="group" class="section">
+              <div class="section-title">{{ group }}</div>
+              <PropFieldRenderer
+                v-for="field in getGroupFields(group)"
+                :key="field.key"
+                :field="field"
+                :model-value="getProp(field.key)"
+                :all-props="store.selectedComponent!.props"
+                @update:model-value="(v) => updateProp(field.key, v)"
+              />
+            </div>
+          </template>
+
+          <div v-else class="section">
             <div class="section-title">组件属性</div>
-            <template v-if="store.selectedComponent.type === 'text'">
-              <div class="form-item">
-                <label>文本</label>
-                <el-input
-                  type="textarea"
-                  :model-value="store.selectedComponent.props.text"
-                  :rows="2"
-                  @update:model-value="(v: string) => updateProp('text', v)"
-                />
-              </div>
-              <div class="form-item">
-                <label>字号</label>
-                <el-slider
-                  :model-value="store.selectedComponent.props.fontSize"
-                  :min="10"
-                  :max="48"
-                  @update:model-value="(v: number) => updateProp('fontSize', v)"
-                />
-              </div>
-            </template>
-
-            <template
-              v-else-if="
-                ['bar-chart', 'line-chart', 'pie-chart', 'scatter-chart'].includes(
-                  store.selectedComponent.type,
-                )
-              "
-            >
-              <div class="form-item">
-                <label>标题</label>
-                <el-input
-                  :model-value="store.selectedComponent.props.title"
-                  @update:model-value="(v: string) => updateProp('title', v)"
-                />
-              </div>
-            </template>
-
-            <template v-else-if="store.selectedComponent.type === 'number'">
-              <div class="form-item">
-                <label>数值</label>
-                <el-input-number
-                  :model-value="store.selectedComponent.props.value"
-                  @update:model-value="(v: number) => updateProp('value', v)"
-                />
-              </div>
-              <div class="form-item">
-                <label>字号</label>
-                <el-slider
-                  :model-value="store.selectedComponent.props.fontSize"
-                  :min="14"
-                  :max="72"
-                  @update:model-value="(v: number) => updateProp('fontSize', v)"
-                />
-              </div>
-            </template>
-
-            <template v-else>
-              <div class="placeholder-text">此组件暂无可配置的属性</div>
-            </template>
+            <div class="placeholder-text">此组件暂无可配置的属性</div>
           </div>
         </div>
 
@@ -220,23 +170,15 @@
       <!-- 数据面板 -->
       <el-tab-pane label="数据" name="data">
         <div v-if="store.selectedComponent" class="data-section">
-          <template
-            v-if="
-              ['bar-chart', 'line-chart', 'pie-chart', 'scatter-chart'].includes(
-                store.selectedComponent.type,
-              )
-            "
-          >
-            <div class="section">
-              <div class="section-title">数据源</div>
-              <div class="form-item">
-                <el-button size="small" @click="mockLoadData">模拟加载数据</el-button>
-              </div>
-              <div class="form-item">
-                <el-button size="small" @click="mockFetchData">从接口获取</el-button>
-              </div>
+          <div v-if="currentDefinition?.supportsDataBinding" class="section">
+            <div class="section-title">数据源</div>
+            <div class="form-item">
+              <el-button size="small" @click="mockLoadData">模拟加载数据</el-button>
             </div>
-          </template>
+            <div class="form-item">
+              <el-button size="small" @click="mockFetchData">从接口获取</el-button>
+            </div>
+          </div>
 
           <template v-else>
             <div class="placeholder-text">此组件不支持数据绑定</div>
@@ -250,12 +192,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
+import { getDefinition } from '@/views/bi-editor/component-defs'
+import PropFieldRenderer from './PropFieldRenderer.vue'
+import type { PropField } from '@/views/bi-editor/component-defs/types'
 
 const store = useBiEditorStore()
-
 const activeTab = ref('props')
+
+const currentDefinition = computed(() => {
+  const type = store.selectedComponent?.type
+  return type ? getDefinition(type) : undefined
+})
+
+/** 按 group 分组的字段列表（无 group 的归入"组件属性"默认组） */
+const fieldGroups = computed(() => {
+  if (!currentDefinition.value) return []
+  const groups = new Set<string>()
+  for (const field of currentDefinition.value.propsSchema) {
+    groups.add(field.group || '组件属性')
+  }
+  return Array.from(groups)
+})
+
+function getGroupFields(group: string): PropField[] {
+  if (!currentDefinition.value) return []
+  return currentDefinition.value.propsSchema.filter((f) => (f.group || '组件属性') === group)
+}
+
+function getProp(key: string): any {
+  return store.selectedComponent?.props?.[key]
+}
 
 function updateField(field: string, value: any) {
   if (store.selectedId) {
@@ -286,12 +254,10 @@ function updateStyle(key: string, value: any) {
 }
 
 function mockLoadData() {
-  // TODO: 实现模拟数据加载
   console.log('模拟加载数据')
 }
 
 function mockFetchData() {
-  // TODO: 实现接口数据获取
   console.log('从接口获取数据')
 }
 </script>
@@ -311,11 +277,17 @@ function mockFetchData() {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0; /* 🔑 允许子元素真正溢出并触发滚动 */
 }
 
 :deep(.el-tabs__header) {
   margin: 0;
   background: var(--bi-panel-header-bg, #111827);
+  flex-shrink: 0; /* 🔑 防止 tab header 被压缩 */
+}
+
+:deep(.el-tabs__nav-wrap::after) {
+  height: 1px;
 }
 
 :deep(.el-tabs__item) {
@@ -333,8 +305,16 @@ function mockFetchData() {
 
 :deep(.el-tabs__content) {
   flex: 1;
+  min-height: 0; /* 🔑 flex 容器内产生滚动的关键 */
   overflow-y: auto;
   padding: 16px;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bi-scrollbar-thumb, #4b5563) var(--bi-scrollbar-track, #1f2937);
+}
+
+:deep(.el-tab-pane) {
+  height: 100%;
 }
 
 .section {
@@ -359,6 +339,12 @@ function mockFetchData() {
   margin-bottom: 12px;
 }
 
+.form-item--inline {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .form-item label {
   font-size: 12px;
   color: var(--bi-text-secondary, #9ca3af);
@@ -376,6 +362,7 @@ function mockFetchData() {
 .form-check {
   display: flex;
   align-items: center;
+  gap: 16px;
 }
 
 :deep(.form-check .el-checkbox__label) {
@@ -390,7 +377,7 @@ function mockFetchData() {
 
 :deep(.layer-actions .el-button) {
   flex: 1;
-  min-width: 60px;
+  min-width: 50px;
 }
 
 .placeholder-text {
@@ -400,7 +387,6 @@ function mockFetchData() {
   padding: 20px;
 }
 
-/* 表单控件样式覆盖 */
 :deep(.el-input__wrapper) {
   background: var(--bi-input-bg, #374151);
   box-shadow: none;
@@ -430,7 +416,6 @@ function mockFetchData() {
   border-color: var(--bi-accent, #409eff);
 }
 
-/* 滚动条 */
 :deep(.el-tabs__content::-webkit-scrollbar) {
   width: 6px;
 }

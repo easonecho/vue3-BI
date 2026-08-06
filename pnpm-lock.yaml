@@ -14,9 +14,15 @@ importers:
       '@scena/ruler':
         specifier: ^0.20.0
         version: 0.20.0
+      '@vxe-ui/core':
+        specifier: ^4.4.19
+        version: 4.4.19(vue@3.5.40(typescript@6.0.3))
       ant-design-vue:
         specifier: ^4.2.6
         version: 4.2.6(vue@3.5.40(typescript@6.0.3))
+      dom-zindex:
+        specifier: ^1.0.7
+        version: 1.0.7
       echarts:
         specifier: ^6.1.0
         version: 6.1.0
@@ -35,6 +41,12 @@ importers:
       vue3-drag-resize:
         specifier: ^2.0.5
         version: 2.0.5
+      vxe-table:
+        specifier: ^4.20.9
+        version: 4.20.9
+      xe-utils:
+        specifier: ^4.0.12
+        version: 4.0.12
     devDependencies:
       '@tsconfig/node24':
         specifier: ^24.0.4
@@ -1023,6 +1035,11 @@ packages:
     peerDependencies:
       vue: ^3.5.0
 
+  '@vxe-ui/core@4.4.19':
+    resolution: {integrity: sha512-Ahx7WWS43tkT6JzVbfZsZ0+81xmVDuzIw0ZXhbUAYqGd98DPX3pnMOdYCHe9OzgpQWkDwsmXF0zuPcEIMnUdQQ==}
+    peerDependencies:
+      vue: ^3.2.0
+
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
     peerDependencies:
@@ -1256,6 +1273,9 @@ packages:
 
   dom-scroll-into-view@2.0.1:
     resolution: {integrity: sha512-bvVTQe1lfaUr1oFzZX80ce9KLDlZ3iU+XGNE/bz9HnGdklTieqsbmsLHe+rT2XWqopvL0PckkYqN7ksmm5pe3w==}
+
+  dom-zindex@1.0.7:
+    resolution: {integrity: sha512-cKU/h8v8IPBgdZOTPbPmq3Ib+Ac5C+kKoh9I4LbGR9BM3GwbmB16KYWKJcj5M2BavnA66EbgYzxYDLd1IytnlQ==}
 
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
@@ -2430,6 +2450,9 @@ packages:
       typescript:
         optional: true
 
+  vxe-table@4.20.9:
+    resolution: {integrity: sha512-FY/wb8yjYwtRYfN3E978QWMdJkE2fLWuqzuGOgQmgJCckGjPcURHs1Twn6WBwzalVLmz24cKUiK8u3VvXrJ2ag==}
+
   warning@4.0.3:
     resolution: {integrity: sha512-rpJyN222KWIvHJ/F53XSZv0Zl/accqHR8et1kpaMTD/fLCRxtV8iX8czMzY7sVZupTI3zcUTg8eycS2kNF9l6w==}
 
@@ -2461,6 +2484,9 @@ packages:
   wsl-utils@0.3.1:
     resolution: {integrity: sha512-g/eziiSUNBSsdDJtCLB8bdYEUMj4jR7AGeUo96p/3dTafgjHhpF4RiCFPiRILwjQoDXx5MqkBr4fwWtR3Ky4Wg==}
     engines: {node: '>=20'}
+
+  xe-utils@4.0.12:
+    resolution: {integrity: sha512-4y2OXEVlXHoBMSyzdAcXDM9oyb8EL9U4LIEq642JO0liULVpC9U5aEiVv2xbS9hhoebYCMdZZYASqh/7H5Wd0Q==}
 
   xml-name-validator@4.0.0:
     resolution: {integrity: sha512-ICP2e+jsHvAj2E2lIHxa5tjXRlKDJo4IdvPvCXbXQGdzSfmSpNVyIKMvoZHjDY9DP0zV17iI85o90vRFXNccRw==}
@@ -3429,6 +3455,12 @@ snapshots:
     dependencies:
       vue: 3.5.40(typescript@6.0.3)
 
+  '@vxe-ui/core@4.4.19(vue@3.5.40(typescript@6.0.3))':
+    dependencies:
+      dom-zindex: 1.0.7
+      vue: 3.5.40(typescript@6.0.3)
+      xe-utils: 4.0.12
+
   acorn-jsx@5.3.2(acorn@8.18.0):
     dependencies:
       acorn: 8.18.0
@@ -3659,6 +3691,8 @@ snapshots:
   dom-align@1.12.4: {}
 
   dom-scroll-into-view@2.0.1: {}
+
+  dom-zindex@1.0.7: {}
 
   eastasianwidth@0.2.0: {}
 
@@ -4758,6 +4792,8 @@ snapshots:
     optionalDependencies:
       typescript: 6.0.3
 
+  vxe-table@4.20.9: {}
+
   warning@4.0.3:
     dependencies:
       loose-envify: 1.4.0
@@ -4790,6 +4826,8 @@ snapshots:
     dependencies:
       is-wsl: 3.1.1
       powershell-utils: 0.1.0
+
+  xe-utils@4.0.12: {}
 
   xml-name-validator@4.0.0: {}
 
