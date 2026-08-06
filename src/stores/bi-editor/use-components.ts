@@ -128,30 +128,34 @@ export function useComponentOperations(
   function bringToFront(id: string) {
     const comp = components.value.find((c) => c.id === id)
     if (!comp) return
-    // 🔑 与 z-index 最大的组件互换（而非重排所有组件）
-    const topComp = components.value.reduce(
-      (max, c) => (c.zIndex > max.zIndex ? c : max),
-      components.value[0],
-    )
-    if (!topComp || topComp.id === id) return
-    const temp = comp.zIndex
-    comp.zIndex = topComp.zIndex
-    topComp.zIndex = temp
+    // 🔑 保持相对顺序：目标组件移到最顶层，其余组件整体下移一格。
+    //   例：[1,2,3,4,5,6] 把 1 置顶 → [2,3,4,5,6,1]（而非 [6,2,3,4,5,1]）
+    const others = components.value.filter((c) => c.id !== id).sort((a, b) => a.zIndex - b.zIndex)
+    if (others.length === 0) return
+    const maxOtherZ = others[others.length - 1].zIndex
+    if (comp.zIndex > maxOtherZ) return // 已经在最顶层
+    // 其余组件整体下移 1 格（保持相对顺序），目标组件占据原最高位
+    others.forEach((c) => {
+      c.zIndex -= 1
+    })
+    comp.zIndex = maxOtherZ
     pushHistory()
   }
 
   function sendToBack(id: string) {
     const comp = components.value.find((c) => c.id === id)
     if (!comp) return
-    // 🔑 与 z-index 最小的组件互换（而非重排所有组件）
-    const bottomComp = components.value.reduce(
-      (min, c) => (c.zIndex < min.zIndex ? c : min),
-      components.value[0],
-    )
-    if (!bottomComp || bottomComp.id === id) return
-    const temp = comp.zIndex
-    comp.zIndex = bottomComp.zIndex
-    bottomComp.zIndex = temp
+    // 🔑 保持相对顺序：目标组件移到最底层，其余组件整体上移一格。
+    //   例：[1,2,3,4,5,6] 把 6 置底 → [6,1,2,3,4,5]（而非 [6,2,3,4,5,1]）
+    const others = components.value.filter((c) => c.id !== id).sort((a, b) => a.zIndex - b.zIndex)
+    if (others.length === 0) return
+    const minOtherZ = others[0].zIndex
+    if (comp.zIndex < minOtherZ) return // 已经在最底层
+    // 其余组件整体上移 1 格（保持相对顺序），目标组件占据原最低位
+    others.forEach((c) => {
+      c.zIndex += 1
+    })
+    comp.zIndex = minOtherZ
     pushHistory()
   }
 
