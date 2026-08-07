@@ -6,58 +6,92 @@
 import { ref, onMounted, watch } from 'vue'
 import type { EChartsOption } from 'echarts'
 import BaseChart from '../_shared/BaseChart.vue'
-import { getBaseOption, mergeOptions } from '../_shared/echarts-options'
+import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
+import { deriveDefaultProps, ECHARTS_DEFAULT_PALETTE } from '../types'
+import { getDefinition } from '../index'
+import { BAR_MAX_WIDTH } from './index'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 
-/** 柱状图特有 option */
-function getChartSpecificOption(): EChartsOption {
-  const title = props.comp.props?.title || '柱状图'
-  const categories = props.comp.props?.categories || ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-  const seriesData = props.comp.props?.series || [
-    { name: '数据', data: [120, 200, 150, 80, 70, 110, 130] },
-  ]
+/**
+ * 🔑 柱状图"组件特有"option —— 只写 series / 柱宽 / 堆叠 等特有配置。
+ *   title / legend / xAxis / yAxis / tooltip / color / animation 统一由 applyUserChartConfig 生成，
+ *   用户在右侧属性面板修改后立即生效。
+ */
+function getChartSpecificOption(): {
+  specificOption: EChartsOption
+  mergedProps: Record<string, any>
+} {
+  // 🔑 合并默认值：schema defaults → actual props（用户设置优先级更高）
+  //   1) 保证 barWidth / barGap / stack 等特有字段也享受 schema 默认值
+  //   2) 旧数据或新增字段缺失时也能正常工作
+  const def = getDefinition(props.comp.type)
+  const schemaDefaults = def ? deriveDefaultProps(def.propsSchema, def.extraDefaults) : {}
+  const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  return {
-    title: {
-      text: title,
-      left: 'center',
-      top: 4,
-      textStyle: { fontSize: 14, fontWeight: 500, color: '#1f2937' },
-      show: true,
-    },
+  const categories = Array.isArray(mergedProps.categories)
+    ? mergedProps.categories
+    : ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+  const seriesData = Array.isArray(mergedProps.series)
+    ? mergedProps.series
+    : [{ name: '数据', data: [120, 200, 150, 80, 70, 110, 130] }]
+  const barWidth = Number(mergedProps.barWidth)
+  const barGapPercent = `${Number(mergedProps.barGap)}%`
+  const stack = !!mergedProps.stack
+  const seriesStyles = Array.isArray(mergedProps.seriesStyles) ? mergedProps.seriesStyles : []
+
+  const specificOption: EChartsOption = {
     xAxis: {
-      type: 'category',
+      // 只传 data，样式（颜色/字号/轴线/网格线）由 applyUserChartConfig 根据用户配置生成
       data: categories,
-      axisLine: { lineStyle: { color: '#e5e7eb' } },
-      axisLabel: { color: '#6b7280', fontSize: 12 },
-      axisTick: { show: false },
     },
-    yAxis: {
-      type: 'value',
-      axisLine: { show: false },
-      axisLabel: { color: '#6b7280', fontSize: 12 },
-      splitLine: { lineStyle: { color: '#f3f4f6', type: 'dashed' } },
-    },
-    series: seriesData.map((s: { name: string; data: number[] }) => ({
-      name: s.name,
-      type: 'bar',
-      data: s.data,
-      barMaxWidth: 40,
-      barGap: '20%',
-      emphasis: {
-        itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.2)' },
-      },
-    })),
+    series: seriesData.map((s: { name: string; data: number[] }, idx: number) => {
+      // 🔑 按 series name 匹配 seriesStyles 中配置的单独样式
+      const style = seriesStyles.find(
+        (x: { seriesName: string; color: string; borderRadius: number; labelShow: boolean }) =>
+          String(x.seriesName || '').trim() === String(s.name || '').trim(),
+      )
+      const itemStyle: Record<string, any> = {}
+      // 🔑 颜色兜底：seriesStyles 未配置时按 index 取 ECHARTS 标准调色板
+      itemStyle.color =
+        style?.color || ECHARTS_DEFAULT_PALETTE[idx % ECHARTS_DEFAULT_PALETTE.length]
+      if (typeof style?.borderRadius === 'number') itemStyle.borderRadius = style.borderRadius
+      const showLabel = !!style?.labelShow
+      return {
+        name: s.name,
+        type: 'bar',
+        data: s.data,
+        barWidth,
+        barMaxWidth: BAR_MAX_WIDTH,
+        barGap: barGapPercent,
+        stack: stack ? 'total' : undefined,
+        itemStyle,
+        label: {
+          show: showLabel,
+          position: 'top',
+          // 🔑 跟随全局字号/颜色（用户未显式在子配置修改时）
+          color: mergedProps.textColor || '#6b7280',
+          fontSize: Number(mergedProps.textFontSize || 12),
+        },
+        emphasis: {
+          itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.2)' },
+        },
+      }
+    }),
   }
+  return { specificOption, mergedProps }
 }
 
 function applyChartOption() {
   const baseOption = getBaseOption()
-  const specificOption = getChartSpecificOption()
-  const merged = mergeOptions(baseOption, specificOption)
+  const { specificOption, mergedProps } = getChartSpecificOption()
+  const merged = applyUserChartConfig(baseOption, mergedProps, specificOption, {
+    hasAxes: true,
+    xAxisData: specificOption.xAxis ? (specificOption.xAxis as any).data : undefined,
+    fallbackTitle: '柱状图',
+  })
   baseChartRef.value?.setOption(merged)
 }
 
@@ -65,8 +99,9 @@ onMounted(() => {
   setTimeout(applyChartOption, 50)
 })
 
+// 监听 comp.props 任意变化（包括 titleShow、barWidth、categories、series 等），立即重绘
 watch(
-  () => [props.comp.props?.title, props.comp.props?.categories, JSON.stringify(props.comp.props?.series)],
+  () => props.comp.props,
   () => {
     applyChartOption()
   },

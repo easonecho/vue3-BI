@@ -1,98 +1,119 @@
 <template>
-  <div class="left-panel">
-    <!-- 组件库 -->
-    <el-tabs v-model="activeTab" class="panel-tabs">
-      <el-tab-pane label="组件库" name="components">
-        <div class="component-library">
-          <!-- 组件分组：直接复用 component-defs 的 CATEGORY_GROUPS / CATEGORY_LABELS -->
-          <template v-for="(catLabel, catKey) in CATEGORY_LABELS" :key="catKey">
-            <div class="component-group" v-if="filteredComponents(catKey as any).length > 0">
-              <div class="group-title">{{ catLabel }}</div>
-              <div class="component-grid">
-                <div
-                  v-for="compMeta in filteredComponents(catKey as any)"
-                  :key="compMeta.type"
-                  class="component-item"
-                  draggable="true"
-                  @dragstart="handleDragStart($event, compMeta)"
-                  @click="handleAddComponent(compMeta)"
-                >
-                  <div class="component-preview">
-                    <div
-                      class="component-preview__inner"
-                      :style="
-                        previewScaleStyle(compMeta.defaultWidth, compMeta.defaultHeight, 96, 60)
-                      "
-                    >
-                      <ComponentRenderer :component="makePreviewInstance(compMeta)" />
+  <div class="left-panel-wrapper" :class="{ collapsed }">
+    <div class="left-panel">
+      <!-- 组件库 -->
+      <el-tabs v-model="activeTab" class="panel-tabs">
+        <el-tab-pane label="组件库" name="components">
+          <div class="component-library">
+            <!-- 按分类的折叠面板：每个 CATEGORY_LABEL 作为一个 el-collapse-item，点击可展开/收起 -->
+            <el-collapse v-model="activeCollapseGroups">
+              <el-collapse-item
+                v-for="(catLabel, catKey) in CATEGORY_LABELS"
+                :key="catKey"
+                :name="catKey"
+                v-show="filteredComponents(catKey as any).length > 0"
+              >
+                <template #title>
+                  <span class="collapse-title">{{ catLabel }}</span>
+                </template>
+                <div class="component-grid">
+                  <div
+                    v-for="compMeta in filteredComponents(catKey as any)"
+                    :key="compMeta.type"
+                    class="component-item"
+                    draggable="true"
+                    @dragstart="handleDragStart($event, compMeta)"
+                    @click="handleAddComponent(compMeta)"
+                  >
+                    <div class="component-preview">
+                      <div
+                        class="component-preview__inner"
+                        :style="
+                          previewScaleStyle(compMeta.defaultWidth, compMeta.defaultHeight, 96, 60)
+                        "
+                      >
+                        <ComponentRenderer :component="makePreviewInstance(compMeta)" />
+                      </div>
                     </div>
+                    <span class="component-name">{{ compMeta.name }}</span>
                   </div>
-                  <span class="component-name">{{ compMeta.name }}</span>
+                </div>
+              </el-collapse-item>
+            </el-collapse>
+          </div>
+        </el-tab-pane>
+
+        <!-- 图层 -->
+        <el-tab-pane label="图层" name="layers">
+          <div class="layer-list">
+            <div
+              v-for="layer in store.layerList"
+              :key="layer.id"
+              class="layer-item"
+              :class="{ active: layer.id === store.selectedId }"
+              @click="store.selectComponent(layer.id)"
+            >
+              <div class="layer-thumb">
+                <div
+                  class="layer-thumb__inner"
+                  :style="previewScaleStyle(layer.width, layer.height, 34, 26)"
+                >
+                  <ComponentRenderer :component="layer" />
                 </div>
               </div>
-            </div>
-          </template>
-        </div>
-      </el-tab-pane>
-
-      <!-- 图层 -->
-      <el-tab-pane label="图层" name="layers">
-        <div class="layer-list">
-          <div
-            v-for="layer in store.layerList"
-            :key="layer.id"
-            class="layer-item"
-            :class="{ active: layer.id === store.selectedId }"
-            @click="store.selectComponent(layer.id)"
-          >
-            <div class="layer-thumb">
-              <div
-                class="layer-thumb__inner"
-                :style="previewScaleStyle(layer.width, layer.height, 34, 26)"
-              >
-                <ComponentRenderer :component="layer" />
+              <div class="layer-info">
+                <span class="layer-name" :class="{ hidden: !layer.visible }">
+                  {{ layer.name }}
+                </span>
+              </div>
+              <div class="layer-actions">
+                <el-tooltip :content="layer.visible ? '隐藏' : '显示'" placement="top">
+                  <el-icon
+                    :size="16"
+                    class="action-btn"
+                    :class="{ active: layer.visible }"
+                    @click.stop="store.toggleVisibility(layer.id)"
+                    ><component :is="layer.visible ? View : Hide"
+                  /></el-icon>
+                </el-tooltip>
+                <el-tooltip :content="layer.locked ? '解锁' : '锁定'" placement="top">
+                  <el-icon
+                    :size="16"
+                    class="action-btn"
+                    :class="{ active: layer.locked }"
+                    @click.stop="store.toggleLock(layer.id)"
+                    ><component :is="layer.locked ? Lock : Unlock"
+                  /></el-icon>
+                </el-tooltip>
               </div>
             </div>
-            <div class="layer-info">
-              <span class="layer-name" :class="{ hidden: !layer.visible }">
-                {{ layer.name }}
-              </span>
-            </div>
-            <div class="layer-actions">
-              <el-tooltip :content="layer.visible ? '隐藏' : '显示'" placement="top">
-                <el-icon
-                  :size="16"
-                  class="action-btn"
-                  :class="{ active: layer.visible }"
-                  @click.stop="store.toggleVisibility(layer.id)"
-                  ><component :is="layer.visible ? View : Hide"
-                /></el-icon>
-              </el-tooltip>
-              <el-tooltip :content="layer.locked ? '解锁' : '锁定'" placement="top">
-                <el-icon
-                  :size="16"
-                  class="action-btn"
-                  :class="{ active: layer.locked }"
-                  @click.stop="store.toggleLock(layer.id)"
-                  ><component :is="layer.locked ? Lock : Unlock"
-                /></el-icon>
-              </el-tooltip>
-            </div>
-          </div>
 
-          <el-empty
-            v-if="store.components.length === 0"
-            description="暂无图层，请添加组件"
-            :image-size="80"
-          />
-        </div>
-      </el-tab-pane>
-    </el-tabs>
+            <el-empty
+              v-if="store.components.length === 0"
+              description="暂无图层，请添加组件"
+              :image-size="80"
+            />
+          </div>
+        </el-tab-pane>
+      </el-tabs>
+    </div>
+
+    <!-- 折叠拉手（侧边栏展开/收起按钮） -->
+    <button
+      class="sidebar-handle"
+      :class="{ collapsed }"
+      :title="collapsed ? '展开组件/图层面板' : '收起组件/图层面板'"
+      @click="toggleCollapsed"
+    >
+      <el-icon class="handle-icon">
+        <component :is="collapsed ? Right : Left" />
+      </el-icon>
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, markRaw } from 'vue'
+import { ref, markRaw, watch } from 'vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import {
   CATEGORY_GROUPS,
@@ -119,6 +140,8 @@ import {
   Hide,
   Lock,
   Unlock,
+  ArrowRight as Left,
+  ArrowLeft as Right,
 } from '@element-plus/icons-vue'
 import type { Component as VComponent } from 'vue'
 
@@ -149,6 +172,23 @@ const emit = defineEmits<{
 
 const store = useBiEditorStore()
 const activeTab = ref('components')
+
+/** 侧边栏整体是否收起 */
+const collapsed = ref(false)
+function toggleCollapsed() {
+  collapsed.value = !collapsed.value
+}
+
+/** 组件库折叠面板：默认所有分类都展开 */
+const activeCollapseGroups = ref<ComponentCategory[]>(Object.keys(CATEGORY_LABELS) as any)
+/** 切换 collapsed 时：收起后就把所有折叠面板关闭，展开时恢复 */
+watch(collapsed, (v) => {
+  if (v) {
+    activeCollapseGroups.value = []
+  } else {
+    activeCollapseGroups.value = Object.keys(CATEGORY_LABELS) as any
+  }
+})
 
 /** 把 ComponentMeta（元信息）构造成一个最小化的 ComponentInstance 供 ComponentRenderer 预览使用 */
 function makePreviewInstance(meta: ComponentMeta): ComponentInstance {
@@ -226,6 +266,14 @@ function getLayerIcon(type: string): VComponent {
 </script>
 
 <style scoped lang="less">
+.left-panel-wrapper {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-shrink: 0;
+  transition: width 0.25s ease;
+}
+
 .left-panel {
   width: 240px;
   height: 100%;
@@ -234,6 +282,57 @@ function getLayerIcon(type: string): VComponent {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  flex-shrink: 0;
+  transition:
+    width 0.25s ease,
+    opacity 0.2s ease;
+}
+
+.left-panel-wrapper.collapsed .left-panel {
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
+  border-right: none;
+}
+
+/* ===== 折叠拉手（贴在侧边栏右侧边缘） ===== */
+.sidebar-handle {
+  position: absolute;
+  top: 50%;
+  right: -11px; /* 一半露在 wrapper 外，方便点击 */
+  transform: translateY(-50%);
+  width: 22px;
+  height: 64px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--bi-border-color, #374151);
+  border-left: none;
+  background: linear-gradient(90deg, var(--bi-panel-bg, #1f2937), #253142);
+  cursor: pointer;
+  border-radius: 0 6px 6px 0;
+  z-index: 10;
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.25);
+  color: var(--bi-text-secondary, #d1d5db);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: linear-gradient(90deg, #2a3749, #37445b);
+    color: var(--bi-accent, #409eff);
+  }
+
+  &.collapsed {
+    right: -11px;
+    border-left: 1px solid var(--bi-border-color, #374151);
+    border-right: 1px solid var(--bi-border-color, #374151);
+    background: linear-gradient(90deg, #253142, var(--bi-panel-bg, #1f2937));
+    border-radius: 6px;
+  }
+}
+
+.handle-icon {
+  font-size: 14px;
 }
 
 .panel-tabs {
@@ -283,9 +382,50 @@ function getLayerIcon(type: string): VComponent {
   padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
   min-height: 100%;
   box-sizing: border-box;
+}
+
+/* 🔑 让 el-collapse 项的 header 与原 group-title 视觉一致 */
+.component-library :deep(.el-collapse) {
+  border-top: none;
+  border-bottom: none;
+  background: transparent;
+}
+
+.component-library :deep(.el-collapse-item) {
+  border-bottom: 1px solid var(--bi-border-color, #374151);
+  background: transparent;
+  margin-bottom: 4px;
+}
+
+.component-library :deep(.el-collapse-item__header) {
+  height: 28px;
+  line-height: 28px;
+  padding: 0 2px;
+  background: transparent;
+  border-bottom: none;
+  color: var(--bi-text-muted, #6b7280);
+  font-weight: 600;
+}
+
+.component-library :deep(.el-collapse-item__wrap) {
+  border-bottom: none;
+  background: transparent;
+  will-change: auto;
+}
+
+.component-library :deep(.el-collapse-item__content) {
+  padding: 4px 0 12px;
+  background: transparent;
+  color: inherit;
+}
+
+.collapse-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: inherit;
 }
 
 .component-group {

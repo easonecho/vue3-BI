@@ -16,7 +16,10 @@ export const lineDefinition: ComponentDefinition = {
       key: 'direction',
       label: '方向',
       type: 'select',
-      options: ['horizontal', 'vertical'],
+      options: [
+        { label: '水平', value: 'horizontal' },
+        { label: '垂直', value: 'vertical' },
+      ],
       default: 'horizontal',
     },
     { key: 'thickness', label: '粗细', type: 'slider', min: 1, max: 20, default: 2 },

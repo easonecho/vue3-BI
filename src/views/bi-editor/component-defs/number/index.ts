@@ -11,7 +11,17 @@ export const numberDefinition: ComponentDefinition = {
     { key: 'suffix', label: '后缀', type: 'input', default: '' },
     { key: 'fontSize', label: '字号', type: 'slider', min: 14, max: 72, default: 24, group: '字体' },
     { key: 'color', label: '颜色', type: 'colorpicker', default: '#333333', group: '字体' },
-    { key: 'fontWeight', label: '字重', type: 'select', options: ['normal', 'bold'], default: 'bold', group: '字体' },
+    {
+      key: 'fontWeight',
+      label: '字重',
+      type: 'select',
+      options: [
+        { label: '常规', value: 'normal' },
+        { label: '粗体', value: 'bold' },
+      ],
+      default: 'bold',
+      group: '字体',
+    },
   ],
   defaultStyle: {},
 }
