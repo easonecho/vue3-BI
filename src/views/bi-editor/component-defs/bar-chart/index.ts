@@ -1,6 +1,6 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import { chartBaseSchema, baseSeriesStylesWithAxesColumns } from '../types'
+import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema } from '../types'
 
 export const BAR_MIN_WIDTH = 5
 export const BAR_MAX_WIDTH = 50
@@ -58,6 +58,8 @@ export const barChartDefinition: ComponentDefinition = {
         { key: 'borderRadius', label: '圆角', type: 'number', min: 0, max: 20, width: 80 },
       ],
     },
+    // 🔑 系列标签：每个系列的 label 独立 5 项样式 + 位置（柱状图默认在顶部）
+    ...buildSeriesLabelSchema('top'),
   ],
   /** 🔑 复杂数据默认值（不适合表单编辑的字段），仅在此声明一次 */
   extraDefaults: {

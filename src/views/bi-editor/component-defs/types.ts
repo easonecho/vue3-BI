@@ -47,6 +47,43 @@ export const ECHARTS_DEFAULT_PALETTE: readonly string[] = [
   '#ea7ccc',
 ] as const
 
+// ================= 文本样式公共 select 选项 =================
+/** 字体家族选项（给每个可单独配文本样式的子分组复用） */
+export const FONT_FAMILY_OPTIONS: readonly SelectOption[] = [
+  {
+    label: '系统默认（苹方 / Segoe UI）',
+    value:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  },
+  { label: '微软雅黑 / 苹方', value: '"Microsoft YaHei", "PingFang SC", sans-serif' },
+  { label: '宋体 / 华文宋体', value: '"SimSun", "Songti SC", serif' },
+  { label: 'Arial（无衬线）', value: 'Arial, Helvetica, sans-serif' },
+  { label: 'Times New Roman（衬线）', value: '"Times New Roman", Times, serif' },
+  { label: 'Consolas（等宽）', value: 'Consolas, "Courier New", monospace' },
+] as const
+
+/** 字重选项（normal / bold / 100~900） */
+export const FONT_WEIGHT_OPTIONS: readonly SelectOption[] = [
+  { label: '极细 (100)', value: 100 },
+  { label: '细 (300)', value: 300 },
+  { label: '常规 (400 / normal)', value: 'normal' as any },
+  { label: '中等 (500)', value: 500 },
+  { label: '半粗 (600)', value: 600 },
+  { label: '粗体 (700 / bold)', value: 'bold' as any },
+  { label: '特粗 (900)', value: 900 },
+] as const
+
+/** 字体样式（常规 / 斜体） */
+export const FONT_STYLE_OPTIONS: readonly SelectOption[] = [
+  { label: '常规', value: 'normal' },
+  { label: 'italic斜体', value: 'italic' },
+  { label: 'oblique斜体（倾斜）', value: 'oblique' },
+] as const
+
+/** 字体家族默认值（与 FONT_FAMILY_OPTIONS[0].value 保持一致） */
+export const DEFAULT_FONT_FAMILY: string =
+  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+
 /** 🔑 有坐标轴图表（bar/line/scatter）seriesStyles 通用基础列：系列名称 + 颜色 + 显示标签 */
 export const baseSeriesStylesWithAxesColumns: TableColumnSchema[] = [
   {
@@ -297,13 +334,28 @@ export const chartCommonSchema: PropField[] = [
     visibleWhen: { field: 'titleShow', truthy: true },
   },
   {
+    key: 'titleFontFamily',
+    label: '字体',
+    type: 'select',
+    options: [...FONT_FAMILY_OPTIONS],
+    default: DEFAULT_FONT_FAMILY,
+    group: '标题',
+    visibleWhen: { field: 'titleShow', truthy: true },
+  },
+  {
     key: 'titleFontWeight',
     label: '字重',
     type: 'select',
-    options: [
-      { label: '常规', value: 'normal' },
-      { label: '粗体', value: 'bold' },
-    ],
+    options: [...FONT_WEIGHT_OPTIONS],
+    default: 'bold',
+    group: '标题',
+    visibleWhen: { field: 'titleShow', truthy: true },
+  },
+  {
+    key: 'titleFontStyle',
+    label: '样式（斜体）',
+    type: 'select',
+    options: [...FONT_STYLE_OPTIONS],
     default: 'normal',
     group: '标题',
     visibleWhen: { field: 'titleShow', truthy: true },
@@ -344,12 +396,39 @@ export const chartCommonSchema: PropField[] = [
     visibleWhen: { field: 'legendShow', truthy: true },
   },
   {
+    key: 'legendFontFamily',
+    label: '字体',
+    type: 'select',
+    options: [...FONT_FAMILY_OPTIONS],
+    default: DEFAULT_FONT_FAMILY,
+    group: '图例',
+    visibleWhen: { field: 'legendShow', truthy: true },
+  },
+  {
     key: 'legendFontSize',
     label: '字号',
     type: 'slider',
     min: 10,
     max: 24,
     default: 12,
+    group: '图例',
+    visibleWhen: { field: 'legendShow', truthy: true },
+  },
+  {
+    key: 'legendFontWeight',
+    label: '字重',
+    type: 'select',
+    options: [...FONT_WEIGHT_OPTIONS],
+    default: 'normal',
+    group: '图例',
+    visibleWhen: { field: 'legendShow', truthy: true },
+  },
+  {
+    key: 'legendFontStyle',
+    label: '样式（斜体）',
+    type: 'select',
+    options: [...FONT_STYLE_OPTIONS],
+    default: 'normal',
     group: '图例',
     visibleWhen: { field: 'legendShow', truthy: true },
   },
@@ -394,20 +473,47 @@ export const chartCommonSchema: PropField[] = [
     visibleWhen: { field: 'tooltipShow', truthy: true },
   },
   {
-    key: 'tooltipTextColor',
-    label: '文字颜色',
-    type: 'colorpicker',
-    default: '#374151',
+    key: 'tooltipTextFontFamily',
+    label: '字体',
+    type: 'select',
+    options: [...FONT_FAMILY_OPTIONS],
+    default: DEFAULT_FONT_FAMILY,
     group: '提示框',
     visibleWhen: { field: 'tooltipShow', truthy: true },
   },
   {
-    key: 'tooltipFontSize',
+    key: 'tooltipTextFontSize',
     label: '字号',
     type: 'slider',
     min: 10,
     max: 20,
     default: 12,
+    group: '提示框',
+    visibleWhen: { field: 'tooltipShow', truthy: true },
+  },
+  {
+    key: 'tooltipTextFontWeight',
+    label: '字重',
+    type: 'select',
+    options: [...FONT_WEIGHT_OPTIONS],
+    default: 'normal',
+    group: '提示框',
+    visibleWhen: { field: 'tooltipShow', truthy: true },
+  },
+  {
+    key: 'tooltipTextFontStyle',
+    label: '样式（斜体）',
+    type: 'select',
+    options: [...FONT_STYLE_OPTIONS],
+    default: 'normal',
+    group: '提示框',
+    visibleWhen: { field: 'tooltipShow', truthy: true },
+  },
+  {
+    key: 'tooltipTextColor',
+    label: '文字颜色',
+    type: 'colorpicker',
+    default: '#374151',
     group: '提示框',
     visibleWhen: { field: 'tooltipShow', truthy: true },
   },
@@ -461,44 +567,6 @@ export const chartCommonSchema: PropField[] = [
     visibleWhen: { field: 'animationShow', truthy: true },
   },
 
-  // ============ 全局文本样式 textStyle ============
-  {
-    key: 'textFontFamily',
-    label: '字体',
-    type: 'select',
-    options: [
-      {
-        label: '系统默认（苹方 / Segoe UI）',
-        value:
-          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-      },
-      { label: '微软雅黑 / 苹方', value: '"Microsoft YaHei", "PingFang SC", sans-serif' },
-      { label: '宋体 / 华文宋体', value: '"SimSun", "Songti SC", serif' },
-      { label: 'Arial（无衬线）', value: 'Arial, Helvetica, sans-serif' },
-      { label: 'Times New Roman（衬线）', value: '"Times New Roman", Times, serif' },
-      { label: 'Consolas（等宽）', value: 'Consolas, "Courier New", monospace' },
-    ],
-    default:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-    group: '全局文本',
-  },
-  {
-    key: 'textFontSize',
-    label: '默认字号',
-    type: 'slider',
-    min: 10,
-    max: 36,
-    default: 12,
-    group: '全局文本',
-  },
-  {
-    key: 'textColor',
-    label: '默认文字颜色',
-    type: 'colorpicker',
-    default: '#6b7280',
-    group: '全局文本',
-  },
-
   // ============ Grid 画布内边距 ============
   {
     key: 'gridLeft',
@@ -545,6 +613,71 @@ export const chartCommonSchema: PropField[] = [
   },
 ]
 
+/**
+ * 🔑 系列标签通用配置（每个图表的系列 label 文本样式）
+ *   使用方式：每个图表的 propsSchema 末尾 [...buildSeriesLabelSchema(defaultPosition)] 合并
+ */
+export function buildSeriesLabelSchema(defaultPosition: string = 'top'): PropField[] {
+  return [
+    {
+      key: 'seriesLabelFontFamily',
+      label: '字体',
+      type: 'select',
+      options: [...FONT_FAMILY_OPTIONS],
+      default: DEFAULT_FONT_FAMILY,
+      group: '系列标签',
+    },
+    {
+      key: 'seriesLabelFontSize',
+      label: '字号',
+      type: 'slider',
+      min: 10,
+      max: 36,
+      default: 12,
+      group: '系列标签',
+    },
+    {
+      key: 'seriesLabelFontWeight',
+      label: '字重',
+      type: 'select',
+      options: [...FONT_WEIGHT_OPTIONS],
+      default: 'normal',
+      group: '系列标签',
+    },
+    {
+      key: 'seriesLabelFontStyle',
+      label: '样式（斜体）',
+      type: 'select',
+      options: [...FONT_STYLE_OPTIONS],
+      default: 'normal',
+      group: '系列标签',
+    },
+    {
+      key: 'seriesLabelColor',
+      label: '文字颜色',
+      type: 'colorpicker',
+      default: '#6b7280',
+      group: '系列标签',
+    },
+    {
+      key: 'seriesLabelPosition',
+      label: '标签位置',
+      type: 'select',
+      options: [
+        { label: '顶部', value: 'top' },
+        { label: '内部顶部', value: 'insideTop' },
+        { label: '居中', value: 'inside' },
+        { label: '内部底部', value: 'insideBottom' },
+        { label: '底部', value: 'bottom' },
+        { label: '左侧', value: 'left' },
+        { label: '右侧', value: 'right' },
+      ],
+      default: defaultPosition,
+      group: '系列标签',
+    },
+  ]
+}
+
 /** 🔑 坐标轴/数据缩放专属 Schema（仅柱/折线/散点等带 X/Y 轴的图表使用） */
 export const chartAxesSchema: PropField[] = [
   // ============ X 轴 ============
@@ -572,10 +705,11 @@ export const chartAxesSchema: PropField[] = [
     visibleWhen: { field: 'xAxisShow', truthy: true },
   },
   {
-    key: 'xAxisLabelColor',
-    label: '刻度颜色',
-    type: 'colorpicker',
-    default: '#6b7280',
+    key: 'xAxisLabelFontFamily',
+    label: '刻度字体',
+    type: 'select',
+    options: [...FONT_FAMILY_OPTIONS],
+    default: DEFAULT_FONT_FAMILY,
     group: 'X 轴',
     visibleWhen: { field: 'xAxisShow', truthy: true },
   },
@@ -586,6 +720,32 @@ export const chartAxesSchema: PropField[] = [
     min: 10,
     max: 24,
     default: 12,
+    group: 'X 轴',
+    visibleWhen: { field: 'xAxisShow', truthy: true },
+  },
+  {
+    key: 'xAxisLabelFontWeight',
+    label: '刻度字重',
+    type: 'select',
+    options: [...FONT_WEIGHT_OPTIONS],
+    default: 'normal',
+    group: 'X 轴',
+    visibleWhen: { field: 'xAxisShow', truthy: true },
+  },
+  {
+    key: 'xAxisLabelFontStyle',
+    label: '刻度样式（斜体）',
+    type: 'select',
+    options: [...FONT_STYLE_OPTIONS],
+    default: 'normal',
+    group: 'X 轴',
+    visibleWhen: { field: 'xAxisShow', truthy: true },
+  },
+  {
+    key: 'xAxisLabelColor',
+    label: '刻度颜色',
+    type: 'colorpicker',
+    default: '#6b7280',
     group: 'X 轴',
     visibleWhen: { field: 'xAxisShow', truthy: true },
   },
@@ -655,10 +815,11 @@ export const chartAxesSchema: PropField[] = [
     visibleWhen: { field: 'yAxisShow', truthy: true },
   },
   {
-    key: 'yAxisLabelColor',
-    label: '刻度颜色',
-    type: 'colorpicker',
-    default: '#6b7280',
+    key: 'yAxisLabelFontFamily',
+    label: '刻度字体',
+    type: 'select',
+    options: [...FONT_FAMILY_OPTIONS],
+    default: DEFAULT_FONT_FAMILY,
     group: 'Y 轴',
     visibleWhen: { field: 'yAxisShow', truthy: true },
   },
@@ -669,6 +830,32 @@ export const chartAxesSchema: PropField[] = [
     min: 10,
     max: 24,
     default: 12,
+    group: 'Y 轴',
+    visibleWhen: { field: 'yAxisShow', truthy: true },
+  },
+  {
+    key: 'yAxisLabelFontWeight',
+    label: '刻度字重',
+    type: 'select',
+    options: [...FONT_WEIGHT_OPTIONS],
+    default: 'normal',
+    group: 'Y 轴',
+    visibleWhen: { field: 'yAxisShow', truthy: true },
+  },
+  {
+    key: 'yAxisLabelFontStyle',
+    label: '刻度样式（斜体）',
+    type: 'select',
+    options: [...FONT_STYLE_OPTIONS],
+    default: 'normal',
+    group: 'Y 轴',
+    visibleWhen: { field: 'yAxisShow', truthy: true },
+  },
+  {
+    key: 'yAxisLabelColor',
+    label: '刻度颜色',
+    type: 'colorpicker',
+    default: '#6b7280',
     group: 'Y 轴',
     visibleWhen: { field: 'yAxisShow', truthy: true },
   },

@@ -48,6 +48,27 @@ function getChartSpecificOption(): {
   const roseType: 'area' | 'radius' | undefined = isRose ? 'area' : undefined
   const seriesStyles = Array.isArray(mergedProps.seriesStyles) ? mergedProps.seriesStyles : []
 
+  // 🔑 系列标签样式：独立 5 项配置
+  const seriesLabelFontFamily = String(mergedProps.seriesLabelFontFamily)
+  const seriesLabelFontSize = Number(mergedProps.seriesLabelFontSize || 12)
+  const seriesLabelFontWeight = mergedProps.seriesLabelFontWeight as any
+  const seriesLabelFontStyle = mergedProps.seriesLabelFontStyle as any
+  const seriesLabelColor = String(mergedProps.seriesLabelColor || '#6b7280')
+  // 饼图 label.position 仅支持 outside / inside / insideLeft / insideRight / center，将通用 top/bottom/left/right 转换
+  const mapPiePosition = (rawPos: string): 'outside' | 'inside' | 'center' => {
+    switch (rawPos) {
+      case 'inside':
+      case 'insideTop':
+      case 'insideBottom':
+        return 'inside'
+      case 'center':
+        return 'center'
+      default:
+        return 'outside'
+    }
+  }
+  const pieLabelPosition = mapPiePosition(String(mergedProps.seriesLabelPosition || 'outside'))
+
   const specificOption: EChartsOption = {
     series: [
       {
@@ -64,13 +85,16 @@ function getChartSpecificOption(): {
         },
         label: {
           show: true,
+          position: pieLabelPosition,
           formatter: '{b}: {d}%',
-          // 🔑 跟随全局字号/颜色
-          color: mergedProps.textColor || '#6b7280',
-          fontSize: Number(mergedProps.textFontSize || 12),
+          fontFamily: seriesLabelFontFamily,
+          fontSize: seriesLabelFontSize,
+          fontWeight: seriesLabelFontWeight,
+          fontStyle: seriesLabelFontStyle,
+          color: seriesLabelColor,
         },
         labelLine: {
-          show: true,
+          show: pieLabelPosition === 'outside',
           length: 10,
           length2: 10,
         },

@@ -240,8 +240,8 @@ function toggleCollapsed() {
 }
 
 /** 默认展开的折叠项（内置固定分类 + 所有 Schema group 全展开） */
-const builtInSections = ['basic', 'layout', 'zindex', 'state']
-const activePropSections = ref<string[]>([...builtInSections])
+// const builtInSections = ['basic', 'layout', 'zindex', 'state']
+const activePropSections = ref<string[]>([])
 
 const currentDefinition = computed(() => {
   const type = store.selectedComponent?.type
@@ -259,25 +259,25 @@ const fieldGroups = computed(() => {
 })
 
 /** 切换组件时：将当前组件的所有 Schema group 加进展开列表（避免切到新组件全是关着的） */
-watch(
-  () => store.selectedId,
-  () => {
-    const schemaGroupNames = fieldGroups.value.map((g) => `schema-${g}`)
-    const merged = Array.from(new Set([...builtInSections, ...schemaGroupNames]))
-    activePropSections.value = merged
-  },
-  { immediate: true },
-)
+// watch(
+//   () => store.selectedId,
+//   () => {
+//     const schemaGroupNames = fieldGroups.value.map((g) => `schema-${g}`)
+//     const merged = Array.from(new Set([...builtInSections, ...schemaGroupNames]))
+//     activePropSections.value = merged
+//   },
+//   { immediate: true },
+// )
 
 /** 收起右栏时顺手关一下所有折叠项，重新展开后恢复 */
-watch(collapsed, (v) => {
-  if (v) {
-    activePropSections.value = []
-  } else {
-    const schemaGroupNames = fieldGroups.value.map((g) => `schema-${g}`)
-    activePropSections.value = Array.from(new Set([...builtInSections, ...schemaGroupNames]))
-  }
-})
+// watch(collapsed, (v) => {
+//   if (v) {
+//     activePropSections.value = []
+//   } else {
+//     const schemaGroupNames = fieldGroups.value.map((g) => `schema-${g}`)
+//     activePropSections.value = Array.from(new Set([...builtInSections, ...schemaGroupNames]))
+//   }
+// })
 
 function getGroupFields(group: string): PropField[] {
   if (!currentDefinition.value) return []

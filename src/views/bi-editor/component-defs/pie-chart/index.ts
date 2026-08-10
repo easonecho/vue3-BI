@@ -1,6 +1,6 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import { chartCommonSchema, baseSeriesStylesNoAxesColumns } from '../types' // 饼图没有 X/Y 轴，只引入通用 Schema（title/legend/tooltip/animation）
+import { chartCommonSchema, baseSeriesStylesNoAxesColumns, buildSeriesLabelSchema } from '../types' // 饼图没有 X/Y 轴，只引入通用 Schema（title/legend/tooltip/animation）
 
 /** 🔑 饼图默认真实数据（[{name, value}, ...]） */
 export const PIE_DEFAULT_DATA = [
@@ -54,6 +54,8 @@ export const pieChartDefinition: ComponentDefinition = {
       // 🔑 无坐标轴通用列：name/color/labelShow（饼图目前没有特殊列，直接用基础）
       columns: [...baseSeriesStylesNoAxesColumns],
     },
+    // 🔑 系列标签（饼图默认在外部，位置可切换：饼图只有 outside/inside/center 三种，位置在饼图自身 label.position 里控制）
+    ...buildSeriesLabelSchema('outside'),
   ],
   extraDefaults: {
     pieData: PIE_DEFAULT_DATA,

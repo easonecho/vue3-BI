@@ -59,6 +59,15 @@ function getChartSpecificOption(): {
         style?.color || ECHARTS_DEFAULT_PALETTE[idx % ECHARTS_DEFAULT_PALETTE.length]
       if (typeof style?.borderRadius === 'number') itemStyle.borderRadius = style.borderRadius
       const showLabel = !!style?.labelShow
+
+      // 🔑 系列标签样式：独立 5 项配置（不再跟随全局）
+      const seriesLabelFontFamily = String(mergedProps.seriesLabelFontFamily)
+      const seriesLabelFontSize = Number(mergedProps.seriesLabelFontSize || 12)
+      const seriesLabelFontWeight = mergedProps.seriesLabelFontWeight as any
+      const seriesLabelFontStyle = mergedProps.seriesLabelFontStyle as any
+      const seriesLabelColor = String(mergedProps.seriesLabelColor || '#6b7280')
+      const seriesLabelPosition = String(mergedProps.seriesLabelPosition || 'top')
+
       return {
         name: s.name,
         type: 'bar',
@@ -70,10 +79,12 @@ function getChartSpecificOption(): {
         itemStyle,
         label: {
           show: showLabel,
-          position: 'top',
-          // 🔑 跟随全局字号/颜色（用户未显式在子配置修改时）
-          color: mergedProps.textColor || '#6b7280',
-          fontSize: Number(mergedProps.textFontSize || 12),
+          position: seriesLabelPosition as any,
+          fontFamily: seriesLabelFontFamily,
+          fontSize: seriesLabelFontSize,
+          fontWeight: seriesLabelFontWeight,
+          fontStyle: seriesLabelFontStyle,
+          color: seriesLabelColor,
         },
         emphasis: {
           itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.2)' },

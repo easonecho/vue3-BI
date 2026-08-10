@@ -63,6 +63,15 @@ function getChartSpecificOption(): {
         style?.color || ECHARTS_DEFAULT_PALETTE[idx % ECHARTS_DEFAULT_PALETTE.length]
       const size = typeof style?.symbolSize === 'number' ? style.symbolSize : symbolSize
       const labelOn = style ? !!style.labelShow : showLabel
+
+      // 🔑 系列标签样式：独立 5 项配置
+      const seriesLabelFontFamily = String(mergedProps.seriesLabelFontFamily)
+      const seriesLabelFontSize = Number(mergedProps.seriesLabelFontSize || 12)
+      const seriesLabelFontWeight = mergedProps.seriesLabelFontWeight as any
+      const seriesLabelFontStyle = mergedProps.seriesLabelFontStyle as any
+      const seriesLabelColor = String(mergedProps.seriesLabelColor || '#6b7280')
+      const seriesLabelPosition = String(mergedProps.seriesLabelPosition || 'top')
+
       return {
         name: s.name,
         type: 'scatter',
@@ -71,11 +80,13 @@ function getChartSpecificOption(): {
         itemStyle: { color: itemColor },
         label: {
           show: labelOn,
-          position: 'top',
+          position: seriesLabelPosition as any,
           formatter: (params: any) => `(${params.value[0]}, ${params.value[1]})`,
-          // 🔑 跟随全局字号/颜色
-          fontSize: Number(mergedProps.textFontSize || 10),
-          color: mergedProps.textColor || '#6b7280',
+          fontFamily: seriesLabelFontFamily,
+          fontSize: seriesLabelFontSize,
+          fontWeight: seriesLabelFontWeight,
+          fontStyle: seriesLabelFontStyle,
+          color: seriesLabelColor,
         },
         emphasis: {
           focus: 'self',

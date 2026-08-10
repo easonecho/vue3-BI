@@ -1,6 +1,6 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import { chartBaseSchema, baseSeriesStylesWithAxesColumns } from '../types'
+import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema } from '../types'
 
 /** 🔑 折线图默认真实数据 */
 export const LINE_DEFAULT_CATEGORIES = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
@@ -46,6 +46,8 @@ export const lineChartDefinition: ComponentDefinition = {
         { key: 'areaStyle', label: '面积填充', type: 'switch', width: 100 },
       ],
     },
+    // 🔑 系列标签（折线图默认在顶部）
+    ...buildSeriesLabelSchema('top'),
   ],
   extraDefaults: {
     categories: LINE_DEFAULT_CATEGORIES,

@@ -165,44 +165,19 @@ export function applyUserChartConfig(
   const { hasAxes = true, xAxisData, fallbackTitle } = ctx
   // 🔑 关键一步：用 Schema 默认值补全旧数据缺失字段 —— 之后 p 中每个字段必有值
   const p = fillDefaults(props, hasAxes)
-  // 🔑 对比用的 Schema 默认值表（判断「子配置是否被用户改过」）
-  const schemaDefaults = hasAxes ? fullSchemaDefaults : commonSchemaDefaults
 
-  /** 🔑 全局文本基底：从「全局文本」分组配置读取 —— fontFamily / fontSize / color */
-  const globalText = {
-    fontFamily: String(p.textFontFamily),
-    fontSize: Number(p.textFontSize),
-    color: String(p.textColor),
-  }
-
-  /**
-   * 🔑 子文本字号选择：
-   *   - 如果用户从未修改过子配置（p[key] 仍等于 Schema 默认值），
-   *     则按「默认字号 / 默认全局字号」的比例跟随全局字号变化
-   *   - 如果用户显式改过子配置，保持用户设置不动
-   */
-  const pickFontSize = (key: string) => {
-    const baseRatio = Number(schemaDefaults[key]) / Number(schemaDefaults.textFontSize || 12)
-    return p[key] === schemaDefaults[key]
-      ? Math.round(globalText.fontSize * baseRatio)
-      : Number(p[key])
-  }
-  /** 🔑 子文本颜色选择：没改过子配置跟随全局颜色，改过就用用户显式色 */
-  const pickColor = (key: string) => {
-    return p[key] === schemaDefaults[key] ? globalText.color : String(p[key])
-  }
-
-  // ============ 1. Title —— 直接读 p.xxx，不再写任何 fallback ============
+  // ============ 1. Title —— 每个文本字段独立 5 项配置（无全局跟随，用户可单独控制每处） ============
   const titleOption: EChartsOption['title'] = {
     show: Boolean(p.titleShow),
     text: String(p.titleText),
     left: p.titleLeft,
     top: titleTopStyle(String(p.titleTop)),
     textStyle: {
-      fontFamily: globalText.fontFamily,
-      fontSize: pickFontSize('titleFontSize'),
+      fontFamily: String(p.titleFontFamily),
+      fontSize: Number(p.titleFontSize),
       fontWeight: p.titleFontWeight as any,
-      color: pickColor('titleColor'),
+      fontStyle: p.titleFontStyle as any,
+      color: String(p.titleColor),
     },
   }
   // 标题为空时兜底显示图表类型名（这个不是默认值，是 UI 友好提示）
@@ -216,9 +191,11 @@ export function applyUserChartConfig(
     show: Boolean(p.legendShow),
     ...legendPos,
     textStyle: {
-      fontFamily: globalText.fontFamily,
-      fontSize: pickFontSize('legendFontSize'),
-      color: pickColor('legendColor'),
+      fontFamily: String(p.legendFontFamily),
+      fontSize: Number(p.legendFontSize),
+      fontWeight: p.legendFontWeight as any,
+      fontStyle: p.legendFontStyle as any,
+      color: String(p.legendColor),
     },
     itemGap: Number(p.legendItemGap),
     itemWidth: 14,
@@ -233,9 +210,11 @@ export function applyUserChartConfig(
     borderColor: String(p.tooltipBorderColor),
     borderWidth: 1,
     textStyle: {
-      fontFamily: globalText.fontFamily,
-      color: pickColor('tooltipTextColor'),
-      fontSize: pickFontSize('tooltipFontSize'),
+      fontFamily: String(p.tooltipTextFontFamily),
+      color: String(p.tooltipTextColor),
+      fontSize: Number(p.tooltipTextFontSize),
+      fontWeight: p.tooltipTextFontWeight as any,
+      fontStyle: p.tooltipTextFontStyle as any,
     },
     extraCssText: 'box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 4px;',
   }
@@ -247,14 +226,7 @@ export function applyUserChartConfig(
     animationEasing: p.animationEasing as any,
   }
 
-  // ============ 6. 全局文本样式 textStyle（从 Schema 读取，唯一真源）============
-  const textStyleOption: EChartsOption['textStyle'] = {
-    fontFamily: String(p.textFontFamily),
-    fontSize: Number(p.textFontSize),
-    color: String(p.textColor),
-  }
-
-  // ============ 7. Grid 画布内边距（从 Schema 读取，唯一真源）============
+  // ============ 6. Grid 画布内边距（从 Schema 读取，唯一真源）============
   const gridOption: EChartsOption['grid'] = {
     left: Number(p.gridLeft),
     right: Number(p.gridRight),
@@ -263,7 +235,7 @@ export function applyUserChartConfig(
     containLabel: Boolean(p.gridContainLabel),
   }
 
-  // ============ 8. X / Y 轴（hasAxes 为 true 时才生成）============
+  // ============ 7. X / Y 轴（hasAxes 为 true 时才生成）============
   const axesOption: EChartsOption = {}
   if (hasAxes) {
     axesOption.xAxis = {
@@ -273,9 +245,11 @@ export function applyUserChartConfig(
       inverse: Boolean(p.xAxisInverse),
       axisLabel: {
         show: Boolean(p.xAxisLabelShow),
-        fontFamily: globalText.fontFamily,
-        color: pickColor('xAxisLabelColor'),
-        fontSize: pickFontSize('xAxisLabelFontSize'),
+        fontFamily: String(p.xAxisLabelFontFamily),
+        color: String(p.xAxisLabelColor),
+        fontSize: Number(p.xAxisLabelFontSize),
+        fontWeight: p.xAxisLabelFontWeight as any,
+        fontStyle: p.xAxisLabelFontStyle as any,
       },
       axisLine: {
         show: Boolean(p.xAxisAxisLineShow),
@@ -293,9 +267,11 @@ export function applyUserChartConfig(
       inverse: Boolean(p.yAxisInverse),
       axisLabel: {
         show: Boolean(p.yAxisLabelShow),
-        fontFamily: globalText.fontFamily,
-        color: pickColor('yAxisLabelColor'),
-        fontSize: pickFontSize('yAxisLabelFontSize'),
+        fontFamily: String(p.yAxisLabelFontFamily),
+        color: String(p.yAxisLabelColor),
+        fontSize: Number(p.yAxisLabelFontSize),
+        fontWeight: p.yAxisLabelFontWeight as any,
+        fontStyle: p.yAxisLabelFontStyle as any,
       },
       axisLine: {
         show: Boolean(p.yAxisAxisLineShow),
@@ -308,7 +284,7 @@ export function applyUserChartConfig(
     }
   }
 
-  // ============ 9. DataZoom（hasAxes 为 true 时才生成）============
+  // ============ 8. DataZoom（hasAxes 为 true 时才生成）============
   if (hasAxes && Boolean(p.dataZoomShow)) {
     const orient = String(p.dataZoomOrient)
     const isHorizontal = orient === 'horizontal'
@@ -325,8 +301,8 @@ export function applyUserChartConfig(
   }
 
   // ============ 最终合并：base → 用户配置 → widget 特有（优先级最高）============
+  // 🔑 已移除「全局 textStyle」配置（所有子配置都自己独立 5 项，不再走全局继承）
   const userConfig: EChartsOption = {
-    textStyle: textStyleOption,
     grid: gridOption,
     title: titleOption,
     legend: legendOption,

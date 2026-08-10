@@ -60,6 +60,15 @@ function getChartSpecificOption(): {
       const lineWidth = typeof style?.lineWidth === 'number' ? style.lineWidth : 2
       const shouldShowArea = style ? !!style.areaStyle : showArea
       const showLabel = !!style?.labelShow
+
+      // 🔑 系列标签样式：独立 5 项配置
+      const seriesLabelFontFamily = String(mergedProps.seriesLabelFontFamily)
+      const seriesLabelFontSize = Number(mergedProps.seriesLabelFontSize || 12)
+      const seriesLabelFontWeight = mergedProps.seriesLabelFontWeight as any
+      const seriesLabelFontStyle = mergedProps.seriesLabelFontStyle as any
+      const seriesLabelColor = String(mergedProps.seriesLabelColor || '#6b7280')
+      const seriesLabelPosition = String(mergedProps.seriesLabelPosition || 'top')
+
       return {
         name: s.name,
         type: 'line',
@@ -72,10 +81,12 @@ function getChartSpecificOption(): {
         areaStyle: shouldShowArea ? { opacity: 0.15, color: itemColor } : undefined,
         label: {
           show: showLabel,
-          // 🔑 跟随全局字号/颜色
-          color: mergedProps.textColor || '#6b7280',
-          fontSize: Number(mergedProps.textFontSize || 12),
-          position: 'top',
+          fontFamily: seriesLabelFontFamily,
+          fontSize: seriesLabelFontSize,
+          fontWeight: seriesLabelFontWeight,
+          fontStyle: seriesLabelFontStyle,
+          color: seriesLabelColor,
+          position: seriesLabelPosition as any,
         },
         emphasis: { focus: 'series' },
       }

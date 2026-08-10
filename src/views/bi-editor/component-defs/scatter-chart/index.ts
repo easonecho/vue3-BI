@@ -1,6 +1,6 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import { chartBaseSchema, baseSeriesStylesWithAxesColumns } from '../types'
+import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema } from '../types'
 
 /** 🔑 散点图默认真实数据：每个系列是 {name, data: [[x,y], ...]} */
 export const SCATTER_DEFAULT_CATEGORIES = null as unknown as string[] | null
@@ -39,7 +39,15 @@ export const scatterChartDefinition: ComponentDefinition = {
   widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
     ...chartBaseSchema,
-    { key: 'symbolSize', label: '点大小', type: 'slider', min: 2, max: 30, default: 10, group: '样式' },
+    {
+      key: 'symbolSize',
+      label: '点大小',
+      type: 'slider',
+      min: 2,
+      max: 30,
+      default: 10,
+      group: '样式',
+    },
     { key: 'showLabel', label: '显示标签', type: 'switch', default: false, group: '样式' },
     {
       key: 'seriesStyles',
@@ -54,6 +62,8 @@ export const scatterChartDefinition: ComponentDefinition = {
         { key: 'symbolSize', label: '点大小', type: 'number', min: 2, max: 40, width: 80 },
       ],
     },
+    // 🔑 系列标签（散点图默认在顶部，因 formatter 是 "(x,y)" 的小字，默认字号更合适）
+    ...buildSeriesLabelSchema('top'),
   ],
   extraDefaults: {
     categories: SCATTER_DEFAULT_CATEGORIES,
