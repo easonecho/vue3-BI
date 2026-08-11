@@ -1,10 +1,10 @@
-import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
+import Widget from './Widget.vue'
 
 export const indicatorDefinition: ComponentDefinition = {
   type: 'indicator',
   meta: { name: '指标卡', category: 'info', icon: 'Flag', defaultWidth: 200, defaultHeight: 100 },
-  widget: defineAsyncComponent(() => import('./Widget.vue')),
+  widget: Widget,
   propsSchema: [
     { key: 'title', label: '标题', type: 'input', default: '指标' },
     { key: 'value', label: '数值', type: 'number', default: 0 },

@@ -1,4 +1,4 @@
-import type { EChartsOption } from 'echarts'
+import type { ECOption } from './echarts-config'
 import { chartCommonSchema, chartAxesSchema, deriveDefaultProps } from '../types'
 
 // ================= 公共默认配置 =================
@@ -9,7 +9,7 @@ import { chartCommonSchema, chartAxesSchema, deriveDefaultProps } from '../types
  *   ⚠️  所有可配置字段（textStyle / grid / title / legend / xAxis / yAxis / tooltip / color / animation / dataZoom）
  *       只允许在 `types.ts` 中 `PropField.default` 处声明一次默认值。
  */
-export function getBaseOption(): EChartsOption {
+export function getBaseOption(): ECOption {
   return {}
 }
 
@@ -47,7 +47,7 @@ export function deepMerge<T extends Record<string, any>>(base: T, specific: Part
 }
 
 /** 🔑 兼容旧接口名：mergeOptions → deepMerge */
-export function mergeOptions(base: EChartsOption, specific: EChartsOption): EChartsOption {
+export function mergeOptions(base: ECOption, specific: ECOption): ECOption {
   return deepMerge(base, specific)
 }
 
@@ -157,17 +157,17 @@ function hexToRgba(hex: string, alpha: number): string {
  *       「legend 没显示但面板开关是开启状态」的不一致问题。
  */
 export function applyUserChartConfig(
-  baseOption: EChartsOption,
+  baseOption: ECOption,
   props: Record<string, any> | undefined,
-  widgetOption: EChartsOption,
+  widgetOption: ECOption,
   ctx: ChartConfigContext = {},
-): EChartsOption {
+): ECOption {
   const { hasAxes = true, xAxisData, fallbackTitle } = ctx
   // 🔑 关键一步：用 Schema 默认值补全旧数据缺失字段 —— 之后 p 中每个字段必有值
   const p = fillDefaults(props, hasAxes)
 
   // ============ 1. Title —— 每个文本字段独立 5 项配置（无全局跟随，用户可单独控制每处） ============
-  const titleOption: EChartsOption['title'] = {
+  const titleOption: any = {
     show: Boolean(p.titleShow),
     text: String(p.titleText),
     left: p.titleLeft,
@@ -187,7 +187,7 @@ export function applyUserChartConfig(
 
   // ============ 2. Legend ============
   const legendPos = legendPositionStyle(String(p.legendPosition))
-  const legendOption: EChartsOption['legend'] = {
+  const legendOption: any = {
     show: Boolean(p.legendShow),
     ...legendPos,
     textStyle: {
@@ -203,7 +203,7 @@ export function applyUserChartConfig(
   }
 
   // ============ 3. Tooltip ============
-  const tooltipOption: EChartsOption['tooltip'] = {
+  const tooltipOption: any = {
     show: Boolean(p.tooltipShow),
     trigger: p.tooltipTrigger as any,
     backgroundColor: hexToRgba(String(p.tooltipBgColor), 0.95),
@@ -220,14 +220,14 @@ export function applyUserChartConfig(
   }
 
   // ============ 5. Animation ============
-  const animationOption: EChartsOption = {
+  const animationOption: ECOption = {
     animation: Boolean(p.animationShow),
     animationDuration: p.animationShow ? Number(p.animationDuration) : 0,
     animationEasing: p.animationEasing as any,
   }
 
   // ============ 6. Grid 画布内边距（从 Schema 读取，唯一真源）============
-  const gridOption: EChartsOption['grid'] = {
+  const gridOption: any = {
     left: Number(p.gridLeft),
     right: Number(p.gridRight),
     top: Number(p.gridTop),
@@ -236,7 +236,7 @@ export function applyUserChartConfig(
   }
 
   // ============ 7. X / Y 轴（hasAxes 为 true 时才生成）============
-  const axesOption: EChartsOption = {}
+  const axesOption: ECOption = {}
   if (hasAxes) {
     axesOption.xAxis = {
       show: Boolean(p.xAxisShow),
@@ -302,7 +302,7 @@ export function applyUserChartConfig(
 
   // ============ 最终合并：base → 用户配置 → widget 特有（优先级最高）============
   // 🔑 已移除「全局 textStyle」配置（所有子配置都自己独立 5 项，不再走全局继承）
-  const userConfig: EChartsOption = {
+  const userConfig: ECOption = {
     grid: gridOption,
     title: titleOption,
     legend: legendOption,

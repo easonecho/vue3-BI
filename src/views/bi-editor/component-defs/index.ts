@@ -18,20 +18,41 @@ export { rawDefinitions, componentDefinitions } from './registry'
  *   - metadata / widgetRegistry：外部消费者（stores、LeftPanel、ComponentRenderer）直接 import 本文件
  */
 
+/** 🔑 defaultProps 计算缓存：避免每次 createComponent 时重复遍历 Schema */
+const defaultPropsCache = new Map<string, Record<string, any>>()
+
 /** 🔑 从 definition 派生完整的 defaultProps（schema defaults + extraDefaults）。
  *   消费者（如 use-components.ts createComponent）调用此函数获取初始 props。
  *   对图表组件：当 seriesStyles 为空数组时，根据真实 series/pieData 数据自动生成每行"空样式行"，
  *   确保系列数量与默认数据一致，用户无需手动新建行。
  */
 export function getDefaultProps(type: string): Record<string, any> {
+  // 命中缓存：直接返回深拷贝，避免外部修改污染缓存
+  if (defaultPropsCache.has(type)) {
+    return structuredClone(defaultPropsCache.get(type)!)
+  }
+
   const def = componentDefinitions[type]
   if (!def) return {}
+
   const baseProps = deriveDefaultProps(def.propsSchema, def.extraDefaults)
   const initialStyles = buildInitialSeriesStyles(def, baseProps)
   if (initialStyles !== undefined) {
     baseProps.seriesStyles = initialStyles
   }
-  return baseProps
+
+  // 首次计算后写入缓存
+  defaultPropsCache.set(type, baseProps)
+  return structuredClone(baseProps)
+}
+
+/** 清除指定类型或全部类型的 defaultProps 缓存（用于热更新或动态 schema 变更） */
+export function invalidateDefaultPropsCache(type?: string): void {
+  if (type) {
+    defaultPropsCache.delete(type)
+  } else {
+    defaultPropsCache.clear()
+  }
 }
 
 /** 分类分组 */

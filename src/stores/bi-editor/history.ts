@@ -31,6 +31,88 @@ let isRestoring = false
 
 const MAX_HISTORY = 100
 
+/** 简易深比较：两个可序列化对象是否语义相等（JSON.stringify 对称，保证快速） */
+function deepEqual(a: any, b: any): boolean {
+  if (a === b) return true
+  if (typeof a !== typeof b) return false
+  if (a === null || b === null) return a === b
+  if (Array.isArray(a) !== Array.isArray(b)) return false
+  try {
+    return JSON.stringify(a) === JSON.stringify(b)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 🔑 增量恢复 components：只有 id 相同但内容真的变了的组件才替换对象引用。
+ *   这样做的好处：
+ *     - v-for key=comp.id 的 CanvasComponentItem 不会被 Vue 整体重建
+ *     - 每个 CanvasComponentItem 里的 watch(comp) 只在 comp 引用变化时触发
+ *       → 真正被改动的组件才重建 VueDragResize，其他全部跳过
+ *     - 组件内部的 ECharts / Widget 实例也保持不变，无需重新初始化 ECharts
+ */
+function mergeComponents(
+  current: Ref<ComponentInstance[]>,
+  snapshotArr: ComponentInstance[],
+): { updated: boolean } {
+  // const snapshotMap = new Map(snapshotArr.map((c) => [c.id, c]))
+  const curMap = new Map(current.value.map((c) => [c.id, c]))
+
+  // 先构建新数组，严格按 snapshot 的顺序
+  const result: ComponentInstance[] = []
+  let mutated = false
+  for (const snapComp of snapshotArr) {
+    const cur = curMap.get(snapComp.id)
+    if (cur && deepEqual(cur, snapComp)) {
+      // 未变化 → 复用原引用，跳过 Vue re-render / VDR 重建
+      result.push(cur)
+    } else {
+      // 新增或内容变更 → 替换成全新的快照对象（触发 watch comp → VDR 重建）
+      result.push(snapComp)
+      mutated = true
+    }
+  }
+  // 如果存在被删除的组件（cur 里有 snapshot 没有），也是 mutation
+  if (current.value.length !== result.length) mutated = true
+
+  // 深度比较数组元素顺序/引用完全一致时避免替换整个数组，减少 v-for 的 diff
+  if (!mutated) return { updated: false }
+  let sameOrder = true
+  if (current.value.length === result.length) {
+    for (let i = 0; i < result.length; i++) {
+      if (current.value[i] !== result[i]) {
+        sameOrder = false
+        break
+      }
+    }
+  } else {
+    sameOrder = false
+  }
+  if (sameOrder) return { updated: false }
+
+  current.value = result
+  return { updated: true }
+}
+
+/** canvas/guides 单对象增量恢复：相等就保留原引用，避免不必要的 watcher */
+function mergeCanvas(
+  current: Ref<CanvasState>,
+  snapCanvas: CanvasState,
+  keepViewport: { zoom: number; scrollX: number; scrollY: number },
+): boolean {
+  const merged: CanvasState = { ...snapCanvas, ...keepViewport }
+  if (deepEqual(current.value, merged)) return false
+  current.value = merged
+  return true
+}
+
+function mergeGuides(current: Ref<GuideLine[]>, snapGuides: GuideLine[]): boolean {
+  if (deepEqual(current.value, snapGuides)) return false
+  current.value = JSON.parse(JSON.stringify(snapGuides))
+  return true
+}
+
 export interface HistoryApi {
   /** 历史栈：仅存储 JSON 字符串，彻底避免 Proxy/响应式对象污染 */
   history: Ref<string[]>
@@ -86,15 +168,14 @@ export function useHistory(
     isRestoring = true
     try {
       const { zoom, scrollX, scrollY } = canvas.value
-      // 🔑 反序列化后再赋值：确保赋给 ref 的是全新普通对象，
-      //   Vue 会重新包装为 Proxy，但历史栈中存储的是字符串，不受影响。
-      components.value = JSON.parse(JSON.stringify(snapshot.components))
-      canvas.value = JSON.parse(JSON.stringify(snapshot.canvas))
-      canvas.value.zoom = zoom
-      canvas.value.scrollX = scrollX
-      canvas.value.scrollY = scrollY
-      guides.value = JSON.parse(JSON.stringify(snapshot.guides))
-      selectedId.value = snapshot.selectedId
+      // 🔑 增量恢复：只有真实变化的对象才替换引用，未变化的组件/画布/参考线
+      //   保持原引用不变，避免触发全量 re-render / VDR 重建 / ECharts 重初始化。
+      mergeComponents(components, snapshot.components as ComponentInstance[])
+      mergeCanvas(canvas, snapshot.canvas as CanvasState, { zoom, scrollX, scrollY })
+      mergeGuides(guides, snapshot.guides as GuideLine[])
+      if (selectedId.value !== snapshot.selectedId) {
+        selectedId.value = snapshot.selectedId
+      }
     } finally {
       // 🔑 用 setTimeout(0)（宏任务）重置：必须晚于 vue3-drag-resize 的 nextTick 链
       //   (watcher → this.$nextTick → bodyUp → dragstop → pushHistory)，

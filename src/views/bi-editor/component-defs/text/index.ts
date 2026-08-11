@@ -1,6 +1,6 @@
-import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 import { textBaseSchema } from '../types'
+import Widget from './Widget.vue'
 
 export const textDefinition: ComponentDefinition = {
   type: 'text',
@@ -11,7 +11,7 @@ export const textDefinition: ComponentDefinition = {
     defaultWidth: 120,
     defaultHeight: 40,
   },
-  widget: defineAsyncComponent(() => import('./Widget.vue')),
+  widget: Widget,
   propsSchema: textBaseSchema,
   defaultStyle: {},
 }

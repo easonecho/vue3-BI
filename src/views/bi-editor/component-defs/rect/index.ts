@@ -1,5 +1,5 @@
-import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
+import Widget from './Widget.vue'
 
 export const rectDefinition: ComponentDefinition = {
   type: 'rect',
@@ -10,7 +10,7 @@ export const rectDefinition: ComponentDefinition = {
     defaultWidth: 100,
     defaultHeight: 80,
   },
-  widget: defineAsyncComponent(() => import('./Widget.vue')),
+  widget: Widget,
   propsSchema: [
     { key: 'borderRadius', label: '圆角', type: 'slider', min: 0, max: 50, default: 0 },
     { key: 'borderWidth', label: '边框宽度', type: 'slider', min: 0, max: 10, default: 0 },

@@ -26,6 +26,7 @@
 
     <component
       :is="VueDragResize"
+      :key="vdrKey"
       :x="comp.x"
       :y="comp.y"
       :w="comp.width"
@@ -56,7 +57,7 @@
         }"
       >
         <div class="component-content">
-          <ComponentRenderer :component="comp as any" />
+          <ComponentRenderer :component="comp" />
         </div>
       </div>
     </component>
@@ -64,6 +65,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import type { Component } from 'vue'
 import VueDragResizeRaw from 'vue3-drag-resize'
 import ComponentRenderer from './ComponentRenderer.vue'
@@ -84,6 +86,9 @@ interface BiComponent {
   zIndex: number
   visible: boolean
   locked: boolean
+  type: string
+  props: Record<string, any>
+  style: Record<string, any>
 }
 
 interface Props {
@@ -93,7 +98,43 @@ interface Props {
   isSpacePressed: boolean
   isPanning: boolean
 }
-defineProps<Props>()
+const props = defineProps<Props>()
+
+/**
+ * 🔑 强制重建 VueDragResize 的 key。
+ *
+ * 为什么需要：
+ *   vue3-drag-resize 内部在 data 中保存 this.x / this.y 作为「拖拽起点」，
+ *   mousedown 时把 this.x/y 记为 startX/startY，然后 mousemove 按 (mouseX - mouseDownX)
+ *   做增量计算 rect.left = this.x + delta。
+ *
+ *   撤销/重做（undo/redo）会通过 restoreSnapshot 把 components.value 整体替换为一个
+ *   全新的对象数组，每个 comp 的引用都会变化，但外层 CanvasArea.vue 用 v-for 的
+ *   key=comp.id，导致 Vue 复用同一个组件实例，也就复用了同一个 VueDragResize 实例。
+ *   此时 VDR 内部 this.x/y 仍然停留在「撤销前的旧位置」，下次 mousedown + 任何微小
+ *   mouse move，rect.left 就会直接以撤销前位置为起点输出，导致组件瞬间跳回旧位置，
+ *   表现为：点击下去的那一刻组件位置偏移。
+ *
+ * 修复策略：
+ *   watch `() => props.comp`（引用本身），只要引用发生变化（不是 moveComponent 的
+ *   浅改 x/y，而是 undo/redo/duplicate 等整体替换了 comp 对象），就把 vdrKey = genId()，
+ *   强制销毁并重建 VueDragResize 实例，清空它内部保存的旧状态 this.x/y。
+ *   正常拖拽（moveComponent 只改 comp.x / comp.y，comp 引用不变）不会触发重建。
+ */
+const getVdrKey = () => {
+  const t = Date.now().toString(36)
+  const rnd = crypto.getRandomValues(new Uint16Array(1))[0].toString(36)
+  return `${t}_${rnd}`
+}
+const vdrKey = ref(getVdrKey())
+watch(
+  () => props.comp,
+  () => {
+    vdrKey.value = getVdrKey()
+  },
+  // 必须用 sync flush：否则 restore 宏任务→渲染→mousedown 已经按下了，watch 还没走
+  { flush: 'sync' },
+)
 
 const emit = defineEmits<{
   (e: 'select', id: string): void

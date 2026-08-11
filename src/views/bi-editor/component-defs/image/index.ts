@@ -1,5 +1,5 @@
-import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
+import Widget from './Widget.vue'
 
 export const imageDefinition: ComponentDefinition = {
   type: 'image',
@@ -10,7 +10,7 @@ export const imageDefinition: ComponentDefinition = {
     defaultWidth: 160,
     defaultHeight: 120,
   },
-  widget: defineAsyncComponent(() => import('./Widget.vue')),
+  widget: Widget,
   propsSchema: [
     { key: 'src', label: '图片地址', type: 'input', default: '', placeholder: '请输入图片 URL' },
     { key: 'alt', label: '替代文本', type: 'input', default: '' },

@@ -1,5 +1,5 @@
-import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
+import Widget from './Widget.vue'
 
 export const lineDefinition: ComponentDefinition = {
   type: 'line',
@@ -10,7 +10,7 @@ export const lineDefinition: ComponentDefinition = {
     defaultWidth: 200,
     defaultHeight: 2,
   },
-  widget: defineAsyncComponent(() => import('./Widget.vue')),
+  widget: Widget,
   propsSchema: [
     {
       key: 'direction',

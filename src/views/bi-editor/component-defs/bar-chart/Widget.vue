@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import type { EChartsOption } from 'echarts'
+import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
 import { deriveDefaultProps, ECHARTS_DEFAULT_PALETTE } from '../types'
@@ -15,13 +15,29 @@ import type { ComponentInstance } from '@/views/bi-editor/types'
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 
+/** 防抖定时器 */
+let debounceTimer: number | null = null
+let pendingOption: ECOption | null = null
+
+function debouncedSetOption(option: ECOption) {
+  pendingOption = option
+  if (debounceTimer !== null) return
+  debounceTimer = window.requestAnimationFrame(() => {
+    debounceTimer = null
+    if (pendingOption) {
+      baseChartRef.value?.setOption(pendingOption)
+      pendingOption = null
+    }
+  })
+}
+
 /**
  * 🔑 柱状图"组件特有"option —— 只写 series / 柱宽 / 堆叠 等特有配置。
  *   title / legend / xAxis / yAxis / tooltip / color / animation 统一由 applyUserChartConfig 生成，
  *   用户在右侧属性面板修改后立即生效。
  */
 function getChartSpecificOption(): {
-  specificOption: EChartsOption
+  specificOption: ECOption
   mergedProps: Record<string, any>
 } {
   // 🔑 合并默认值：schema defaults → actual props（用户设置优先级更高）
@@ -42,7 +58,7 @@ function getChartSpecificOption(): {
   const stack = !!mergedProps.stack
   const seriesStyles = Array.isArray(mergedProps.seriesStyles) ? mergedProps.seriesStyles : []
 
-  const specificOption: EChartsOption = {
+  const specificOption: ECOption = {
     xAxis: {
       // 只传 data，样式（颜色/字号/轴线/网格线）由 applyUserChartConfig 根据用户配置生成
       data: categories,
@@ -103,14 +119,13 @@ function applyChartOption() {
     xAxisData: specificOption.xAxis ? (specificOption.xAxis as any).data : undefined,
     fallbackTitle: '柱状图',
   })
-  baseChartRef.value?.setOption(merged)
+  debouncedSetOption(merged)
 }
 
-onMounted(() => {
+onMounted(async () => {
   setTimeout(applyChartOption, 50)
 })
 
-// 监听 comp.props 任意变化（包括 titleShow、barWidth、categories、series 等），立即重绘
 watch(
   () => props.comp.props,
   () => {

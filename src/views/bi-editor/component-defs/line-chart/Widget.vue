@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import type { EChartsOption } from 'echarts'
+import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
 import { deriveDefaultProps, ECHARTS_DEFAULT_PALETTE } from '../types'
@@ -14,12 +14,27 @@ import type { ComponentInstance } from '@/views/bi-editor/types'
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 
+let debounceTimer: number | null = null
+let pendingOption: ECOption | null = null
+
+function debouncedSetOption(option: ECOption) {
+  pendingOption = option
+  if (debounceTimer !== null) return
+  debounceTimer = window.requestAnimationFrame(() => {
+    debounceTimer = null
+    if (pendingOption) {
+      baseChartRef.value?.setOption(pendingOption)
+      pendingOption = null
+    }
+  })
+}
+
 /**
  * 🔑 折线图"组件特有"option —— 只写 series（smooth/areaStyle/symbolSize）。
  *   title / legend / xAxis / yAxis / tooltip / color / animation 统一由 applyUserChartConfig 生成。
  */
 function getChartSpecificOption(): {
-  specificOption: EChartsOption
+  specificOption: ECOption
   mergedProps: Record<string, any>
 } {
   // 🔑 合并默认值：schema defaults → actual props（保证特有字段如 smooth/pointSize 有默认值）
@@ -38,7 +53,7 @@ function getChartSpecificOption(): {
   const pointSize = Number(mergedProps.pointSize)
   const seriesStyles = Array.isArray(mergedProps.seriesStyles) ? mergedProps.seriesStyles : []
 
-  const specificOption: EChartsOption = {
+  const specificOption: ECOption = {
     xAxis: {
       data: categories,
       boundaryGap: false,
@@ -103,10 +118,10 @@ function applyChartOption() {
     xAxisData: specificOption.xAxis ? (specificOption.xAxis as any).data : undefined,
     fallbackTitle: '折线图',
   })
-  baseChartRef.value?.setOption(merged)
+  debouncedSetOption(merged)
 }
 
-onMounted(() => {
+onMounted(async () => {
   setTimeout(applyChartOption, 50)
 })
 

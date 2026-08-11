@@ -78,7 +78,7 @@
     <!-- 🔑 表格：可编辑列表，用户按每一项数据单独配置样式（series 每个数据项的颜色/线宽等） -->
     <div v-else-if="field.type === 'table'" class="table-editor">
       <div class="table-toolbar">
-        <el-button size="small" @click="addTableRow">新增行</el-button>
+        <el-button size="small" type="primary" plain @click="addTableRow">新增行</el-button>
         <el-button size="small" type="danger" plain :disabled="!hasRows" @click="removeLastRow"
           >删除末行</el-button
         >

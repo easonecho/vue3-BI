@@ -22,6 +22,7 @@
                     :key="compMeta.type"
                     class="component-item"
                     draggable="true"
+                    @mouseenter="preloadComponent(compMeta.type)"
                     @dragstart="handleDragStart($event, compMeta)"
                     @click="handleAddComponent(compMeta)"
                   >
@@ -124,6 +125,7 @@ import {
 import { COMPONENT_META, getMeta } from '@/stores/bi-editor/metadata'
 import type { ComponentMeta, ComponentCategory, ComponentInstance } from '@/views/bi-editor/types'
 import ComponentRenderer from './ComponentRenderer.vue'
+import { preloadComponent } from '@/views/bi-editor/component-defs/registry'
 import {
   Document,
   Picture,

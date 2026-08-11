@@ -4,14 +4,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch, shallowRef, type ShallowRef } from 'vue'
-import * as echarts from 'echarts'
-import type { EChartsOption } from 'echarts'
+import { init, type ECharts, type ECOption } from './echarts-config'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 const props = defineProps<{ comp: ComponentInstance }>()
 
 const chartRef = ref<HTMLDivElement | null>(null)
-const chartInstance: ShallowRef<echarts.ECharts | null> = shallowRef(null)
+const chartInstance: ShallowRef<ECharts | null> = shallowRef(null)
 let resizeObserver: ResizeObserver | null = null
 
 function initChart() {
@@ -20,7 +19,7 @@ function initChart() {
     chartInstance.value.dispose()
     chartInstance.value = null
   }
-  chartInstance.value = echarts.init(chartRef.value)
+  chartInstance.value = init(chartRef.value)
 }
 
 function handleResize() {
@@ -55,7 +54,7 @@ watch(
 /** 供子类获取 chart 实例 */
 defineExpose({
   getChart: () => chartInstance.value,
-  setOption: (option: EChartsOption) => {
+  setOption: (option: ECOption) => {
     chartInstance.value?.setOption(option, true)
   },
   resize: handleResize,

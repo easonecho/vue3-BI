@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import type { EChartsOption } from 'echarts'
+import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
 import { deriveDefaultProps, ECHARTS_DEFAULT_PALETTE } from '../types'
@@ -14,12 +14,27 @@ import type { ComponentInstance } from '@/views/bi-editor/types'
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 
+let debounceTimer: number | null = null
+let pendingOption: ECOption | null = null
+
+function debouncedSetOption(option: ECOption) {
+  pendingOption = option
+  if (debounceTimer !== null) return
+  debounceTimer = window.requestAnimationFrame(() => {
+    debounceTimer = null
+    if (pendingOption) {
+      baseChartRef.value?.setOption(pendingOption)
+      pendingOption = null
+    }
+  })
+}
+
 /**
  * 🔑 饼图"组件特有"option —— 只写 series（radius/center/roseType/label/emphasis）。
  *   pie 无坐标轴，所以 hasAxes=false；title / legend / tooltip / color / animation 统一由 applyUserChartConfig 生成。
  */
 function getChartSpecificOption(): {
-  specificOption: EChartsOption
+  specificOption: ECOption
   mergedProps: Record<string, any>
 } {
   // 🔑 合并默认值：饼图仅使用 chartCommonSchema（无坐标轴），保证 radius/donut/rose 等特有字段有默认值
@@ -69,7 +84,7 @@ function getChartSpecificOption(): {
   }
   const pieLabelPosition = mapPiePosition(String(mergedProps.seriesLabelPosition || 'outside'))
 
-  const specificOption: EChartsOption = {
+  const specificOption: ECOption = {
     series: [
       {
         name: '饼图',
@@ -135,13 +150,13 @@ function applyChartOption() {
   const baseOption = getBaseOption()
   const { specificOption, mergedProps } = getChartSpecificOption()
   const merged = applyUserChartConfig(baseOption, mergedProps, specificOption, {
-    hasAxes: false, // 饼图无 x/y 轴、无 dataZoom
+    hasAxes: false,
     fallbackTitle: '饼图',
   })
-  baseChartRef.value?.setOption(merged)
+  debouncedSetOption(merged)
 }
 
-onMounted(() => {
+onMounted(async () => {
   setTimeout(applyChartOption, 50)
 })
 
