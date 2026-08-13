@@ -1,9 +1,11 @@
 <template>
-  <router-view />
+  <ErrorBoundary>
+    <router-view />
+  </ErrorBoundary>
 </template>
 
 <script setup lang="ts">
-// App.vue 作为根组件，只渲染 router-view
+// App.vue 作为根组件，使用 ErrorBoundary 包裹 router-view
 </script>
 
 <style lang="less">

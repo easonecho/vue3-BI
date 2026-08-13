@@ -1,4 +1,4 @@
-import { fileURLToPath, URL } from 'node:url'
+﻿import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -26,10 +26,20 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      // 代理 /api 到 BI 低代码平台服务端 (http://localhost:3000)
+      // 前端请求 /api/auth/login 实际访问 http://localhost:3000/api/auth/login
       '/api': {
-        target: 'http://backend-api.com', // 替换为实际后端地址
+        target: 'http://localhost:3000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+      // Swagger 文档也走代理
+      '/api-docs': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/swagger.json': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
       },
     },
   },

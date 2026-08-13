@@ -1,0 +1,72 @@
+/**
+ * 应用主题 CSS 变量
+ *
+ * 通过 html[data-theme="dark"] 切换暗色主题
+ * 组件中通过 var(--app-xxx) 引用
+ */
+
+:root {
+  /* ========== 品牌色 ========== */
+  --app-brand: #409eff;
+  --app-brand-hover: #66b1ff;
+  --app-brand-active: #3a8ee6;
+  --app-success: #67c23a;
+  --app-warning: #e6a23c;
+  --app-danger: #f56c6c;
+  --app-info: #909399;
+
+  /* ========== 文本颜色 ========== */
+  --app-text-primary: #303133;
+  --app-text-regular: #606266;
+  --app-text-secondary: #909399;
+  --app-text-placeholder: #c0c4cc;
+
+  /* ========== 背景颜色 ========== */
+  --app-bg: #ffffff;
+  --app-bg-secondary: #f5f7fa;
+  --app-panel-bg: #ffffff;
+  --app-sidebar-bg: #304156;
+  --app-sidebar-text: #bfcbd9;
+  --app-sidebar-active: #409eff;
+
+  /* ========== 边框颜色 ========== */
+  --app-border: #dcdfe6;
+  --app-border-light: #e4e7ed;
+  --app-border-lighter: #ebeef5;
+
+  /* ========== 阴影 ========== */
+  --app-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+html[data-theme='dark'] {
+  /* ========== 品牌色 ========== */
+  --app-brand: #409eff;
+  --app-brand-hover: #66b1ff;
+  --app-brand-active: #3a8ee6;
+  --app-success: #67c23a;
+  --app-warning: #e6a23c;
+  --app-danger: #f56c6c;
+  --app-info: #909399;
+
+  /* ========== 文本颜色 ========== */
+  --app-text-primary: #e5eaf3;
+  --app-text-regular: #cfd3dc;
+  --app-text-secondary: #a3a6ad;
+  --app-text-placeholder: #8d9095;
+
+  /* ========== 背景颜色 ========== */
+  --app-bg: #141414;
+  --app-bg-secondary: #1d1e1f;
+  --app-panel-bg: #1d1e1f;
+  --app-sidebar-bg: #001528;
+  --app-sidebar-text: #a3a6ad;
+  --app-sidebar-active: #409eff;
+
+  /* ========== 边框颜色 ========== */
+  --app-border: #4c4d4f;
+  --app-border-light: #414243;
+  --app-border-lighter: #363637;
+
+  /* ========== 阴影 ========== */
+  --app-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.3);
+}
