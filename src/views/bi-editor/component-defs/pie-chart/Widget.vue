@@ -3,19 +3,39 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
 import { deriveDefaultProps, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
+import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
+let initTimer: number | undefined
 
 let debounceTimer: number | null = null
 let pendingOption: ECOption | null = null
+
+// 🔑 数据绑定:有 datasetId 时走动态取数 + 字段映射,无则走静态兜底
+const dataSourceRef = computed(() => props.comp.dataSource)
+const { rows } = useDatasetBinding(dataSourceRef)
+
+/** 字段映射:把数据集行数据映射成饼图所需的 {name, value}[] */
+const mappedData = computed(() => {
+  if (!props.comp.dataSource.datasetId || rows.value.length === 0) return null
+  const { nameField, valueField } = (props.comp.dataConfig ?? {}) as {
+    nameField?: string
+    valueField?: string
+  }
+  if (!nameField || !valueField) return null
+  return rows.value.map((r) => ({
+    name: String(r[nameField] ?? ''),
+    value: Number(r[valueField] ?? 0),
+  }))
+})
 
 function debouncedSetOption(option: ECOption) {
   pendingOption = option
@@ -42,18 +62,19 @@ function getChartSpecificOption(): {
   const schemaDefaults = def ? deriveDefaultProps(def.propsSchema, def.extraDefaults) : {}
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const pieData = Array.isArray(mergedProps.pieData)
-    ? mergedProps.pieData.map((item: { name: string; value: number }) => ({
-        name: item.name,
-        value: item.value,
-      }))
-    : [
-        { name: '直接访问', value: 1048 },
-        { name: '搜索引擎', value: 735 },
-        { name: '邮件营销', value: 580 },
-        { name: '联盟广告', value: 484 },
-        { name: '视频广告', value: 300 },
-      ]
+  const pieData = mappedData.value
+    ?? (Array.isArray(mergedProps.pieData)
+      ? mergedProps.pieData.map((item: { name: string; value: number }) => ({
+          name: item.name,
+          value: item.value,
+        }))
+      : [
+          { name: '直接访问', value: 1048 },
+          { name: '搜索引擎', value: 735 },
+          { name: '邮件营销', value: 580 },
+          { name: '联盟广告', value: 484 },
+          { name: '视频广告', value: 300 },
+        ])
 
   const outerRadius = Number(mergedProps.radius)
   const isDonut = !!mergedProps.donut
@@ -157,14 +178,21 @@ function applyChartOption() {
 }
 
 onMounted(async () => {
-  setTimeout(applyChartOption, 50)
+  initTimer = window.setTimeout(applyChartOption, 50)
 })
 
 watch(
-  () => props.comp.props,
+  [() => props.comp.props, rows, () => props.comp.dataConfig],
   () => {
     applyChartOption()
   },
   { deep: true },
 )
+
+// 清理定时器, 防止内存泄漏
+onUnmounted(() => {
+  if (initTimer) clearTimeout(initTimer)
+  if (debounceTimer !== null) cancelAnimationFrame(debounceTimer)
+})
+
 </script>

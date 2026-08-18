@@ -68,6 +68,10 @@ export const barChartDefinition: ComponentDefinition = {
   },
   defaultStyle: {},
   supportsDataBinding: true,
+  dataBindingSchema: [
+    { key: 'categoryField', label: '类目字段', type: 'category' },
+    { key: 'valueFields', label: '数值字段', type: 'value', multiple: true },
+  ],
 }
 
 export default barChartDefinition

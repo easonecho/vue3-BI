@@ -33,6 +33,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
+import { useDatasetBinding } from '../../composables/useDatasetBinding'
 
 const props = defineProps<{ comp: ComponentInstance }>()
 
@@ -44,8 +45,22 @@ interface TableColumn {
   align?: 'left' | 'center' | 'right'
 }
 
-const columns = computed<TableColumn[]>(() => props.comp.props?.columns || [])
-const rows = computed(() => props.comp.props?.data || [])
+// 🔑 数据绑定:有 datasetId 时直接用数据集行数据,fields 自动生成列
+const dataSourceRef = computed(() => props.comp.dataSource)
+const { rows: datasetRows, fields: datasetFields } = useDatasetBinding(dataSourceRef)
+
+const columns = computed<TableColumn[]>(() => {
+  if (props.comp.dataSource.datasetId && datasetFields.value.length > 0) {
+    return datasetFields.value.map((f) => ({ key: f, title: f, minWidth: 100 }))
+  }
+  return props.comp.props?.columns || []
+})
+const rows = computed(() => {
+  if (props.comp.dataSource.datasetId && datasetRows.value.length > 0) {
+    return datasetRows.value
+  }
+  return props.comp.props?.data || []
+})
 
 const tableHeight = computed(() => '100%')
 

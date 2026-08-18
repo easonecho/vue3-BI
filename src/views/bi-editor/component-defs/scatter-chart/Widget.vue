@@ -3,19 +3,58 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
 import { deriveDefaultProps, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
+import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
+let initTimer: number | undefined
 
 let debounceTimer: number | null = null
 let pendingOption: ECOption | null = null
+
+// 🔑 数据绑定:有 datasetId 时走动态取数 + 字段映射,无则走静态兜底
+const dataSourceRef = computed(() => props.comp.dataSource)
+const { rows } = useDatasetBinding(dataSourceRef)
+
+/**
+ * 字段映射:把数据集行数据映射成散点图所需的 series。
+ * - 无 seriesField:单一系列,data 为 [[x,y], ...]
+ * - 有 seriesField:按该字段值分组,每组一个系列
+ */
+const mappedData = computed(() => {
+  if (!props.comp.dataSource.datasetId || rows.value.length === 0) return null
+  const { xField, yField, seriesField } = (props.comp.dataConfig ?? {}) as {
+    xField?: string
+    yField?: string
+    seriesField?: string
+  }
+  if (!xField || !yField) return null
+
+  if (!seriesField) {
+    return [
+      {
+        name: '数据',
+        data: rows.value.map((r) => [Number(r[xField] ?? 0), Number(r[yField] ?? 0)]),
+      },
+    ]
+  }
+  // 按 seriesField 分组
+  const groups = new Map<string, number[][]>()
+  for (const r of rows.value) {
+    const key = String(r[seriesField] ?? '')
+    const point = [Number(r[xField] ?? 0), Number(r[yField] ?? 0)]
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(point)
+  }
+  return Array.from(groups.entries()).map(([name, data]) => ({ name, data }))
+})
 
 function debouncedSetOption(option: ECOption) {
   pendingOption = option
@@ -42,25 +81,26 @@ function getChartSpecificOption(): {
   const schemaDefaults = def ? deriveDefaultProps(def.propsSchema, def.extraDefaults) : {}
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const seriesData = Array.isArray(mergedProps.series)
-    ? mergedProps.series
-    : [
-        {
-          name: '数据',
-          data: [
-            [10.0, 8.04],
-            [8.07, 6.95],
-            [13.0, 7.58],
-            [9.05, 8.81],
-            [11.0, 8.33],
-            [14.0, 7.66],
-            [13.0, 12.5],
-            [10.0, 6.26],
-            [14.0, 8.84],
-            [12.5, 6.2],
-          ],
-        },
-      ]
+  const seriesData = mappedData.value
+    ?? (Array.isArray(mergedProps.series)
+      ? mergedProps.series
+      : [
+          {
+            name: '数据',
+            data: [
+              [10.0, 8.04],
+              [8.07, 6.95],
+              [13.0, 7.58],
+              [9.05, 8.81],
+              [11.0, 8.33],
+              [14.0, 7.66],
+              [13.0, 12.5],
+              [10.0, 6.26],
+              [14.0, 8.84],
+              [12.5, 6.2],
+            ],
+          },
+        ])
   const symbolSize = Number(mergedProps.symbolSize)
   const showLabel = !!mergedProps.showLabel
   const seriesStyles = Array.isArray(mergedProps.seriesStyles) ? mergedProps.seriesStyles : []
@@ -124,14 +164,21 @@ function applyChartOption() {
 }
 
 onMounted(async () => {
-  setTimeout(applyChartOption, 50)
+  initTimer = window.setTimeout(applyChartOption, 50)
 })
 
 watch(
-  () => props.comp.props,
+  [() => props.comp.props, rows, () => props.comp.dataConfig],
   () => {
     applyChartOption()
   },
   { deep: true },
 )
+
+// 清理定时器, 防止内存泄漏
+onUnmounted(() => {
+  if (initTimer) clearTimeout(initTimer)
+  if (debounceTimer !== null) cancelAnimationFrame(debounceTimer)
+})
+
 </script>

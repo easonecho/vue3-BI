@@ -2,7 +2,7 @@
  * 认证模块 API
  */
 import { post, get } from '@/utils/request'
-import type { LoginResult, User } from './types'
+import type { LoginResult, RefreshResult, User } from './types'
 
 /** 登录请求参数 */
 export interface LoginParams {
@@ -25,10 +25,20 @@ export function login(data: LoginParams) {
 
 /** 用户注册 */
 export function register(data: RegisterParams) {
-  return post<User>('/api/auth/register', data)
+  return post<LoginResult>('/api/auth/register', data)
 }
 
 /** 获取当前登录用户信息 */
 export function getProfile() {
   return get<User>('/api/auth/profile')
+}
+
+/** 刷新 token */
+export function refreshToken(data: { refreshToken: string }) {
+  return post<RefreshResult>('/api/auth/refresh', data)
+}
+
+/** 登出 */
+export function logout(data?: { refreshToken?: string }) {
+  return post<void>('/api/auth/logout', data || {})
 }

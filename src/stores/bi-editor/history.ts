@@ -208,7 +208,6 @@ export function useHistory(
     //   → dragstop → handleVdrDragstop → pushHistory；guides watcher → setGuides → pushHistory）
     //   都是恢复的副作用，不是用户操作，必须丢弃，否则会立即抵消 undo/redo。
     if (isRestoring) {
-      console.log('[pushHistory] SKIPPED — restoring snapshot (undo/redo in progress)')
       return
     }
 
@@ -223,7 +222,6 @@ export function useHistory(
     const curSig = currentSnapshot ? snapshotSignature(currentSnapshot) : null
 
     if (currentSnapshot && newSig === curSig) {
-      console.log('[pushHistory] DEDUP HIT — skipped (no actual change)')
       return
     }
 
@@ -237,13 +235,7 @@ export function useHistory(
       history.value.shift()
     }
     historyIndex.value = history.value.length - 1
-    console.log('[pushHistory] COMMITTED', {
-      index: historyIndex.value,
-      historyLen: history.value.length,
-      componentsCount: snapshot.components.length,
-      selectedId: snapshot.selectedId,
-      history: history.value,
-    })
+    // debug log removed
   }
 
   function undo() {

@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, shallowRef, type ShallowRef } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, shallowRef, nextTick, type ShallowRef } from 'vue'
 import { init, type ECharts, type ECOption } from './echarts-config'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
@@ -27,13 +27,17 @@ function handleResize() {
 }
 
 onMounted(() => {
-  initChart()
+  // 🔑 使用 nextTick 确保 DOM 布局完成后再初始化 ECharts，
+  //   避免容器宽高为 0 时初始化导致图表不渲染
+  nextTick(() => {
+    initChart()
 
-  // 监听容器尺寸变化
-  if (chartRef.value) {
-    resizeObserver = new ResizeObserver(() => handleResize())
-    resizeObserver.observe(chartRef.value)
-  }
+    // 监听容器尺寸变化
+    if (chartRef.value) {
+      resizeObserver = new ResizeObserver(() => handleResize())
+      resizeObserver.observe(chartRef.value)
+    }
+  })
 })
 
 onBeforeUnmount(() => {
@@ -56,6 +60,8 @@ defineExpose({
   getChart: () => chartInstance.value,
   setOption: (option: ECOption) => {
     chartInstance.value?.setOption(option, true)
+    // 🔑 setOption 后调用 resize，处理容器从 0 尺寸变为有尺寸的情况
+    chartInstance.value?.resize()
   },
   resize: handleResize,
 })

@@ -89,6 +89,8 @@ interface BiComponent {
   type: string
   props: Record<string, any>
   style: Record<string, any>
+  dataSource: { datasetId: number | null }
+  dataConfig: Record<string, unknown>
 }
 
 interface Props {

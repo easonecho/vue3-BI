@@ -71,6 +71,11 @@ export const scatterChartDefinition: ComponentDefinition = {
   },
   defaultStyle: {},
   supportsDataBinding: true,
+  dataBindingSchema: [
+    { key: 'xField', label: 'X 轴字段', type: 'value' },
+    { key: 'yField', label: 'Y 轴字段', type: 'value' },
+    { key: 'seriesField', label: '系列字段(可选)', type: 'category' },
+  ],
 }
 
 export default scatterChartDefinition

@@ -82,6 +82,9 @@ export function useComponentOperations(
       locked: false,
       props: { ...meta?.defaultProps },
       style: { ...meta?.defaultStyle },
+      // 🔑 数据绑定默认值:新建组件无数据集绑定,空 dataConfig
+      dataSource: { datasetId: null },
+      dataConfig: {},
     }
   }
 

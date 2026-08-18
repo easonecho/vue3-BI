@@ -1,0 +1,58 @@
+# ============================================================================
+# BI 低代码平台 - docker-compose 编排
+# ============================================================================
+# 一键启动: MySQL + 后端 + 前端
+# 使用: docker-compose up -d
+# ============================================================================
+
+services:
+  # ---------- MySQL 数据库 ----------
+  mysql:
+    image: mysql:8.0
+    container_name: bi-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_DATABASE: bi_lowcode
+      TZ: Asia/Shanghai
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-proot123456']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------- 后端 API ----------
+  backend:
+    build: ../bi-lowcode-server
+    container_name: bi-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql://root:root123456@mysql:3306/bi_lowcode
+      JWT_SECRET: bi-lowcode-jwt-secret-2024
+      CRYPTO_KEY: bi-lowcode-crypto-key-32bytes!!
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - '3000:3000'
+    depends_on:
+      mysql:
+        condition: service_healthy
+    # 启动前自动执行数据库迁移
+    command: sh -c "npx prisma migrate deploy && npx prisma db seed && node dist/server.js"
+
+  # ---------- 前端 Nginx ----------
+  frontend:
+    build: .
+    container_name: bi-frontend
+    restart: unless-stopped
+    ports:
+      - '80:80'
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:

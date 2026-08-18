@@ -122,6 +122,18 @@ export interface TableColumnSchema {
   placeholder?: string
 }
 
+/** 🔑 数据绑定字段槽位定义 —— 声明组件需要从数据集映射哪些字段 */
+export interface DataBindingField {
+  /** dataConfig 中的 key,如 categoryField / valueFields */
+  key: string
+  /** UI 显示标签,如"类目字段"/"数值字段" */
+  label: string
+  /** 字段语义类型:category=维度(类目),value=度量(数值),name=名称(饼图用) */
+  type: 'category' | 'value' | 'name'
+  /** 是否多选(如柱状图的 valueFields 可选多个数值列) */
+  multiple?: boolean
+}
+
 export interface PropField {
   /** 属性 key，对应 comp.props[key] */
   key: string
@@ -179,6 +191,8 @@ export interface ComponentDefinition {
   defaultStyle?: Record<string, any>
   /** 是否支持数据绑定（数据面板） */
   supportsDataBinding?: boolean
+  /** 🔑 数据绑定字段槽位 —— 声明组件需要从数据集映射哪些字段,RightPanel 据此生成字段映射 UI */
+  dataBindingSchema?: DataBindingField[]
 }
 
 /**

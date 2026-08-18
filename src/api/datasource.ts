@@ -17,6 +17,30 @@ export interface CreateDataSourceParams {
   description?: string
 }
 
+/** 表字段结构 */
+export interface TableField {
+  name: string
+  type: string
+  nullable: boolean
+  key: string
+  defaultValue: string | null
+  extra: string
+  comment: string | null
+}
+
+/** Schema 表节点 (表 + 字段) */
+export interface SchemaTableNode {
+  name: string
+  fields: TableField[]
+}
+
+/** Schema 树结构 */
+export interface DataSourceSchema {
+  database: string
+  tableCount: number
+  tables: SchemaTableNode[]
+}
+
 /** 获取数据源列表 */
 export function getDataSourceList(params: PageQuery) {
   return get<PaginateData<DataSource>>('/api/datasources', params as Record<string, unknown>)
@@ -44,10 +68,20 @@ export function deleteDataSource(id: number) {
 
 /** 测试数据源连接 */
 export function testDataSource(id: number) {
-  return post<{ connected: boolean }>(`/api/datasources/${id}/test`)
+  return post<{ connected: boolean; tables: string[]; tableCount: number }>(`/api/datasources/${id}/test`)
 }
 
 /** 获取数据源的表列表 */
 export function getDataSourceTables(id: number) {
   return get<string[]>(`/api/datasources/${id}/tables`)
+}
+
+/** 获取表的字段结构 */
+export function getDataSourceTableFields(id: number, table: string) {
+  return get<TableField[]>(`/api/datasources/${id}/tables/${encodeURIComponent(table)}/fields`)
+}
+
+/** 获取整个库的 Schema (表+字段树) */
+export function getDataSourceSchema(id: number) {
+  return get<DataSourceSchema>(`/api/datasources/${id}/schema`)
 }

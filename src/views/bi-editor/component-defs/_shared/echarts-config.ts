@@ -4,6 +4,9 @@ import { LineChart, type LineSeriesOption } from 'echarts/charts'
 import { PieChart, type PieSeriesOption } from 'echarts/charts'
 import { ScatterChart, type ScatterSeriesOption } from 'echarts/charts'
 import { GaugeChart, type GaugeSeriesOption } from 'echarts/charts'
+import { FunnelChart, type FunnelSeriesOption } from 'echarts/charts'
+import { RadarChart, type RadarSeriesOption } from 'echarts/charts'
+import { HeatmapChart, type HeatmapSeriesOption } from 'echarts/charts'
 import {
   TitleComponent,
   type TitleComponentOption,
@@ -15,6 +18,10 @@ import {
   type GridComponentOption,
   DataZoomComponent,
   type DataZoomComponentOption,
+  VisualMapComponent,
+  type VisualMapComponentOption,
+  RadarComponent,
+  type RadarComponentOption,
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 
@@ -24,11 +31,16 @@ use([
   PieChart,
   ScatterChart,
   GaugeChart,
+  FunnelChart,
+  RadarChart,
+  HeatmapChart,
   TitleComponent,
   TooltipComponent,
   LegendComponent,
   GridComponent,
   DataZoomComponent,
+  VisualMapComponent,
+  RadarComponent,
   CanvasRenderer,
 ])
 
@@ -38,11 +50,16 @@ export type ECOption = ComposeOption<
   | PieSeriesOption
   | ScatterSeriesOption
   | GaugeSeriesOption
+  | FunnelSeriesOption
+  | RadarSeriesOption
+  | HeatmapSeriesOption
   | TitleComponentOption
   | TooltipComponentOption
   | LegendComponentOption
   | GridComponentOption
   | DataZoomComponentOption
+  | VisualMapComponentOption
+  | RadarComponentOption
 >
 
 export { init }

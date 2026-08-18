@@ -24,17 +24,27 @@ export interface PaginateData<T = unknown> {
 }
 
 const TOKEN_KEY = 'bi_token'
+const REFRESH_KEY = 'bi_refresh_token'
 
 export function getToken(): string {
   return localStorage.getItem(TOKEN_KEY) || ''
 }
-
+export function getRefreshToken(): string {
+  return localStorage.getItem(REFRESH_KEY) || ''
+}
 export function setToken(token: string): void {
   localStorage.setItem(TOKEN_KEY, token)
 }
-
+export function setRefreshToken(token: string): void {
+  localStorage.setItem(REFRESH_KEY, token)
+}
+export function setTokenPair(access: string, refresh: string): void {
+  localStorage.setItem(TOKEN_KEY, access)
+  localStorage.setItem(REFRESH_KEY, refresh)
+}
 export function removeToken(): void {
   localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(REFRESH_KEY)
 }
 
 // ========== NProgress 配置 ==========
@@ -79,6 +89,37 @@ function removePending(config: AxiosRequestConfig): void {
   const key = getRequestKey(config)
   if (pendingMap.has(key)) {
     pendingMap.delete(key)
+  }
+}
+
+/**
+ * access token 静默刷新并发锁:
+ * - 多个并发请求同时遇到 401 时, 只发起一次 refresh;
+ * - 其余请求等 promise 结束后重试, 避免多发刷新导致服务端错乱。
+ */
+let isRefreshing = false
+let refreshQueue: Array<() => void> = []
+
+async function handleTokenRefresh(): Promise<boolean> {
+  const refresh = getRefreshToken()
+  if (!refresh) {
+    return false
+  }
+  try {
+    // 动态 import 避免循环依赖 (request.ts -> auth.ts -> request.ts)
+    const { refreshToken: refreshApi } = await import('@/api/auth')
+    const res = await refreshApi({ refreshToken: refresh })
+    if (res.code === 0 && res.data) {
+      setTokenPair(res.data.accessToken, res.data.refreshToken)
+      refreshQueue.forEach((fn) => fn())
+      refreshQueue = []
+      return true
+    }
+    return false
+  } catch {
+    return false
+  } finally {
+    isRefreshing = false
   }
 }
 
@@ -128,7 +169,7 @@ request.interceptors.response.use(
     ElMessage.error(res.message || '请求失败')
     return Promise.reject(new Error(res.message || 'Error'))
   },
-  (error) => {
+  async (error) => {
     // 取消的请求不提示错误
     if (axios.isCancel(error)) {
       NProgress.done()
@@ -143,10 +184,42 @@ request.interceptors.response.use(
     const { response } = error
     if (response) {
       switch (response.status) {
-        case 401:
+        case 401: {
+          const originalConfig = error.config
+          // 防重复刷新死循环: 已重试过一次则放弃
+          const alreadyRetried = (originalConfig as any).__retried
+          const hasRefresh = !!getRefreshToken()
+
+          if (hasRefresh && !alreadyRetried) {
+            if (!isRefreshing) {
+              isRefreshing = true
+              ;(originalConfig as any).__retried = true
+              const ok = await handleTokenRefresh()
+              if (ok) {
+                // 用新 access token 重放原请求
+                originalConfig.headers.Authorization = `Bearer ${getToken()}`
+                return request(originalConfig)
+              }
+            } else {
+              // 已有刷新在进行: 排队等它完成后再重放
+              ;(originalConfig as any).__retried = true
+              return new Promise<void>((resolve) => {
+                refreshQueue.push(() => {
+                  originalConfig.headers.Authorization = `Bearer ${getToken()}`
+                  resolve(request(originalConfig) as any)
+                })
+              }) as any
+            }
+          }
+          // refresh 失败或无 refresh token: 走登出流程
           ElMessage.error('登录已过期，请重新登录')
           removeToken()
+          // 避免 pinia 循环依赖, 用事件通知应用层跳转登录页
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('bi-auth:expired'))
+          }
           break
+        }
         case 403:
           ElMessage.error('没有权限访问该资源')
           break

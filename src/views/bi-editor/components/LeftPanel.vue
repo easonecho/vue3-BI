@@ -207,6 +207,8 @@ function makePreviewInstance(meta: ComponentMeta): ComponentInstance {
     locked: false,
     props: meta.defaultProps ?? getDefaultProps(meta.type),
     style: meta.defaultStyle ?? {},
+    dataSource: { datasetId: null },
+    dataConfig: {},
   }
 }
 

@@ -15,6 +15,7 @@ import router from './router'
 import i18n from './i18n'
 import { useThemeStore } from './stores/theme'
 import ErrorBoundary from './components/ErrorBoundary.vue'
+import { vPermission } from './directives/permission'
 import './styles/global.less'
 import './styles/theme.css'
 
@@ -38,6 +39,7 @@ app.config.errorHandler = (err, _instance, info) => {
 
 // 注册全局 ErrorBoundary 组件
 app.component('ErrorBoundary', ErrorBoundary)
+app.directive('permission', vPermission)
 
 // 初始化主题（需要在 pinia 安装之后调用）
 useThemeStore().initTheme()

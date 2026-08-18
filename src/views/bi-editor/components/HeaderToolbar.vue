@@ -7,7 +7,13 @@
         <span class="logo-text">BI 编辑器</span>
       </div>
       <el-divider direction="vertical" />
-      <span class="file-name">未命名报表</span>
+      <el-input
+        v-model="store.dashboardName"
+        class="file-name-input"
+        size="small"
+        :placeholder="'未命名报表'"
+      />
+      <span v-if="store.isDirty" class="dirty-dot" title="有未保存的修改"></span>
     </div>
 
     <!-- 操作按钮组（中间） -->
@@ -143,7 +149,7 @@
         <el-icon><View /></el-icon>
         <span>预览</span>
       </el-button>
-      <el-button type="primary" @click="handleSave">
+      <el-button type="primary" :loading="store.isSaving" @click="handleSave">
         <el-icon><FolderChecked /></el-icon>
         <span>保存</span>
       </el-button>
@@ -153,6 +159,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import {
   DataAnalysis,
   RefreshLeft,
@@ -181,6 +189,8 @@ import {
 import { useBiEditorStore } from '@/stores/bi-editor'
 import { useCanvasZoom } from '@/views/bi-editor/composables/useCanvas'
 
+const route = useRoute()
+const router = useRouter()
 const store = useBiEditorStore()
 const { zoomOptions, zoomIn, zoomOut } = useCanvasZoom()
 
@@ -233,14 +243,30 @@ function handleResetViewport() {
 }
 
 // ========== 预览 / 保存 ==========
-function handlePreview() {
-  console.log('预览模式')
+async function handleSave() {
+  try {
+    await store.saveDashboard()
+    // 🔑 新建保存后 URL 还停留在 /bi-editor(无 id),用 replace 补上 id
+    //   这样刷新页面能正确加载刚创建的看板,而非进入新建态
+    if (route.params.id == null && store.currentDashboardId != null) {
+      router.replace(`/bi-editor/${store.currentDashboardId}`)
+    }
+  } catch {
+    // 错误提示由 request 拦截器统一处理,这里只需吞掉避免 unhandled rejection
+  }
 }
-function handleSave() {
-  console.log('保存数据', {
-    canvas: store.canvas,
-    components: store.components,
-  })
+
+function handlePreview() {
+  // 🔑 未保存的看板没有 id,无法预览,提示先保存
+  if (store.currentDashboardId == null) {
+    ElMessage.warning('请先保存看板后再预览')
+    return
+  }
+  // 🔑 有未保存改动时提示,但仍允许预览(用户可能想看当前编辑态 vs 已保存态)
+  if (store.isDirty) {
+    ElMessage.info('当前有未保存的修改,预览展示的是已保存版本')
+  }
+  router.push(`/preview/${store.currentDashboardId}`)
 }
 </script>
 
@@ -278,6 +304,36 @@ function handleSave() {
 .file-name {
   color: var(--bi-text-secondary, #9ca3af);
   font-size: 14px;
+}
+
+/* 🔑 文件名输入框:透明背景,聚焦时才显示边框,视觉上接近纯文本 */
+.file-name-input {
+  width: 180px;
+}
+
+.file-name-input :deep(.el-input__wrapper) {
+  background: transparent;
+  box-shadow: none;
+}
+
+.file-name-input :deep(.el-input__wrapper:hover),
+.file-name-input :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px var(--bi-border-color, #4b5563) inset;
+}
+
+.file-name-input :deep(.el-input__inner) {
+  color: var(--bi-text-primary, #f3f4f6);
+  font-size: 14px;
+}
+
+/* 🔑 脏状态圆点:有未保存改动时显示 */
+.dirty-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bi-accent, #409eff);
+  display: inline-block;
+  flex-shrink: 0;
 }
 
 .header-center {

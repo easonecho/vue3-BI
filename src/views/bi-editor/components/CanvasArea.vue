@@ -3,58 +3,59 @@
     ref="containerRef"
     class="canvas-container"
     :class="{
-      'pan-cursor': isSpacePressed || isMiddlePressed || isPanning,
-      'show-dots': store.canvas.showGrid,
+      'pan-cursor': !readonly && (isSpacePressed || isMiddlePressed || isPanning),
+      'show-dots': !readonly && store.canvas.showGrid,
+      'readonly-mode': readonly,
     }"
-    @wheel.capture="handleWheel"
-    @mousedown="handleContainerMouseDown"
+    @wheel.capture="readonly ? undefined : handleWheel"
+    @mousedown="readonly ? undefined : handleContainerMouseDown"
   >
     <div class="canvas-layout" :style="layoutStyle">
-      <div v-if="store.canvas.showRuler" class="ruler-corner" />
-      <div v-if="store.canvas.showRuler" ref="hGuidesRef" class="ruler-horizontal" />
-      <div v-if="store.canvas.showRuler" ref="vGuidesRef" class="ruler-vertical" />
+      <div v-if="!readonly && store.canvas.showRuler" class="ruler-corner" />
+      <div v-if="!readonly && store.canvas.showRuler" ref="hGuidesRef" class="ruler-horizontal" />
+      <div v-if="!readonly && store.canvas.showRuler" ref="vGuidesRef" class="ruler-vertical" />
 
       <div
         ref="viewportRef"
         class="canvas-viewport"
         :style="viewportStyle"
-        @click.self="store.selectComponent(null)"
-        @drop="handleDrop"
+        @click.self="readonly ? undefined : store.selectComponent(null)"
+        @drop="readonly ? undefined : handleDrop"
         @dragover.prevent
       >
         <div
           class="canvas-transform-layer"
           :style="transformLayerStyle"
-          @click.self="store.selectComponent(null)"
+          @click.self="readonly ? undefined : store.selectComponent(null)"
         >
           <div
             class="canvas-offset-layer"
             :style="offsetLayerStyle"
-            @click.self="store.selectComponent(null)"
+            @click.self="readonly ? undefined : store.selectComponent(null)"
           >
             <div
               ref="canvasSheetRef"
               class="canvas-sheet"
               :style="canvasSheetStyle"
-              @click.self="store.selectComponent(null)"
+              @click.self="readonly ? undefined : store.selectComponent(null)"
             >
-              <CanvasSnapLines :vertical="snapLines.vertical" :horizontal="snapLines.horizontal" />
+              <CanvasSnapLines v-if="!readonly" :vertical="snapLines.vertical" :horizontal="snapLines.horizontal" />
 
               <CanvasComponentItem
                 v-for="comp in store.components"
-                :key="comp.id"
+                :key="comp.id + '_' + store.refreshKey"
                 :comp="comp"
-                :selected-id="store.selectedId"
-                :resize-handles="resizeHandles"
-                :is-space-pressed="isSpacePressed"
-                :is-panning="isPanning"
-                @select="handleSelect"
-                @wrapper-mousedown="handleWrapperMouseDown"
-                @resize-start="handleResizeStart"
-                @vdr-dragging="handleVdrDragging"
-                @vdr-dragstop="handleVdrDragstop"
-                @vdr-activated="handleSelect"
-                @vdr-clicked="handleSelect"
+                :selected-id="readonly ? null : store.selectedId"
+                :resize-handles="readonly ? [] : resizeHandles"
+                :is-space-pressed="readonly ? false : isSpacePressed"
+                :is-panning="readonly ? false : isPanning"
+                @select="readonly ? undefined : handleSelect"
+                @wrapper-mousedown="readonly ? undefined : handleWrapperMouseDown"
+                @resize-start="readonly ? undefined : handleResizeStart"
+                @vdr-dragging="readonly ? undefined : handleVdrDragging"
+                @vdr-dragstop="readonly ? undefined : handleVdrDragstop"
+                @vdr-activated="readonly ? undefined : handleSelect"
+                @vdr-clicked="readonly ? undefined : handleSelect"
               />
             </div>
           </div>
@@ -62,12 +63,12 @@
       </div>
     </div>
 
-    <div v-if="store.components.length === 0" class="empty-canvas">
+    <div v-if="!readonly && store.components.length === 0" class="empty-canvas">
       <el-icon :size="64" color="#9ca3af"><Plus /></el-icon>
       <p>拖拽组件到画布，或点击左侧组件库添加</p>
     </div>
 
-    <div class="canvas-info-bar">
+    <div v-if="!readonly" class="canvas-info-bar">
       <span>画布: {{ store.canvas.width }} × {{ store.canvas.height }}</span>
       <el-divider direction="vertical" />
       <span>缩放: {{ Math.round(localScale * 100) }}%</span>
@@ -100,11 +101,15 @@ import { useSmartGuides } from '@/views/bi-editor/composables/useSmartGuides'
 import { useRulerGuides } from '@/views/bi-editor/composables/useRulerGuides'
 import { useCanvasInteraction } from '@/views/bi-editor/composables/useCanvasInteraction'
 
+const props = withDefaults(defineProps<{ readonly?: boolean }>(), { readonly: false })
+
 const emit = defineEmits<{
   (e: 'select-component', id: string | null): void
 }>()
 
 const store = useBiEditorStore()
+// readonly prop 在模板中直接访问,无需 script 内解构
+void props
 
 // ========== Smart Guides ==========
 const { snapLines, clearSnapLines, applySnapLines, snapRectToGuides } = useSmartGuides()

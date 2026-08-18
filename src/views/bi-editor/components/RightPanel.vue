@@ -201,13 +201,91 @@
         <el-tab-pane label="数据" name="data">
           <div v-if="store.selectedComponent" class="data-section">
             <div v-if="currentDefinition?.supportsDataBinding" class="section">
+              <!-- 数据集选择器 -->
               <div class="section-title">数据源</div>
               <div class="form-item">
-                <el-button size="small" @click="mockLoadData">模拟加载数据</el-button>
+                <label>数据集</label>
+                <el-select
+                  :model-value="store.selectedComponent.dataSource.datasetId"
+                  placeholder="请选择数据集"
+                  filterable
+                  clearable
+                  :loading="datasetListLoading"
+                  @visible-change="handleDatasetSelectVisible"
+                  @update:model-value="handleDatasetChange"
+                >
+                  <el-option
+                    v-for="item in datasetList"
+                    :key="item.id"
+                    :label="item.name"
+                    :value="item.id"
+                  />
+                </el-select>
               </div>
-              <div class="form-item">
-                <el-button size="small" @click="mockFetchData">从接口获取</el-button>
-              </div>
+
+              <!-- 字段映射(根据 dataBindingSchema 动态渲染) -->
+              <template v-if="store.selectedComponent.dataSource.datasetId">
+                <div v-if="dataBindingFields.length > 0" class="section-title" style="margin-top: 16px">
+                  字段映射
+                </div>
+                <div v-if="dataBindingFields.length === 0" class="form-item">
+                  <span class="placeholder-text" style="padding: 8px 0">
+                    表格组件自动展示数据集全部字段,无需手动映射
+                  </span>
+                </div>
+                <div
+                  v-for="field in dataBindingFields"
+                  :key="field.key"
+                  class="form-item"
+                >
+                  <label>{{ field.label }}</label>
+                  <el-select
+                    :model-value="getFieldMapping(field.key)"
+                    :placeholder="`选择${field.label}`"
+                    :multiple="field.multiple"
+                    clearable
+                    @update:model-value="(v: string | string[] | null) => handleFieldMappingChange(field.key, v)"
+                  >
+                    <el-option
+                      v-for="f in datasetFields"
+                      :key="f"
+                      :label="f"
+                      :value="f"
+                    />
+                  </el-select>
+                </div>
+              </template>
+
+              <!-- 数据预览 -->
+              <template v-if="store.selectedComponent.dataSource.datasetId">
+                <div class="section-title" style="margin-top: 16px">
+                  数据预览
+                  <span v-if="datasetLoading" class="loading-hint">加载中...</span>
+                </div>
+                <div class="data-preview">
+                  <el-table
+                    v-if="previewRows.length > 0"
+                    :data="previewRows"
+                    size="small"
+                    border
+                    max-height="200"
+                  >
+                    <el-table-column
+                      v-for="f in previewFields"
+                      :key="f"
+                      :prop="f"
+                      :label="f"
+                      min-width="100"
+                      show-overflow-tooltip
+                    />
+                  </el-table>
+                  <el-empty
+                    v-else-if="!datasetLoading"
+                    description="暂无数据"
+                    :image-size="40"
+                  />
+                </div>
+              </template>
             </div>
 
             <template v-else>
@@ -227,8 +305,11 @@ import { ref, computed, watch } from 'vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import { getDefinition } from '@/views/bi-editor/component-defs'
 import PropFieldRenderer from './PropFieldRenderer.vue'
-import type { PropField } from '@/views/bi-editor/component-defs/types'
+import type { PropField, DataBindingField } from '@/views/bi-editor/component-defs/types'
 import { ArrowLeft as Left, ArrowRight as Right } from '@element-plus/icons-vue'
+import { getDatasetList } from '@/api/dataset'
+import { useDatasetBinding } from '../composables/useDatasetBinding'
+import type { Dataset } from '@/api/types'
 
 const store = useBiEditorStore()
 const activeTab = ref('props')
@@ -316,13 +397,84 @@ function updateStyle(key: string, value: any) {
   }
 }
 
-function mockLoadData() {
-  console.log('模拟加载数据')
+// ====== 数据绑定面板逻辑 ======
+
+/** 数据集列表 */
+const datasetList = ref<Dataset[]>([])
+const datasetListLoading = ref(false)
+/** 已加载过列表标志(避免每次展开 select 都请求) */
+let datasetListLoaded = false
+
+async function loadDatasetList() {
+  if (datasetListLoaded) return
+  datasetListLoading.value = true
+  try {
+    const res = await getDatasetList({ page: 1, pageSize: 100 })
+    datasetList.value = res.data.list ?? []
+    datasetListLoaded = true
+  } finally {
+    datasetListLoading.value = false
+  }
 }
 
-function mockFetchData() {
-  console.log('从接口获取数据')
+/** 下拉展开时懒加载数据集列表 */
+function handleDatasetSelectVisible(visible: boolean) {
+  if (visible) loadDatasetList()
 }
+
+/** 当前组件的数据绑定字段 schema(从组件定义读取) */
+const dataBindingFields = computed<DataBindingField[]>(() => {
+  return currentDefinition.value?.dataBindingSchema ?? []
+})
+
+/** 当前组件绑定的数据集 dataSource ref(供 useDatasetBinding 取数) */
+const currentDataSource = computed(() => {
+  return store.selectedComponent?.dataSource ?? { datasetId: null }
+})
+
+/** RightPanel 自己也用 useDatasetBinding 取一份数据(用于字段映射下拉选项 + 数据预览)。
+ *   与 Widget 内部的 useDatasetBinding 共享模块级缓存,不会重复请求 */
+const {
+  rows: datasetRows,
+  fields: datasetFields,
+  loading: datasetLoading,
+} = useDatasetBinding(currentDataSource)
+
+/** 预览数据(前 5 行) */
+const previewRows = computed(() => datasetRows.value.slice(0, 5))
+const previewFields = computed(() => datasetFields.value)
+
+/** 切换数据集 */
+function handleDatasetChange(datasetId: number | null) {
+  if (!store.selectedId) return
+  store.updateComponent(store.selectedId, {
+    dataSource: { datasetId },
+    // 🔑 切换数据集时清空字段映射,避免旧字段名残留
+    dataConfig: {},
+  })
+}
+
+/** 读取字段映射值 */
+function getFieldMapping(key: string): string | string[] | undefined {
+  const config = store.selectedComponent?.dataConfig as Record<string, unknown> | undefined
+  return config?.[key] as string | string[] | undefined
+}
+
+/** 更新字段映射 */
+function handleFieldMappingChange(key: string, value: string | string[] | null) {
+  if (!store.selectedId || !store.selectedComponent) return
+  store.updateComponent(store.selectedId, {
+    dataConfig: { ...store.selectedComponent.dataConfig, [key]: value ?? undefined },
+  })
+}
+
+/** 切换组件时重置数据集列表加载标志(可选,这里不重置,复用已加载列表) */
+watch(
+  () => store.selectedId,
+  () => {
+    // 切换组件无需清缓存,useDatasetBinding 会自动按新 datasetId 取数
+  },
+)
 </script>
 
 <style scoped lang="less">
@@ -552,6 +704,44 @@ function mockFetchData() {
   color: var(--bi-text-muted, #6b7280);
   text-align: center;
   padding: 20px;
+}
+
+/* ===== 数据面板 ===== */
+.data-section .section {
+  margin-bottom: 16px;
+}
+
+.loading-hint {
+  font-size: 12px;
+  color: var(--bi-accent, #409eff);
+  margin-left: 8px;
+  font-weight: normal;
+}
+
+.data-preview {
+  margin-top: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+:deep(.data-preview .el-table) {
+  background: var(--bi-input-bg, #374151);
+  color: var(--bi-text-primary, #f3f4f6);
+  font-size: 12px;
+}
+
+:deep(.data-preview .el-table th.el-table__cell) {
+  background: var(--bi-panel-header-bg, #111827);
+  color: var(--bi-text-secondary, #9ca3af);
+  border-color: var(--bi-border-color, #374151);
+}
+
+:deep(.data-preview .el-table td.el-table__cell) {
+  border-color: var(--bi-border-color, #374151);
+}
+
+:deep(.data-preview .el-table__empty-text) {
+  color: var(--bi-text-muted, #6b7280);
 }
 
 :deep(.el-input__wrapper) {

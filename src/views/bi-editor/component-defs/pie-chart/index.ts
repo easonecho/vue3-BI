@@ -62,6 +62,10 @@ export const pieChartDefinition: ComponentDefinition = {
   },
   defaultStyle: {},
   supportsDataBinding: true,
+  dataBindingSchema: [
+    { key: 'nameField', label: '名称字段', type: 'name' },
+    { key: 'valueField', label: '数值字段', type: 'value' },
+  ],
 }
 
 export default pieChartDefinition

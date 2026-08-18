@@ -1,21 +1,32 @@
 /**
  * 数据导出模块 API
  */
-import { download, get } from '@/utils/request'
+import { download } from '@/utils/request'
+
+/** 导出参数 */
+export interface ExportParams {
+  limit?: number
+  filename?: string
+}
 
 /** 导出数据集为 CSV */
-export function exportDatasetCsv(id: number) {
-  return download(`/api/export/dataset/${id}/csv`)
+export function exportDatasetCsv(id: number, params?: ExportParams) {
+  return download(`/api/export/dataset/${id}/csv`, params)
 }
 
 /** 导出数据集为 JSON */
-export function exportDatasetJson(id: number) {
-  return download(`/api/export/dataset/${id}/json`)
+export function exportDatasetJson(id: number, params?: ExportParams) {
+  return download(`/api/export/dataset/${id}/json`, params)
 }
 
-/** 导出图表数据 */
-export function exportChartData(id: number) {
-  return get<Blob>(`/api/export/chart/${id}/data`, undefined, { responseType: 'blob' }).then((res) => res.data as unknown as Blob)
+/** 导出图表数据为 CSV */
+export function exportChartCsv(id: number, params?: ExportParams) {
+  return download(`/api/export/chart/${id}/csv`, params)
+}
+
+/** 导出图表数据为 JSON */
+export function exportChartJson(id: number, params?: ExportParams) {
+  return download(`/api/export/chart/${id}/json`, params)
 }
 
 /** 触发浏览器下载 */

@@ -44,6 +44,10 @@ export interface ComponentInstance {
   props: Record<string, any>
   /** 样式配置 */
   style: Record<string, any>
+  /** 🔑 数据绑定配置:数据集来源,为路线 B(executeDataset + 前端字段映射) */
+  dataSource: { datasetId: number | null }
+  /** 🔑 字段映射配置:不同图表类型所需字段槽位不同(如 bar: {categoryField, valueFields}) */
+  dataConfig: Record<string, unknown>
 }
 
 /** 组件元信息 (定义面板中展示的组件模板) */
@@ -100,4 +104,16 @@ export interface HistorySnapshot {
   canvas: CanvasState
   guides: GuideLine[]
   selectedId: string | null
+}
+
+/** 看板持久化结构(存入 Dashboard.layout) */
+export interface DashboardLayout {
+  /** 结构版本号,便于未来 schema 迁移 */
+  version: string
+  /** 画布状态 */
+  canvas: CanvasState
+  /** 组件实例列表 */
+  components: ComponentInstance[]
+  /** 辅助线列表 */
+  guides: GuideLine[]
 }

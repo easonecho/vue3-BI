@@ -3,19 +3,42 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
 import { deriveDefaultProps, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
+import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
+let initTimer: number | undefined
 
 let debounceTimer: number | null = null
 let pendingOption: ECOption | null = null
+
+// 🔑 数据绑定:有 datasetId 时走动态取数 + 字段映射,无则走静态兜底
+const dataSourceRef = computed(() => props.comp.dataSource)
+const { rows } = useDatasetBinding(dataSourceRef)
+
+/** 字段映射:把数据集行数据映射成折线图所需的 {categories, series} */
+const mappedData = computed(() => {
+  if (!props.comp.dataSource.datasetId || rows.value.length === 0) return null
+  const { categoryField, valueFields } = (props.comp.dataConfig ?? {}) as {
+    categoryField?: string
+    valueFields?: string[]
+  }
+  if (!categoryField || !valueFields?.length) return null
+  return {
+    categories: rows.value.map((r) => String(r[categoryField] ?? '')),
+    series: valueFields.map((f) => ({
+      name: f,
+      data: rows.value.map((r) => Number(r[f] ?? 0)),
+    })),
+  }
+})
 
 function debouncedSetOption(option: ECOption) {
   pendingOption = option
@@ -42,12 +65,14 @@ function getChartSpecificOption(): {
   const schemaDefaults = def ? deriveDefaultProps(def.propsSchema, def.extraDefaults) : {}
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const categories = Array.isArray(mergedProps.categories)
-    ? mergedProps.categories
-    : ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-  const seriesData = Array.isArray(mergedProps.series)
-    ? mergedProps.series
-    : [{ name: '数据', data: [120, 200, 150, 80, 70, 110, 130] }]
+  const categories = mappedData.value?.categories
+    ?? (Array.isArray(mergedProps.categories)
+      ? mergedProps.categories
+      : ['周一', '周二', '周三', '周四', '周五', '周六', '周日'])
+  const seriesData = mappedData.value?.series
+    ?? (Array.isArray(mergedProps.series)
+      ? mergedProps.series
+      : [{ name: '数据', data: [120, 200, 150, 80, 70, 110, 130] }])
   const smooth = !!mergedProps.smooth // schema default: true
   const showArea = !!mergedProps.area
   const pointSize = Number(mergedProps.pointSize)
@@ -122,14 +147,21 @@ function applyChartOption() {
 }
 
 onMounted(async () => {
-  setTimeout(applyChartOption, 50)
+  initTimer = window.setTimeout(applyChartOption, 50)
 })
 
 watch(
-  () => props.comp.props,
+  [() => props.comp.props, rows, () => props.comp.dataConfig],
   () => {
     applyChartOption()
   },
   { deep: true },
 )
+
+// 清理定时器, 防止内存泄漏
+onUnmounted(() => {
+  if (initTimer) clearTimeout(initTimer)
+  if (debounceTimer !== null) cancelAnimationFrame(debounceTimer)
+})
+
 </script>
