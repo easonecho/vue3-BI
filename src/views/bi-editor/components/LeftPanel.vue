@@ -46,13 +46,32 @@
 
         <!-- 图层 -->
         <el-tab-pane label="图层" name="layers">
+          <!-- 🔑 图层搜索：按名称模糊过滤（不区分大小写） -->
+          <div class="layer-toolbar">
+            <el-input
+              v-model="layerKeyword"
+              size="small"
+              clearable
+              placeholder="搜索图层名称…"
+              :prefix-icon="Search"
+            />
+            <div class="layer-toolbar__count" v-if="layerKeyword">
+              {{ filteredLayerList.length }} / {{ store.layerList.length }}
+            </div>
+          </div>
           <div class="layer-list">
             <div
-              v-for="layer in store.layerList"
+              v-for="layer in filteredLayerList"
               :key="layer.id"
               class="layer-item"
-              :class="{ active: layer.id === store.selectedId }"
-              @click="store.selectComponent(layer.id)"
+              :class="{
+                active: layer.id === store.selectedId,
+                'multi-selected': store.selectedIdSet.has(layer.id),
+                hidden: !layer.visible,
+              }"
+              @click="onLayerClick($event, layer)"
+              @dblclick.stop="startRename(layer)"
+              @contextmenu.prevent="onLayerContextMenu($event, layer)"
             >
               <div class="layer-thumb">
                 <div
@@ -63,9 +82,21 @@
                 </div>
               </div>
               <div class="layer-info">
-                <span class="layer-name" :class="{ hidden: !layer.visible }">
+                <el-input
+                  v-if="renamingId === layer.id"
+                  ref="renameInputRef"
+                  v-model="renameDraft"
+                  size="small"
+                  class="layer-name-input"
+                  @click.stop
+                  @blur="commitRename(layer)"
+                  @keyup.enter="commitRename(layer)"
+                  @keyup.esc="cancelRename"
+                />
+                <span v-else class="layer-name" :class="{ hidden: !layer.visible }">
                   {{ layer.name }}
                 </span>
+                <div v-if="layer.groupId" class="layer-tag">组</div>
               </div>
               <div class="layer-actions">
                 <el-tooltip :content="layer.visible ? '隐藏' : '显示'" placement="top">
@@ -95,6 +126,8 @@
               :image-size="80"
             />
           </div>
+          <!-- 🔑 图层右键菜单（与画布/组件右键复用 ContextMenu.vue） -->
+          <LayerContextMenu ref="layerCtxRef" />
         </el-tab-pane>
       </el-tabs>
     </div>
@@ -114,8 +147,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, markRaw, watch } from 'vue'
+import { ref, markRaw, watch, nextTick, computed } from 'vue'
+import type { ComponentInstance } from '@/views/bi-editor/types'
+import {
+  DocumentCopy,
+  Scissor,
+  Delete,
+  CopyDocument,
+  Top,
+  Bottom,
+  Upload,
+  Promotion,
+  Hide as HideIcon,
+  Lock as LockIcon,
+  Setting,
+  Edit,
+  Search,
+} from '@element-plus/icons-vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
+import ContextMenu from './ContextMenu.vue'
+import type { ContextMenuGroups } from './ContextMenu.vue'
 import {
   CATEGORY_GROUPS,
   CATEGORY_LABELS,
@@ -123,7 +174,7 @@ import {
   getDefinition,
 } from '@/views/bi-editor/component-defs'
 import { COMPONENT_META, getMeta } from '@/stores/bi-editor/metadata'
-import type { ComponentMeta, ComponentCategory, ComponentInstance } from '@/views/bi-editor/types'
+import type { ComponentMeta, ComponentCategory } from '@/views/bi-editor/types'
 import ComponentRenderer from './ComponentRenderer.vue'
 import { preloadComponent } from '@/views/bi-editor/component-defs/registry'
 import {
@@ -142,8 +193,8 @@ import {
   Hide,
   Lock,
   Unlock,
-  ArrowRight as Left,
-  ArrowLeft as Right,
+  ArrowLeft as Left,
+  ArrowRight as Right,
 } from '@element-plus/icons-vue'
 import type { Component as VComponent } from 'vue'
 
@@ -174,6 +225,187 @@ const emit = defineEmits<{
 
 const store = useBiEditorStore()
 const activeTab = ref('components')
+
+/** 🔑 图层搜索：按名称模糊过滤（不区分大小写），关键词为空时与 store.layerList 一致 */
+const layerKeyword = ref('')
+const filteredLayerList = computed(() => {
+  const kw = layerKeyword.value.trim().toLowerCase()
+  if (!kw) return store.layerList
+  return store.layerList.filter((l) => l.name.toLowerCase().includes(kw))
+})
+
+// ========== 🔑 图层列表交互 ==========
+/** 图层右键菜单（ContextMenu 别名） */
+const LayerContextMenu = ContextMenu
+const layerCtxRef = ref<InstanceType<typeof ContextMenu> | null>(null)
+
+/** 图层点击：支持 Shift+Click（范围选中）、Ctrl/Cmd+Click（切换选择） */
+function onLayerClick(e: MouseEvent, layer: ComponentInstance) {
+  const isMultiModifier = e.shiftKey || e.ctrlKey || e.metaKey
+  if (!isMultiModifier) {
+    store.selectComponent(layer.id)
+    return
+  }
+  // Ctrl: 切换单个；Shift: 范围选中（从最后主选中项到当前项中间全部选中）
+  if (e.ctrlKey || e.metaKey) {
+    store.selectComponentAccum(layer.id, true)
+    return
+  }
+  // Shift+Click：按 store.layerList 的顺序，将 selectedId (主选) 与 layer.id 之间的所有组件一并选中
+  if (e.shiftKey) {
+    const order = store.layerList.map((l) => l.id)
+    const fromIdx = order.indexOf(store.selectedId || layer.id)
+    const toIdx = order.indexOf(layer.id)
+    const [a, b] = fromIdx < toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx]
+    store.clearSelection()
+    for (let i = a; i <= b; i++) {
+      store.selectComponentAccum(order[i], false)
+    }
+    store.selectComponentAccum(layer.id, false)
+  }
+}
+
+/** 🔑 双击重命名 */
+const renamingId = ref<string | null>(null)
+const renameDraft = ref('')
+const renameInputRef = ref<any>(null)
+function startRename(layer: ComponentInstance) {
+  renamingId.value = layer.id
+  renameDraft.value = layer.name
+  nextTick(() => {
+    renameInputRef.value?.focus?.()
+    renameInputRef.value?.select?.()
+  })
+}
+function commitRename(layer: ComponentInstance) {
+  if (renamingId.value !== layer.id) return
+  const newName = renameDraft.value.trim()
+  if (newName && newName !== layer.name) {
+    store.updateComponent(layer.id, { name: newName })
+  }
+  renamingId.value = null
+}
+function cancelRename() {
+  renamingId.value = null
+}
+
+/** 🔑 图层右键菜单：与画布组件右键一致 */
+function onLayerContextMenu(e: MouseEvent, layer: ComponentInstance) {
+  if (!layerCtxRef.value) return
+  // 右键若不在选中集合内，则先单选目标组件
+  if (!store.selectedIdSet.has(layer.id)) {
+    store.selectComponent(layer.id)
+  }
+  const comp = store.selectedComponent
+  const groups: ContextMenuGroups = [
+    [
+      {
+        label: '重命名',
+        icon: Edit,
+        shortcut: '双击图层',
+        disabled: !store.selectedId,
+        action: () => comp && startRename(comp),
+      },
+      { divider: true },
+      {
+        label: '剪切',
+        icon: Scissor,
+        shortcut: 'Ctrl+X',
+        action: () => {
+          store.copyToClipboard()
+          if (store.selectedId) {
+            store.removeComponent(store.selectedId)
+            store.clearSelection()
+          }
+        },
+      },
+      {
+        label: '复制',
+        icon: DocumentCopy,
+        shortcut: 'Ctrl+C',
+        action: () => store.copyToClipboard(),
+      },
+      {
+        label: '复制此组件',
+        icon: CopyDocument,
+        shortcut: 'Ctrl+D',
+        disabled: !store.selectedId,
+        action: () => store.selectedId && store.duplicateComponent(store.selectedId),
+      },
+      {
+        label: '删除',
+        icon: Delete,
+        shortcut: 'Delete',
+        danger: true,
+        disabled: !store.selectedId,
+        action: () => {
+          const ids =
+            store.selectedIds.length > 0
+              ? [...store.selectedIds]
+              : store.selectedId
+                ? [store.selectedId]
+                : []
+          ids.forEach((id) => store.removeComponent(id))
+          store.clearSelection()
+        },
+      },
+    ],
+    [
+      {
+        label: '图层置顶',
+        icon: Top,
+        disabled: !store.selectedId,
+        action: () => store.selectedId && store.bringToFront(store.selectedId),
+      },
+      {
+        label: '图层上移',
+        icon: Promotion,
+        disabled: !store.selectedId,
+        action: () => store.selectedId && store.moveUp(store.selectedId),
+      },
+      {
+        label: '图层下移',
+        icon: Upload,
+        disabled: !store.selectedId,
+        action: () => store.selectedId && store.moveDown(store.selectedId),
+      },
+      {
+        label: '图层置底',
+        icon: Bottom,
+        disabled: !store.selectedId,
+        action: () => store.selectedId && store.sendToBack(store.selectedId),
+      },
+      { divider: true },
+      {
+        label: '组合',
+        icon: Setting,
+        disabled: !store.canGroup,
+        action: () => store.groupSelection(),
+      },
+      {
+        label: '取消组合',
+        icon: Setting,
+        disabled: !store.canUngroup,
+        action: () => store.ungroupSelection(),
+      },
+    ],
+    [
+      {
+        label: comp?.visible ? '隐藏组件' : '显示组件',
+        icon: HideIcon,
+        disabled: !store.selectedId,
+        action: () => store.selectedId && store.toggleVisibility(store.selectedId),
+      },
+      {
+        label: comp?.locked ? '解锁组件' : '锁定组件',
+        icon: LockIcon,
+        disabled: !store.selectedId,
+        action: () => store.selectedId && store.toggleLock(store.selectedId),
+      },
+    ],
+  ]
+  layerCtxRef.value.show(e.clientX, e.clientY, groups)
+}
 
 /** 侧边栏整体是否收起 */
 const collapsed = ref(false)
@@ -344,6 +576,10 @@ function getLayerIcon(type: string): VComponent {
   display: flex;
   flex-direction: column;
   min-height: 0; /* 🔑 子元素使用 overflow 滚动时，父 flex item 必须限制最小高度 */
+}
+
+:deep(.el-tabs__nav-wrap) {
+  padding-left: 20px;
 }
 
 :deep(.el-tabs__header) {
@@ -523,7 +759,25 @@ function getLayerIcon(type: string): VComponent {
   padding: 0 2px;
 }
 
-/* ===== 图层列表 ===== */
+/* ===== 图层搜索 & 列表 ===== */
+.layer-toolbar {
+  margin: 4px 8px 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  :deep(.el-input__wrapper) {
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  }
+  :deep(.el-input__inner) {
+    color: var(--bi-text-primary, #f3f4f6);
+  }
+  &__count {
+    font-size: 12px;
+    color: var(--bi-text-muted, #9ca3af);
+    white-space: nowrap;
+  }
+}
 .layer-list {
   padding: 8px;
   display: flex;
@@ -543,6 +797,7 @@ function getLayerIcon(type: string): VComponent {
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
+  position: relative;
 
   &:hover {
     background: var(--bi-layer-hover-bg, #4b5563);
@@ -551,6 +806,23 @@ function getLayerIcon(type: string): VComponent {
   &.active {
     background: var(--bi-layer-active-bg, rgba(30, 64, 175, 0.55));
     border-color: var(--bi-accent, #409eff);
+  }
+  /* 🔑 多选的非主选成员：加左色条指示 + 浅色背景 */
+  &.multi-selected {
+    background: rgba(64, 158, 255, 0.18);
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 6px;
+      bottom: 6px;
+      width: 3px;
+      border-radius: 2px;
+      background: var(--bi-accent, #409eff);
+    }
+  }
+  &.hidden .layer-thumb__inner {
+    filter: grayscale(1) opacity(0.5);
   }
 }
 
@@ -596,6 +868,31 @@ function getLayerIcon(type: string): VComponent {
 .layer-name.hidden {
   text-decoration: line-through;
   opacity: 0.5;
+}
+
+.layer-tag {
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: #fff;
+  background: #8b5cf6;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.layer-name-input {
+  width: 100%;
+  :deep(.el-input__wrapper) {
+    padding: 2px 6px;
+    box-shadow: 0 0 0 1px var(--bi-accent, #409eff) inset;
+    background: rgba(30, 64, 175, 0.25);
+  }
+  :deep(.el-input__inner) {
+    color: var(--bi-text-primary, #f3f4f6);
+    font-size: 13px;
+    height: 24px;
+  }
 }
 
 .layer-actions {

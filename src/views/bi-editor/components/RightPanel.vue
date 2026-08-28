@@ -115,6 +115,82 @@
                 </div>
               </el-collapse-item>
 
+              <!-- 🔑 分组 / 取消分组 -->
+              <el-collapse-item name="group">
+                <template #title>
+                  <span class="collapse-title">分组</span>
+                </template>
+                <div class="group-actions">
+                  <el-button
+                    size="small"
+                    type="primary"
+                    plain
+                    :disabled="!store.canGroup"
+                    @click="store.groupSelection()"
+                  >
+                    组合 (Group)
+                  </el-button>
+                  <el-button
+                    size="small"
+                    :disabled="!store.canUngroup"
+                    @click="store.ungroupSelection()"
+                  >
+                    取消组合 (Ungroup)
+                  </el-button>
+                </div>
+                <div class="group-hint" v-if="store.selectedComponent?.groupId">
+                  主选组件已归属到分组
+                </div>
+              </el-collapse-item>
+
+              <!-- 🔑 对齐 / 分布 -->
+              <el-collapse-item name="align">
+                <template #title>
+                  <span class="collapse-title">对齐 &amp; 分布</span>
+                </template>
+                <div class="align-section">
+                  <div class="align-label">水平对齐</div>
+                  <div class="align-row">
+                    <el-button size="small" @click="store.alignLeft()" :disabled="!canAlign"
+                      >左对齐</el-button
+                    >
+                    <el-button size="small" @click="store.alignHCenter()" :disabled="!canAlign"
+                      >水平居中</el-button
+                    >
+                    <el-button size="small" @click="store.alignRight()" :disabled="!canAlign"
+                      >右对齐</el-button
+                    >
+                  </div>
+                  <div class="align-label">垂直对齐</div>
+                  <div class="align-row">
+                    <el-button size="small" @click="store.alignTop()" :disabled="!canAlign"
+                      >顶对齐</el-button
+                    >
+                    <el-button size="small" @click="store.alignVCenter()" :disabled="!canAlignMulti"
+                      >垂直居中</el-button
+                    >
+                    <el-button size="small" @click="store.alignBottom()" :disabled="!canAlignMulti"
+                      >底对齐</el-button
+                    >
+                  </div>
+                  <div class="align-label">等距分布（≥3 个组件）</div>
+                  <div class="align-row">
+                    <el-button
+                      size="small"
+                      @click="store.distributeHorizontal()"
+                      :disabled="!canDistribute"
+                      >水平分布</el-button
+                    >
+                    <el-button
+                      size="small"
+                      @click="store.distributeVertical()"
+                      :disabled="!canDistribute"
+                      >垂直分布</el-button
+                    >
+                  </div>
+                </div>
+              </el-collapse-item>
+
               <!-- 状态控制 -->
               <el-collapse-item name="state">
                 <template #title>
@@ -166,6 +242,130 @@
             </div>
           </div>
 
+          <!-- 🔑 多选批量修改面板：选中 >1 个组件时显示此精简模式（批量状态/样式/分组） -->
+          <div v-else-if="hasMultiSelection" class="props-section multi-edit">
+            <div class="multi-summary">
+              已选择 <b>{{ multiSelectedIds.length }}</b> 个组件
+            </div>
+            <el-collapse v-model="multiActiveSections">
+              <!-- 批量状态：可见/锁定 -->
+              <el-collapse-item name="state">
+                <template #title><span class="collapse-title">批量状态</span></template>
+                <div class="form-item">
+                  <div class="form-check">
+                    <el-checkbox
+                      :model-value="sharedState.visible"
+                      :indeterminate="sharedState.visibleMixed"
+                      @update:model-value="(v: boolean) => batchSetField('visible', v)"
+                      >可见</el-checkbox
+                    >
+                  </div>
+                  <div class="form-check">
+                    <el-checkbox
+                      :model-value="sharedState.locked"
+                      :indeterminate="sharedState.lockedMixed"
+                      @update:model-value="(v: boolean) => batchSetField('locked', v)"
+                      >锁定</el-checkbox
+                    >
+                  </div>
+                </div>
+              </el-collapse-item>
+
+              <!-- 🔑 分组 / 取消分组 -->
+              <el-collapse-item name="group">
+                <template #title><span class="collapse-title">分组</span></template>
+                <div class="group-actions">
+                  <el-button
+                    size="small"
+                    type="primary"
+                    plain
+                    :disabled="!store.canGroup"
+                    @click="store.groupSelection()"
+                  >
+                    组合 (Group)
+                  </el-button>
+                  <el-button
+                    size="small"
+                    :disabled="!store.canUngroup"
+                    @click="store.ungroupSelection()"
+                  >
+                    取消组合 (Ungroup)
+                  </el-button>
+                </div>
+              </el-collapse-item>
+
+              <!-- 批量对齐 / 分布 -->
+              <el-collapse-item name="align">
+                <template #title><span class="collapse-title">对齐 &amp; 分布</span></template>
+                <div class="align-section">
+                  <div class="align-label">水平对齐</div>
+                  <div class="align-row">
+                    <el-button size="small" @click="store.alignLeft()" :disabled="!canAlign"
+                      >左对齐</el-button
+                    >
+                    <el-button size="small" @click="store.alignHCenter()" :disabled="!canAlign"
+                      >水平居中</el-button
+                    >
+                    <el-button size="small" @click="store.alignRight()" :disabled="!canAlign"
+                      >右对齐</el-button
+                    >
+                  </div>
+                  <div class="align-label">垂直对齐</div>
+                  <div class="align-row">
+                    <el-button size="small" @click="store.alignTop()" :disabled="!canAlign"
+                      >顶对齐</el-button
+                    >
+                    <el-button size="small" @click="store.alignVCenter()" :disabled="!canAlignMulti"
+                      >垂直居中</el-button
+                    >
+                    <el-button size="small" @click="store.alignBottom()" :disabled="!canAlignMulti"
+                      >底对齐</el-button
+                    >
+                  </div>
+                  <div class="align-label">等距分布（≥3 个组件）</div>
+                  <div class="align-row">
+                    <el-button
+                      size="small"
+                      @click="store.distributeHorizontal()"
+                      :disabled="!canDistribute"
+                      >水平分布</el-button
+                    >
+                    <el-button
+                      size="small"
+                      @click="store.distributeVertical()"
+                      :disabled="!canDistribute"
+                      >垂直分布</el-button
+                    >
+                  </div>
+                </div>
+              </el-collapse-item>
+
+              <!-- 批量基础样式：背景色 / 圆角 -->
+              <el-collapse-item name="style">
+                <template #title><span class="collapse-title">批量样式</span></template>
+                <div class="form-item">
+                  <label>背景色</label>
+                  <el-color-picker
+                    :model-value="sharedStyle.backgroundColor"
+                    @update:model-value="(v: string) => batchSetStyle('backgroundColor', v)"
+                  />
+                  <div v-if="sharedStyle.mixedBg" class="mixed-hint">选中组件背景色不一致</div>
+                </div>
+                <div class="form-item">
+                  <label>边框圆角</label>
+                  <el-input-number
+                    :model-value="sharedStyle.borderRadius"
+                    :min="0"
+                    :max="50"
+                    @update:model-value="(v: number) => batchSetStyle('borderRadius', v)"
+                  />
+                  <div v-if="sharedStyle.mixedRadius" class="mixed-hint">选中组件圆角不一致</div>
+                </div>
+              </el-collapse-item>
+            </el-collapse>
+            <div class="multi-tip">提示：点击画布任意组件可退出多选模式查看单组件完整属性面板</div>
+          </div>
+
           <!-- 未选中状态 -->
           <el-empty v-else description="请选择组件查看属性" :image-size="100" />
         </el-tab-pane>
@@ -178,14 +378,14 @@
               <div class="form-item">
                 <label>背景色</label>
                 <el-color-picker
-                  :model-value="store.selectedComponent.style.backgroundColor || '#ffffff'"
+                  :model-value="store.selectedComponent.style?.backgroundColor || '#ffffff'"
                   @update:model-value="(v: string) => updateStyle('backgroundColor', v)"
                 />
               </div>
               <div class="form-item">
                 <label>边框圆角</label>
                 <el-input-number
-                  :model-value="store.selectedComponent.style.borderRadius || 0"
+                  :model-value="store.selectedComponent.style?.borderRadius || 0"
                   :min="0"
                   :max="50"
                   @update:model-value="(v: number) => updateStyle('borderRadius', v)"
@@ -225,7 +425,11 @@
 
               <!-- 字段映射(根据 dataBindingSchema 动态渲染) -->
               <template v-if="store.selectedComponent.dataSource.datasetId">
-                <div v-if="dataBindingFields.length > 0" class="section-title" style="margin-top: 16px">
+                <div
+                  v-if="dataBindingFields.length > 0"
+                  class="section-title"
+                  style="margin-top: 16px"
+                >
                   字段映射
                 </div>
                 <div v-if="dataBindingFields.length === 0" class="form-item">
@@ -233,25 +437,18 @@
                     表格组件自动展示数据集全部字段,无需手动映射
                   </span>
                 </div>
-                <div
-                  v-for="field in dataBindingFields"
-                  :key="field.key"
-                  class="form-item"
-                >
+                <div v-for="field in dataBindingFields" :key="field.key" class="form-item">
                   <label>{{ field.label }}</label>
                   <el-select
                     :model-value="getFieldMapping(field.key)"
                     :placeholder="`选择${field.label}`"
                     :multiple="field.multiple"
                     clearable
-                    @update:model-value="(v: string | string[] | null) => handleFieldMappingChange(field.key, v)"
+                    @update:model-value="
+                      (v: string | string[] | null) => handleFieldMappingChange(field.key, v)
+                    "
                   >
-                    <el-option
-                      v-for="f in datasetFields"
-                      :key="f"
-                      :label="f"
-                      :value="f"
-                    />
+                    <el-option v-for="f in datasetFields" :key="f" :label="f" :value="f" />
                   </el-select>
                 </div>
               </template>
@@ -279,11 +476,7 @@
                       show-overflow-tooltip
                     />
                   </el-table>
-                  <el-empty
-                    v-else-if="!datasetLoading"
-                    description="暂无数据"
-                    :image-size="40"
-                  />
+                  <el-empty v-else-if="!datasetLoading" description="暂无数据" :image-size="40" />
                 </div>
               </template>
             </div>
@@ -294,6 +487,136 @@
           </div>
 
           <el-empty v-else description="请选择组件配置数据" :image-size="100" />
+        </el-tab-pane>
+
+        <!-- 🔑 画布全局设置：背景/尺寸/网格/标尺 -->
+        <el-tab-pane label="画布" name="canvas">
+          <div class="canvas-settings">
+            <!-- 画布尺寸 -->
+            <div class="cs-section">
+              <div class="cs-section-head">
+                <span class="cs-section-title">画布尺寸</span>
+                <span class="cs-section-hint">宽 × 高 (px)</span>
+              </div>
+              <div class="cs-size-row">
+                <el-input-number
+                  :model-value="store.canvas.width"
+                  size="small"
+                  controls-position="right"
+                  :min="100"
+                  :max="10000"
+                  :step="10"
+                  class="cs-size-input"
+                  @update:model-value="(v: number) => updateCanvasField('width', v)"
+                />
+                <span class="cs-size-x">×</span>
+                <el-input-number
+                  :model-value="store.canvas.height"
+                  size="small"
+                  controls-position="right"
+                  :min="100"
+                  :max="10000"
+                  :step="10"
+                  class="cs-size-input"
+                  @update:model-value="(v: number) => updateCanvasField('height', v)"
+                />
+              </div>
+              <div class="cs-presets">
+                <button
+                  v-for="p in canvasPresets"
+                  :key="p.label"
+                  class="cs-preset"
+                  :class="{ active: store.canvas.width === p.w && store.canvas.height === p.h }"
+                  @click="applyCanvasPreset(p.w, p.h)"
+                >
+                  <span class="cs-preset-size">{{ p.w }}×{{ p.h }}</span>
+                  <span class="cs-preset-label">{{ p.label }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 画布外观 -->
+            <div class="cs-section">
+              <div class="cs-section-head">
+                <span class="cs-section-title">外观</span>
+              </div>
+              <div class="cs-field-row">
+                <label class="cs-field-label">背景色</label>
+                <div class="cs-field-control">
+                  <el-color-picker
+                    :model-value="store.canvas.backgroundColor || '#ffffff'"
+                    @update:model-value="(v: string) => updateCanvasField('backgroundColor', v)"
+                  />
+                </div>
+              </div>
+              <div class="cs-field-row cs-field-col">
+                <label class="cs-field-label">背景图</label>
+                <el-input
+                  :model-value="store.canvas.backgroundImage"
+                  size="small"
+                  placeholder="图片 URL，留空不使用"
+                  clearable
+                  @update:model-value="(v: string) => updateCanvasField('backgroundImage', v)"
+                />
+              </div>
+              <div class="cs-bg-preview" :style="canvasPreviewStyle">预览</div>
+            </div>
+
+            <!-- 视图 & 吸附 -->
+            <div class="cs-section">
+              <div class="cs-section-head">
+                <span class="cs-section-title">视图与吸附</span>
+              </div>
+              <div class="cs-toggles">
+                <div class="cs-toggle">
+                  <span class="cs-toggle-label">显示标尺</span>
+                  <el-switch
+                    :model-value="store.canvas.showRuler"
+                    size="small"
+                    @update:model-value="(v: boolean) => updateCanvasField('showRuler', v)"
+                  />
+                </div>
+                <div class="cs-toggle">
+                  <span class="cs-toggle-label">显示网格</span>
+                  <el-switch
+                    :model-value="store.canvas.showGrid"
+                    size="small"
+                    @update:model-value="(v: boolean) => updateCanvasField('showGrid', v)"
+                  />
+                </div>
+                <div class="cs-toggle">
+                  <span class="cs-toggle-label">网格吸附</span>
+                  <el-switch
+                    :model-value="store.canvas.snapToGrid"
+                    size="small"
+                    @update:model-value="(v: boolean) => updateCanvasField('snapToGrid', v)"
+                  />
+                </div>
+                <div class="cs-toggle">
+                  <span class="cs-toggle-label">辅助线</span>
+                  <el-switch
+                    :model-value="store.canvas.showGuides"
+                    size="small"
+                    @update:model-value="(v: boolean) => updateCanvasField('showGuides', v)"
+                  />
+                </div>
+              </div>
+              <div class="cs-field-row">
+                <label class="cs-field-label">网格大小</label>
+                <div class="cs-field-control">
+                  <el-input-number
+                    :model-value="store.canvas.gridSize"
+                    size="small"
+                    controls-position="right"
+                    :min="4"
+                    :max="100"
+                    :step="1"
+                    @update:model-value="(v: number) => updateCanvasField('gridSize', v)"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </el-tab-pane>
       </el-tabs>
     </div>
@@ -328,6 +651,124 @@ const currentDefinition = computed(() => {
   const type = store.selectedComponent?.type
   return type ? getDefinition(type) : undefined
 })
+
+/** 🔑 对齐 / 分布可用性判定
+ * canAlign：至少有 1 个组件（左/右/顶/底、水平居中对单选也生效，即贴画布）
+ * canAlignMulti：至少有 2 个组件（垂直居中/底对齐只支持多选集合）
+ * canDistribute：至少 3 个组件（等距分布的数学要求）
+ */
+const selectedCount = computed(() =>
+  store.selectedIds.length > 0 ? store.selectedIds.length : store.selectedId ? 1 : 0,
+)
+const canAlign = computed(() => selectedCount.value >= 1)
+const canAlignMulti = computed(() => selectedCount.value >= 2)
+const canDistribute = computed(() => selectedCount.value >= 3)
+
+// ========== 🔑 多选批量修改 ==========
+/** 多选面板：有 >1 个组件被选中（且主选仍然存在），显示批量修改面板 */
+const multiSelectedIds = computed<string[]>(() =>
+  store.selectedIds.length > 0 ? [...store.selectedIds] : [],
+)
+const hasMultiSelection = computed(
+  () => !store.selectedComponent && multiSelectedIds.value.length > 0,
+)
+const multiActiveSections = ref<string[]>(['state', 'group', 'align', 'style'])
+
+/** 批量：可见/锁定的「共同值 / 混合状态」 */
+const sharedState = computed(() => {
+  const comps = multiSelectedIds.value
+    .map((id) => store.components.find((c) => c.id === id))
+    .filter(Boolean) as any[]
+  if (comps.length === 0) {
+    return { visible: false, visibleMixed: false, locked: false, lockedMixed: false }
+  }
+  const firstV = comps[0].visible
+  const firstL = comps[0].locked
+  const visibleMixed = comps.some((c) => c.visible !== firstV)
+  const lockedMixed = comps.some((c) => c.locked !== firstL)
+  return {
+    visible: visibleMixed ? false : firstV,
+    visibleMixed,
+    locked: lockedMixed ? false : firstL,
+    lockedMixed,
+  }
+})
+
+/** 批量：基础样式的「共同值 / 混合状态」 */
+const sharedStyle = computed(() => {
+  const comps = multiSelectedIds.value
+    .map((id) => store.components.find((c) => c.id === id))
+    .filter(Boolean) as any[]
+  if (comps.length === 0) {
+    return {
+      backgroundColor: '' as string | undefined,
+      mixedBg: false,
+      borderRadius: 0,
+      mixedRadius: false,
+    }
+  }
+  const firstBg = comps[0].style?.backgroundColor
+  const firstR = comps[0].style?.borderRadius ?? 0
+  const mixedBg = comps.some((c) => (c.style?.backgroundColor || '') !== (firstBg || ''))
+  const mixedRadius = comps.some((c) => (c.style?.borderRadius ?? 0) !== firstR)
+  return {
+    backgroundColor: mixedBg ? undefined : (firstBg as string),
+    mixedBg,
+    borderRadius: mixedRadius ? undefined : (firstR as number),
+    mixedRadius,
+  }
+})
+
+/** 批量写入组件一级字段（visible / locked） */
+function batchSetField(field: 'visible' | 'locked', value: boolean) {
+  for (const id of multiSelectedIds.value) {
+    store.updateComponent(id, { [field]: value })
+  }
+}
+/** 批量写入组件 style 字段（backgroundColor / borderRadius） */
+function batchSetStyle(field: 'backgroundColor' | 'borderRadius', value: any) {
+  for (const id of multiSelectedIds.value) {
+    const comp = store.components.find((c) => c.id === id)
+    if (!comp) continue
+    store.updateComponent(id, {
+      style: { ...comp.style, [field]: value },
+    })
+  }
+}
+
+// ========== 🔑 画布全局设置（尺寸/背景/视图） ==========
+const canvasPresets = [
+  { w: 1920, h: 1080, label: 'Full HD' },
+  { w: 1600, h: 900, label: 'HD+' },
+  { w: 1440, h: 900, label: '笔记本' },
+  { w: 1366, h: 768, label: '标准' },
+  { w: 1280, h: 720, label: 'HD' },
+  { w: 1024, h: 768, label: '4:3' },
+]
+function updateCanvasField<K extends keyof (typeof store)['canvas']>(
+  key: K,
+  value: (typeof store)['canvas'][K],
+) {
+  store.updateCanvas({ [key]: value } as any)
+}
+function applyCanvasPreset(w: number, h: number) {
+  store.updateCanvas({ width: w, height: h })
+}
+const canvasPreviewStyle = computed(() => ({
+  background: store.canvas.backgroundColor || '#ffffff',
+  backgroundImage: store.canvas.backgroundImage ? `url(${store.canvas.backgroundImage})` : 'none',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  width: '100%',
+  height: '96px',
+  borderRadius: '6px',
+  border: '1px dashed rgba(255,255,255,0.2)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: store.canvas.backgroundColor ? '#9ca3af' : '#4b5563',
+  fontSize: '12px',
+}))
 
 /** 按 group 分组的字段列表（无 group 的归入"组件属性"默认组） */
 const fieldGroups = computed(() => {
@@ -554,6 +995,10 @@ watch(
   min-height: 0; /* 🔑 允许子元素真正溢出并触发滚动 */
 }
 
+:deep(.el-tabs__nav-wrap) {
+  padding-left: 20px;
+}
+
 :deep(.el-tabs__header) {
   margin: 0;
   background: var(--bi-panel-header-bg, #111827);
@@ -699,11 +1144,228 @@ watch(
   min-width: 50px;
 }
 
+/* 🔑 分组 */
+.group-actions {
+  display: flex;
+  gap: 8px;
+}
+:deep(.group-actions .el-button) {
+  flex: 1;
+  min-width: 0;
+}
+.group-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--bi-text-muted, #9ca3af);
+  padding: 6px 8px;
+  background: rgba(64, 158, 255, 0.08);
+  border-radius: 4px;
+  border: 1px dashed rgba(64, 158, 255, 0.4);
+}
+
+/* 🔑 对齐 / 分布工具条 */
+.align-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.align-label {
+  font-size: 12px;
+  color: var(--bi-text-muted, #9ca3af);
+  margin-top: 2px;
+}
+.align-row {
+  display: flex;
+  gap: 6px;
+}
+:deep(.align-row .el-button) {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 4px;
+  font-size: 12px;
+}
+
 .placeholder-text {
   font-size: 13px;
   color: var(--bi-text-muted, #6b7280);
   text-align: center;
   padding: 20px;
+}
+
+/* ===== 画布全局设置 ===== */
+.canvas-settings {
+  .cs-section {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--bi-border-color, #374151);
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+  .cs-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .cs-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--bi-text-primary, #f3f4f6);
+  }
+  .cs-section-hint {
+    font-size: 11px;
+    color: var(--bi-text-muted, #9ca3af);
+  }
+
+  /* 尺寸输入行 */
+  .cs-size-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .cs-size-input {
+      flex: 1;
+    }
+    .cs-size-x {
+      color: var(--bi-text-muted, #9ca3af);
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+  }
+
+  /* 预设尺寸网格 */
+  .cs-presets {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .cs-preset {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 4px;
+    border-radius: 6px;
+    background: var(--bi-component-bg, #1a1a1d);
+    border: 1px solid var(--bi-component-border, #2d2d33);
+    cursor: pointer;
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease;
+
+    &:hover {
+      border-color: var(--bi-border-accent, rgba(16, 185, 129, 0.3));
+      background: var(--bi-component-hover-bg, #26262b);
+    }
+    &.active {
+      border-color: var(--bi-accent, #10b981);
+      background: var(--bi-layer-active-bg, rgba(16, 185, 129, 0.12));
+
+      .cs-preset-size {
+        color: var(--bi-accent, #10b981);
+      }
+    }
+    .cs-preset-size {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--bi-text-primary, #f3f4f6);
+      font-variant-numeric: tabular-nums;
+    }
+    .cs-preset-label {
+      font-size: 10px;
+      color: var(--bi-text-muted, #9ca3af);
+    }
+  }
+
+  /* 行内字段 */
+  .cs-field-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+
+    &.cs-field-col {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+    }
+  }
+  .cs-field-label {
+    font-size: 12px;
+    color: var(--bi-text-secondary, #a1a1aa);
+    flex-shrink: 0;
+  }
+  .cs-field-control {
+    display: flex;
+    align-items: center;
+  }
+
+  /* 背景预览 */
+  .cs-bg-preview {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--bi-text-muted, #9ca3af);
+    border: 1px dashed var(--bi-border-color, #2d2d33);
+    border-radius: 6px;
+  }
+
+  /* 开关网格 */
+  .cs-toggles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 12px;
+    margin-bottom: 12px;
+  }
+  .cs-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: var(--bi-component-bg, #1a1a1d);
+    border: 1px solid var(--bi-component-border, #2d2d33);
+  }
+  .cs-toggle-label {
+    font-size: 12px;
+    color: var(--bi-text-secondary, #a1a1aa);
+  }
+}
+
+/* ===== 多选批量修改 ===== */
+.multi-edit {
+  .multi-summary {
+    padding: 12px 14px;
+    margin: 0 -4px 8px;
+    background: rgba(64, 158, 255, 0.12);
+    color: var(--bi-text-primary, #f3f4f6);
+    border-radius: 6px;
+    font-size: 13px;
+    b {
+      color: var(--bi-accent, #409eff);
+      font-size: 15px;
+      margin: 0 2px;
+    }
+  }
+  .mixed-hint {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--bi-text-muted, #9ca3af);
+  }
+  .multi-tip {
+    margin-top: 14px;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--bi-text-muted, #9ca3af);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 6px;
+  }
 }
 
 /* ===== 数据面板 ===== */

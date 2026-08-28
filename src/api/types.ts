@@ -56,18 +56,14 @@ export interface TokenPair {
   accessExpiresIn: number
 }
 
-/** 登录响应 */
+/** 登录响应 (仅 token + 用户信息; 路由/权限由 /api/menus/me/* 独立获取) */
 export interface LoginResult extends TokenPair {
-  user: User & { roleName?: string; permissions?: string | string[]; roleIds?: number[] }
-  routers?: unknown[]
-  perms?: string[]
+  user: User & { roleName?: string; roleIds?: number[] }
 }
 
-/** 刷新 token 响应 */
+/** 刷新 token 响应 (仅 token + 用户信息) */
 export interface RefreshResult extends TokenPair {
-  user: User & { roleName?: string; permissions?: string | string[]; roleIds?: number[] }
-  routers?: unknown[]
-  perms?: string[]
+  user: User & { roleName?: string; roleIds?: number[] }
 }
 
 /** 数据源 */
@@ -117,6 +113,8 @@ export interface DashboardTemplate {
   thumbnail?: string | null
   category?: string | null
   isPublic: boolean
+  /** 是否系统预置模板 (true=预置, false=用户创建) */
+  isSystem: boolean
   creatorId: number
   creator?: { id: number; username: string; nickname?: string | null } | null
   createdAt: string
@@ -129,6 +127,7 @@ export interface Dashboard {
   name: string
   description?: string
   layout?: Record<string, unknown>
+  thumbnail?: string | null
   status: number
   isPublic: boolean
   groupId?: number | null                  // P2-3: 所属分组

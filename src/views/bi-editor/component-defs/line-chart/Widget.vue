@@ -7,9 +7,9 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
-import { deriveDefaultProps, ECHARTS_DEFAULT_PALETTE } from '../types'
+import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
-import { useDatasetBinding } from '../../composables/useDatasetBinding'
+import { useDatasetBinding, useWorkerMappedData } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 const props = defineProps<{ comp: ComponentInstance }>()
@@ -17,37 +17,25 @@ const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 let initTimer: number | undefined
 
 let debounceTimer: number | null = null
-let pendingOption: ECOption | null = null
+let pendingBuilder: (() => ECOption) | null = null
 
 // 🔑 数据绑定:有 datasetId 时走动态取数 + 字段映射,无则走静态兜底
 const dataSourceRef = computed(() => props.comp.dataSource)
 const { rows } = useDatasetBinding(dataSourceRef)
 
-/** 字段映射:把数据集行数据映射成折线图所需的 {categories, series} */
-const mappedData = computed(() => {
-  if (!props.comp.dataSource.datasetId || rows.value.length === 0) return null
-  const { categoryField, valueFields } = (props.comp.dataConfig ?? {}) as {
-    categoryField?: string
-    valueFields?: string[]
-  }
-  if (!categoryField || !valueFields?.length) return null
-  return {
-    categories: rows.value.map((r) => String(r[categoryField] ?? '')),
-    series: valueFields.map((f) => ({
-      name: f,
-      data: rows.value.map((r) => Number(r[f] ?? 0)),
-    })),
-  }
-})
+// 🔑 Worker 数据集映射：大数据集（> 500 行）在 Worker 中计算，主线程零开销
+const categoryField = computed(() => (props.comp.dataConfig as any)?.categoryField as string | undefined)
+const valueFields = computed(() => (props.comp.dataConfig as any)?.valueFields as string[] | undefined)
+const mappedData = useWorkerMappedData(rows, categoryField, valueFields)
 
-function debouncedSetOption(option: ECOption) {
-  pendingOption = option
+function debouncedSetOption(builder: () => ECOption) {
+  pendingBuilder = builder
   if (debounceTimer !== null) return
   debounceTimer = window.requestAnimationFrame(() => {
     debounceTimer = null
-    if (pendingOption) {
-      baseChartRef.value?.setOption(pendingOption)
-      pendingOption = null
+    if (pendingBuilder) {
+      baseChartRef.value?.setOption(pendingBuilder())
+      pendingBuilder = null
     }
   })
 }
@@ -62,7 +50,7 @@ function getChartSpecificOption(): {
 } {
   // 🔑 合并默认值：schema defaults → actual props（保证特有字段如 smooth/pointSize 有默认值）
   const def = getDefinition(props.comp.type)
-  const schemaDefaults = def ? deriveDefaultProps(def.propsSchema, def.extraDefaults) : {}
+  const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
   const categories = mappedData.value?.categories
@@ -136,14 +124,15 @@ function getChartSpecificOption(): {
 }
 
 function applyChartOption() {
-  const baseOption = getBaseOption()
-  const { specificOption, mergedProps } = getChartSpecificOption()
-  const merged = applyUserChartConfig(baseOption, mergedProps, specificOption, {
-    hasAxes: true,
-    xAxisData: specificOption.xAxis ? (specificOption.xAxis as any).data : undefined,
-    fallbackTitle: '折线图',
+  debouncedSetOption(() => {
+    const baseOption = getBaseOption()
+    const { specificOption, mergedProps } = getChartSpecificOption()
+    return applyUserChartConfig(baseOption, mergedProps, specificOption, {
+      hasAxes: true,
+      xAxisData: specificOption.xAxis ? (specificOption.xAxis as any).data : undefined,
+      fallbackTitle: '折线图',
+    })
   })
-  debouncedSetOption(merged)
 }
 
 onMounted(async () => {
@@ -151,17 +140,24 @@ onMounted(async () => {
 })
 
 watch(
-  [() => props.comp.props, rows, () => props.comp.dataConfig],
+  // 🔑 性能优化：签名式 watch 替代 deep watch。
+  //   mappedData 加入 watch：Worker 异步返回后 mappedData 变化也触发重新渲染。
+  [
+    () => JSON.stringify(props.comp.props),
+    () => JSON.stringify(props.comp.dataConfig),
+    rows,
+    mappedData,
+  ],
   () => {
     applyChartOption()
   },
-  { deep: true },
 )
 
 // 清理定时器, 防止内存泄漏
 onUnmounted(() => {
   if (initTimer) clearTimeout(initTimer)
   if (debounceTimer !== null) cancelAnimationFrame(debounceTimer)
+  pendingBuilder = null
 })
 
 </script>

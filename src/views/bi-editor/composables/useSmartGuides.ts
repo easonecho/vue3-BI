@@ -28,18 +28,44 @@ export function useSmartGuides() {
     horizontal: number[]
   }>({ vertical: [], horizontal: [] })
 
+  /**
+   * 🔑 拖拽会话级缓存：同一次拖拽过程中，被排除的组件 ID 不变，其他组件位置不变，
+   *   所以吸附目标集合只需在首次调用时计算一次，后续 mousemove 直接复用缓存。
+   *   拖拽结束后（handleVdrDragstop）调用 resetSnapCache() 清除缓存。
+   */
+  let snapTargetCache: {
+    excludeId: string
+    targetsX: number[]
+    targetsY: number[]
+  } | null = null
+
+  /** 🔑 性能优化：RAF 批量更新吸附线，避免每次 mousemove 触发响应式更新 */
+  let snapRafId: number | null = null
+  let pendingSnapHits = { x: [] as number[], y: [] as number[] }
+
   /** Clear currently-displayed alignment snap lines */
   function clearSnapLines() {
+    // 🔑 取消 pending rAF，避免延迟更新覆盖清除
+    if (snapRafId !== null) {
+      cancelAnimationFrame(snapRafId)
+      snapRafId = null
+    }
+    pendingSnapHits = { x: [], y: [] }
     if (snapLines.vertical.length) snapLines.vertical.length = 0
     if (snapLines.horizontal.length) snapLines.horizontal.length = 0
   }
 
-  /** Convenience helper: replace snap line contents in one shot (from hits arrays). */
+  /** 🔑 RAF 批量更新：合并同一帧内的多次 mousemove 调用为一次响应式更新 */
   function applySnapLines(hitsX: number[], hitsY: number[]) {
-    snapLines.vertical.length = 0
-    snapLines.horizontal.length = 0
-    hitsX.forEach((x) => snapLines.vertical.push(x))
-    hitsY.forEach((y) => snapLines.horizontal.push(y))
+    pendingSnapHits = { x: hitsX, y: hitsY }
+    if (snapRafId !== null) return // 已有 pending rAF，只更新缓存
+    snapRafId = requestAnimationFrame(() => {
+      snapRafId = null
+      snapLines.vertical.length = 0
+      snapLines.horizontal.length = 0
+      pendingSnapHits.x.forEach((x) => snapLines.vertical.push(x))
+      pendingSnapHits.y.forEach((y) => snapLines.horizontal.push(y))
+    })
   }
 
   /** Extract the 6 alignment anchors of a rectangle in business-space (same as component x/y). */
@@ -58,8 +84,15 @@ export function useSmartGuides() {
    * Collect candidate target anchors:
    *  - Canvas sheet edges + center (vertical: x=0 / w/2 / w; horizontal: y=0 / h/2 / h)
    *  - All 6 anchors of every OTHER component (non-locked, visible) in the canvas.
+   *
+   * 🔑 性能优化：同一次拖拽中 excludeId 不变且其他组件位置不变，
+   *   首次计算后缓存结果，后续直接复用，避免每次 mousemove 都遍历全部组件。
    */
   function collectSnapTargets(excludeId: string) {
+    if (snapTargetCache && snapTargetCache.excludeId === excludeId) {
+      return snapTargetCache
+    }
+
     const xSet = new Set<number>()
     const ySet = new Set<number>()
     xSet.add(0)
@@ -78,7 +111,14 @@ export function useSmartGuides() {
       ySet.add(a.centerY)
       ySet.add(a.bottom)
     }
-    return { targetsX: [...xSet], targetsY: [...ySet] }
+    const result = { excludeId, targetsX: [...xSet], targetsY: [...ySet] }
+    snapTargetCache = result
+    return result
+  }
+
+  /** 🔑 重置吸附目标缓存：拖拽/拉伸结束后调用，确保下次拖拽使用最新组件位置 */
+  function resetSnapCache() {
+    snapTargetCache = null
   }
 
   /** Find the nearest target within SNAP_THRESHOLD of a source anchor. */
@@ -154,5 +194,6 @@ export function useSmartGuides() {
     clearSnapLines,
     applySnapLines,
     snapRectToGuides,
+    resetSnapCache,
   }
 }

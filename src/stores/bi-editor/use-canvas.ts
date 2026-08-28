@@ -12,6 +12,7 @@ export interface CanvasOperationsApi {
   updateCanvas: (updates: Partial<CanvasState>) => void
   setZoom: (zoom: number) => void
   addGuide: (guide: Omit<GuideLine, 'id'>) => void
+  removeGuide: (id: string) => void
   setGuides: (guides: GuideLine[]) => void
   /** 仅更新辅助线，不写入历史（用于拖拽过程中的实时刷新） */
   setGuidesSilent: (guides: GuideLine[]) => void
@@ -24,6 +25,8 @@ export function useCanvasOperations(
   canvas: Ref<CanvasState>,
   guides: Ref<GuideLine[]>,
   pushHistory: () => void,
+  /** 标记未保存改动（用于 setGuidesSilent 等不调用 pushHistory 的操作） */
+  markDirty: () => void,
 ) {
   function updateCanvas(updates: Partial<CanvasState>) {
     canvas.value = { ...canvas.value, ...updates }
@@ -40,6 +43,13 @@ export function useCanvasOperations(
     pushHistory()
   }
 
+  function removeGuide(id: string) {
+    const idx = guides.value.findIndex((g) => g.id === id)
+    if (idx < 0) return
+    guides.value.splice(idx, 1)
+    pushHistory()
+  }
+
   function setGuides(newGuides: GuideLine[]) {
     guides.value = [...newGuides]
     pushHistory()
@@ -47,6 +57,9 @@ export function useCanvasOperations(
 
   function setGuidesSilent(newGuides: GuideLine[]) {
     guides.value = [...newGuides]
+    // 🔑 setGuidesSilent 不调用 pushHistory（拖拽辅助线时高频调用），
+    //   但辅助线位置确实变了，需要标记未保存改动
+    markDirty()
   }
 
   function clearGuides() {
@@ -70,6 +83,7 @@ export function useCanvasOperations(
     updateCanvas,
     setZoom,
     addGuide,
+    removeGuide,
     setGuides,
     setGuidesSilent,
     clearGuides,

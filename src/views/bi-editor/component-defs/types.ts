@@ -212,6 +212,34 @@ export function deriveDefaultProps(
 }
 
 /**
+ * 🔑 性能优化:按 ComponentDefinition 引用缓存 deriveDefaultProps 结果。
+ *
+ *   schema defaults 是静态值(组件定义在运行时不变),但 9 个图表 Widget 的
+ *   getChartSpecificOption 每次构 option 都会调用 deriveDefaultProps 重新遍历 schema。
+ *   对于 50 个图表同时刷新数据触发 RAF option build,就是 50 次 schema 遍历/帧。
+ *
+ *   WeakMap 以 def 为 key,def 在 registry 中是稳定引用,缓存命中率高。
+ *   返回的是缓存对象的浅拷贝(与 deriveDefaultProps 行为一致),外部修改不影响缓存。
+ *
+ *   注意:此函数仅适用于"只读 schema defaults"的场景(如 Widget option 构建);
+ *   createComponent 路径仍走 deriveDefaultProps + buildInitialSeriesStyles,不使用此缓存。
+ */
+const deriveDefaultPropsCache = new WeakMap<
+  { propsSchema: PropField[]; extraDefaults?: Record<string, any> },
+  Record<string, any>
+>()
+export function deriveDefaultPropsCached(
+  def: { propsSchema: PropField[]; extraDefaults?: Record<string, any> } | undefined,
+): Record<string, any> {
+  if (!def) return {}
+  const cached = deriveDefaultPropsCache.get(def)
+  if (cached) return { ...cached }
+  const result = deriveDefaultProps(def.propsSchema, def.extraDefaults)
+  deriveDefaultPropsCache.set(def, result)
+  return { ...result }
+}
+
+/**
  * 🔑 从当前 props 中的真实数据（series / pieData）+ seriesStyles 的列定义，
  *   生成"每个数据项一行空样式"的初始 seriesStyles，保证 seriesStyles 与真实数据一一对应。
  *   规则：

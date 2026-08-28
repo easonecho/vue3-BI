@@ -41,7 +41,7 @@ app.config.errorHandler = (err, _instance, info) => {
 app.component('ErrorBoundary', ErrorBoundary)
 app.directive('permission', vPermission)
 
-// 初始化主题（需要在 pinia 安装之后调用）
-useThemeStore().initTheme()
+// 初始化主题（需要在 pinia 安装之后调用，触发 watch 立即应用主题）
+useThemeStore()
 
 app.mount('#app')

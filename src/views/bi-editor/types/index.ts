@@ -48,6 +48,27 @@ export interface ComponentInstance {
   dataSource: { datasetId: number | null }
   /** 🔑 字段映射配置:不同图表类型所需字段槽位不同(如 bar: {categoryField, valueFields}) */
   dataConfig: Record<string, unknown>
+  /**
+   * 🔑 分组 ID（扁平分组方案）：
+   *   - 多个组件拥有相同的 groupId 即视为同一组
+   *   - 选中任一组员 → 自动全组选中
+   *   - 拖动任一组员 → 其他组员按相同 delta 跟随移动
+   *   - 未分组 = undefined
+   */
+  groupId?: string
+  /**
+   * 🔑 分组容器名称（仅当此实例是"分组根"时存在；目前保留冗余，方便未来扩展容器节点）
+   */
+  groupName?: string
+  /**
+   * 🔑 分组框冻结尺寸（快照，以分组创建/最后一次明确重建时的包围盒为准）：
+   *   - 存在时：GroupBox 绘制用该固定 x/y/width/height，不再随组员对齐/分布而重算边界
+   *   - 不存在时（老数据 / 未分组）：退回实时包围盒计算（兼容旧项目）
+   *   ⚠️ x/y 是相对画布世界坐标的绝对位置，不是相对偏移
+   *   ⚠️ 分组整体拖拽时：所有组员 x/y + delta，本快照 x/y 也应同步 + delta，保证 GroupBox 跟随
+   *   ⚠️ 加/减组员 / 解散重分组时：重建快照（让框重新反映实际包含范围）
+   */
+  fixedGroupBox?: { x: number; y: number; width: number; height: number }
 }
 
 /** 组件元信息 (定义面板中展示的组件模板) */
@@ -104,6 +125,8 @@ export interface HistorySnapshot {
   canvas: CanvasState
   guides: GuideLine[]
   selectedId: string | null
+  /** 🔑 多选集合的快照：undo/redo 后正确恢复选中态，保持分布/对齐按钮可用性 */
+  selectedIds: string[]
 }
 
 /** 看板持久化结构(存入 Dashboard.layout) */

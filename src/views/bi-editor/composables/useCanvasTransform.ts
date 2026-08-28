@@ -114,19 +114,21 @@ export function useCanvasTransform(options: UseCanvasTransformOptions = {}) {
   //   - localOffset 改 → 同步到 store.canvas.scrollX/scrollY（不写历史，因为 setZoomLocal 也不写）
   //   - store.canvas.scrollX/Y 改（例如 restoreSnapshot） → 同步回 localOffset（阈值判断避免死循环）
   let suppressOffsetSync = false
+  // 🔑 性能优化：字符串签名替代 deep watch。
+  //   localOffset 是 {x,y} 对象，平移时原地修改 x/y 属性（非引用替换），
+  //   deep watch 会遍历全部属性建立依赖；签名式直接读 x/y 拼接比较。
   watch(
-    localOffset,
-    (v) => {
+    () => `${localOffset.value.x}_${localOffset.value.y}`,
+    () => {
       if (suppressOffsetSync) return
       suppressOffsetSync = true
       try {
-        store.canvas.scrollX = v.x
-        store.canvas.scrollY = v.y
+        store.canvas.scrollX = localOffset.value.x
+        store.canvas.scrollY = localOffset.value.y
       } finally {
         suppressOffsetSync = false
       }
     },
-    { deep: true },
   )
   watch(
     () => [store.canvas.scrollX, store.canvas.scrollY],
@@ -166,34 +168,111 @@ export function useCanvasTransform(options: UseCanvasTransformOptions = {}) {
   }
 
   // ========== Wheel: pan (unmodified) / zoom (Ctrl/Cmd+wheel) ==========
+  // 🔑 rAF 节流：trackpad/鼠标滚轮事件可高达 120Hz，每帧直接更新 localOffset/localScale
+  //   会触发大量 reactive 计算和 DOM style patch。用 rAF + delta 累积将同一帧内的
+  //   多次 wheel 事件合并为一次状态更新，显著降低渲染压力。
+  let wheelRafId: number | null = null
+  let wheelBuffer = {
+    deltaX: 0,
+    deltaY: 0,
+    ctrlKey: false,
+    metaKey: false,
+    shiftKey: false,
+    anchorX: 0,
+    anchorY: 0,
+    hasAnchor: false,
+  }
+
+  function flushWheel() {
+    wheelRafId = null
+    const buf = wheelBuffer
+
+    if (buf.ctrlKey || buf.metaKey) {
+      if (buf.hasAnchor) {
+        const factor = Math.exp(-buf.deltaY * 0.0015)
+        setZoomLocal(localScale.value * factor, {
+          screenX: buf.anchorX,
+          screenY: buf.anchorY,
+        })
+      }
+    } else {
+      const scrollSpeed = 1.5
+      if (buf.shiftKey) {
+        localOffset.value = {
+          ...localOffset.value,
+          x: localOffset.value.x - buf.deltaY * scrollSpeed,
+        }
+      } else {
+        const hasHorizontal = Math.abs(buf.deltaX) > Math.abs(buf.deltaY)
+        localOffset.value = {
+          x: localOffset.value.x - (hasHorizontal ? buf.deltaX : 0) * scrollSpeed,
+          y: localOffset.value.y - (hasHorizontal ? 0 : buf.deltaY) * scrollSpeed,
+        }
+      }
+    }
+
+    // 重置 buffer
+    wheelBuffer = {
+      deltaX: 0,
+      deltaY: 0,
+      ctrlKey: false,
+      metaKey: false,
+      shiftKey: false,
+      anchorX: 0,
+      anchorY: 0,
+      hasAnchor: false,
+    }
+  }
+
   function handleWheel(e: WheelEvent) {
     const viewport = viewportRef.value
     if (!viewport) return
-    e.preventDefault()
-    e.stopPropagation()
 
-    if (e.ctrlKey || e.metaKey) {
-      const rect = viewport.getBoundingClientRect()
-      const sx = e.clientX - rect.left
-      const sy = e.clientY - rect.top
-      const factor = Math.exp(-e.deltaY * 0.0015)
-      setZoomLocal(localScale.value * factor, { screenX: sx, screenY: sy })
+    // 🔑 滚轮交互隔离：仅当滚轮事件发生在「选中态组件」的内容区内部时，交给组件自己处理。
+    //   典型场景：ECharts inside 型 dataZoom 需要在图表 canvas 上响应滚轮来缩放数据区，
+    //   但 CanvasArea 在 capture 阶段拦截 wheel 并做画布 zoom/pan，导致两者同时触发
+    //   → 画布缩放叠加数据缩放，交互混乱。
+    //   修复：如果 target 位于 选中态组件(.selected) 的 .component-content 内部，则：
+    //   1) 仍然 preventDefault → 防止浏览器层面的页面滚动（编辑器视口内部不需要）
+    //   2) 不 stopPropagation → 让事件继续向下传递到 ECharts/table 等组件内部监听器
+    //   3) 不累积 wheelBuffer → 画布不做任何缩放 / 平移，避免与 inside dataZoom 冲突
+    //   🔑 未选中组件不隔离滚轮 → 鼠标停在未选中组件上仍可滚动画布
+    if (e.target && (e.target as HTMLElement).closest?.('.canvas-component-wrapper-inner.selected.has-dz .component-content')) {
+      e.preventDefault()
       return
     }
 
-    const scrollSpeed = 1.5
-    if (e.shiftKey) {
-      localOffset.value = {
-        ...localOffset.value,
-        x: localOffset.value.x - e.deltaY * scrollSpeed,
+    e.preventDefault()
+    e.stopPropagation()
+
+    // 累积 delta 到 buffer
+    if (e.ctrlKey || e.metaKey) {
+      if (!wheelBuffer.hasAnchor) {
+        const rect = viewport.getBoundingClientRect()
+        wheelBuffer.anchorX = e.clientX - rect.left
+        wheelBuffer.anchorY = e.clientY - rect.top
+        wheelBuffer.hasAnchor = true
       }
+      wheelBuffer.ctrlKey = true
+      wheelBuffer.metaKey = e.metaKey
+      wheelBuffer.deltaY += e.deltaY
     } else {
-      const hasSignificantHorizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY)
-      localOffset.value = {
-        x: localOffset.value.x - (hasSignificantHorizontal ? e.deltaX : 0) * scrollSpeed,
-        y: localOffset.value.y - (hasSignificantHorizontal ? 0 : e.deltaY) * scrollSpeed,
+      wheelBuffer.shiftKey = e.shiftKey
+      if (e.shiftKey) {
+        wheelBuffer.deltaY += e.deltaY
+      } else {
+        const hasHorizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY)
+        if (hasHorizontal) {
+          wheelBuffer.deltaX += e.deltaX
+        } else {
+          wheelBuffer.deltaY += e.deltaY
+        }
       }
     }
+
+    // 同一帧内已有 rAF pending 则跳过，只累积 delta
+    if (wheelRafId !== null) return
+    wheelRafId = requestAnimationFrame(flushWheel)
   }
 
   // ========== Pan mode (Space + drag or Middle-click drag) ==========
@@ -321,6 +400,11 @@ export function useCanvasTransform(options: UseCanvasTransformOptions = {}) {
 
   onBeforeUnmount(() => {
     stopViewportObserver()
+    // 🔑 清理 wheel rAF，防止组件卸载后仍触发 flushWheel
+    if (wheelRafId !== null) {
+      cancelAnimationFrame(wheelRafId)
+      wheelRafId = null
+    }
     window.removeEventListener('keydown', handleKeyDown)
     window.removeEventListener('keyup', handleKeyUp)
     if (panMouseMoveHandler) {

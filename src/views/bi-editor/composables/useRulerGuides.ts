@@ -386,12 +386,15 @@ export function useRulerGuides(deps: UseRulerGuidesDeps) {
   }
 
   // Re-draw rulers + reposition guide markers whenever transform / viewport / theme changes
+  // 🔑 性能优化：字符串签名替代 deep watch。
+  //   localOffset 是 {x,y} 对象，deep:true 会遍历其属性建立依赖；
+  //   localScale/viewportW/H 是原始值，deep 对它们无意义。
+  //   改为读取具体属性值拼接签名，单次比较即可判断是否变化。
   watch(
-    [localOffset, localScale, viewportWidth, viewportHeight],
+    () => `${localOffset.value.x}_${localOffset.value.y}_${localScale.value}_${viewportWidth.value}_${viewportHeight.value}`,
     () => {
       nextTick(() => refreshGuides())
     },
-    { deep: true },
   )
 
   watch(
@@ -425,8 +428,11 @@ export function useRulerGuides(deps: UseRulerGuidesDeps) {
     },
   )
 
+  // 🔑 性能优化：JSON.stringify 签名替代 deep watch。
+  //   guides 数组可能被 push/splice 原地修改（非引用替换），
+  //   浅 watch 无法捕获；签名式可同时捕获引用替换和元素变更。
   watch(
-    () => store.guides,
+    () => JSON.stringify(store.guides),
     () => {
       if (isApplyingStoreGuides) return
       // 🔑 @scena 自身变更（用户拖拽/点击添加）：@scena 内部 state 已正确
@@ -449,7 +455,6 @@ export function useRulerGuides(deps: UseRulerGuidesDeps) {
         })
       })
     },
-    { deep: true },
   )
 
   onBeforeUnmount(() => {

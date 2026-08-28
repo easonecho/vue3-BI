@@ -7,7 +7,7 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
-import { deriveDefaultProps, ECHARTS_DEFAULT_PALETTE } from '../types'
+import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
@@ -17,7 +17,7 @@ const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 let initTimer: number | undefined
 
 let debounceTimer: number | null = null
-let pendingOption: ECOption | null = null
+let pendingBuilder: (() => ECOption) | null = null
 
 const dataSourceRef = computed(() => props.comp.dataSource)
 const { rows } = useDatasetBinding(dataSourceRef)
@@ -36,14 +36,14 @@ const mappedData = computed(() => {
   }))
 })
 
-function debouncedSetOption(option: ECOption) {
-  pendingOption = option
+function debouncedSetOption(builder: () => ECOption) {
+  pendingBuilder = builder
   if (debounceTimer !== null) return
   debounceTimer = window.requestAnimationFrame(() => {
     debounceTimer = null
-    if (pendingOption) {
-      baseChartRef.value?.setOption(pendingOption)
-      pendingOption = null
+    if (pendingBuilder) {
+      baseChartRef.value?.setOption(pendingBuilder())
+      pendingBuilder = null
     }
   })
 }
@@ -57,7 +57,7 @@ function getChartSpecificOption(): {
   mergedProps: Record<string, any>
 } {
   const def = getDefinition(props.comp.type)
-  const schemaDefaults = def ? deriveDefaultProps(def.propsSchema, def.extraDefaults) : {}
+  const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
   const funnelData = mappedData.value
@@ -155,13 +155,14 @@ function getChartSpecificOption(): {
 }
 
 function applyChartOption() {
-  const baseOption = getBaseOption()
-  const { specificOption, mergedProps } = getChartSpecificOption()
-  const merged = applyUserChartConfig(baseOption, mergedProps, specificOption, {
-    hasAxes: false,
-    fallbackTitle: '漏斗图',
+  debouncedSetOption(() => {
+    const baseOption = getBaseOption()
+    const { specificOption, mergedProps } = getChartSpecificOption()
+    return applyUserChartConfig(baseOption, mergedProps, specificOption, {
+      hasAxes: false,
+      fallbackTitle: '漏斗图',
+    })
   })
-  debouncedSetOption(merged)
 }
 
 onMounted(async () => {
@@ -169,17 +170,24 @@ onMounted(async () => {
 })
 
 watch(
-  [() => props.comp.props, rows, () => props.comp.dataConfig],
+  // 🔑 性能优化：签名式 watch 替代 deep watch。
+  //   原 deep:true 遍历 comp.props + comp.dataConfig + rows 全部元素（rows 可能 1000+ 行）。
+  //   改为 JSON.stringify 签名对比小对象 + rows 浅 ref watch（仅引用变更触发）。
+  [
+    () => JSON.stringify(props.comp.props),
+    () => JSON.stringify(props.comp.dataConfig),
+    rows,
+  ],
   () => {
     applyChartOption()
   },
-  { deep: true },
 )
 
 // 清理定时器, 防止内存泄漏
 onUnmounted(() => {
   if (initTimer) clearTimeout(initTimer)
   if (debounceTimer !== null) cancelAnimationFrame(debounceTimer)
+  pendingBuilder = null
 })
 
 </script>

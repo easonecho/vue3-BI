@@ -285,19 +285,63 @@ export function applyUserChartConfig(
   }
 
   // ============ 8. DataZoom（hasAxes 为 true 时才生成）============
+  // 🔑 必须显式赋值（包括关闭时的空数组），避免 ECharts setOption merge 模式下
+  //   旧 dataZoom 残留，导致「开关关闭后缩放条仍存在、inside 滚轮仍生效」。
+  // 🔑 xAxisIndex / yAxisIndex 使用数组形式（ECharts 内部更统一接受数组），
+  //   避免单值在某些场景下被忽略。inside 型补充 zoomOnMouseWheel/moveOnMouseWheel
+  //   等显式开关，防止因浏览器滚轮行为差异导致"看起来不生效"。
+  // 🔑 slider 型必须对齐 grid.left/right/top/bottom：否则滑块条横跨整个容器，
+  //   会比轴线（在 grid 内部）长一大截，出现"超出轴线长度"的视觉问题。
   if (hasAxes && Boolean(p.dataZoomShow)) {
     const orient = String(p.dataZoomOrient)
     const isHorizontal = orient === 'horizontal'
-    axesOption.dataZoom = [
-      {
-        type: p.dataZoomType as any,
-        orient: orient as any,
-        xAxisIndex: isHorizontal ? 0 : undefined,
-        yAxisIndex: isHorizontal ? undefined : 0,
-        start: Number(p.dataZoomStart),
-        end: Number(p.dataZoomEnd),
-      },
-    ]
+    const type = String(p.dataZoomType)
+    const baseDz: Record<string, any> = {
+      type: type as any,
+      orient: orient as any,
+      xAxisIndex: isHorizontal ? [0] : undefined,
+      yAxisIndex: isHorizontal ? undefined : [0],
+      start: Number(p.dataZoomStart),
+      end: Number(p.dataZoomEnd),
+      filterMode: 'filter',
+    }
+    if (type === 'inside') {
+      // inside 型：显式启用滚轮缩放 + 拖拽平移，禁止 ECharts 内部 preventDefault
+      // （外层 CanvasArea 已经统一处理 preventDefault，这里 true 可能会覆盖外层逻辑）
+      baseDz.zoomOnMouseWheel = true
+      baseDz.moveOnMouseWheel = true
+      baseDz.moveOnMouseMove = true
+      baseDz.preventDefaultMouseMove = false
+      baseDz.lock = false
+      baseDz.zoomLock = false
+    } else {
+      // slider 型：显式 show，附带到指定坐标轴，left/right/top/bottom 与 grid 对齐
+      baseDz.show = true
+      baseDz.realtime = true
+      baseDz.height = isHorizontal ? 16 : undefined
+      baseDz.width = isHorizontal ? undefined : 16
+      // handleSize 稍微缩小一点，避免左右/上下手柄比条还大一圈显得不协调
+      baseDz.handleSize = '100%'
+      baseDz.showDetail = true
+      baseDz.showDataShadow = 'auto'
+      if (isHorizontal) {
+        // 底部水平条：左右边界与 grid.left/right 对齐，保证滑块条长度=轴线长度
+        baseDz.left = Number(gridOption.left)
+        baseDz.right = Number(gridOption.right)
+        // 底部距离：14px 固定留白（足够放滑块 + 数值提示，不遮挡 x 轴标签）
+        baseDz.bottom = 14
+      } else {
+        // 右侧垂直条：上下边界与 grid.top/bottom 对齐，保证滑块条高度=轴线高度
+        baseDz.top = Number(gridOption.top)
+        baseDz.bottom = Number(gridOption.bottom)
+        // 右侧距离：14px 固定留白（足够放滑块 + 数值提示，不遮挡 y 轴标签）
+        baseDz.right = 14
+      }
+    }
+    axesOption.dataZoom = [baseDz]
+  } else if (hasAxes) {
+    // 🔑 坐标轴类图表但关闭 dataZoom 时：显式空数组覆盖旧配置
+    axesOption.dataZoom = []
   }
 
   // ============ 最终合并：base → 用户配置 → widget 特有（优先级最高）============
@@ -311,5 +355,28 @@ export function applyUserChartConfig(
     ...axesOption,
   }
 
-  return deepMerge(deepMerge(baseOption, userConfig), widgetOption)
+  const merged = deepMerge(deepMerge(baseOption, userConfig), widgetOption)
+  // 🔑 大数据集分块渲染：数据量超过阈值时 ECharts 自动分块，避免一次性渲染所有数据点
+  applyProgressive(merged)
+  return merged
+}
+
+/**
+ * 🔑 Progressive Rendering：大数据集优化。
+ *   - progressive: 每块渲染的数据点数（1000），避免一次性渲染所有点
+ *   - progressiveThreshold: 数据量超过 3000 才启用分块
+ *   只对 bar/line/scatter 有效（ECharts 限制），pie/funnel 等不支持
+ */
+function applyProgressive(option: ECOption) {
+  if (!option.series) return
+  const seriesList = Array.isArray(option.series) ? option.series : [option.series]
+  for (const s of seriesList) {
+    if (s && typeof s === 'object' && 'type' in s) {
+      const t = (s as any).type
+      if (t === 'bar' || t === 'line' || t === 'scatter') {
+        ;(s as any).progressive = 1000
+        ;(s as any).progressiveThreshold = 3000
+      }
+    }
+  }
 }

@@ -7,7 +7,10 @@
     @mousemove="handleMouseMove"
     @mouseleave="hideToolbar"
   >
-    <!-- 预览态顶部工具栏:鼠标悬停显示 (纯静模式下也保留入口) -->
+    <!-- 🔑 企业级数据大屏渲染层：铺满整个视口，scale 自适应 -->
+    <DashboardScreen v-if="!loading && !loadError" />
+
+    <!-- 浮动工具栏：hover 显示，不占用画布空间 -->
     <transition name="toolbar-slide">
       <div v-show="showToolbar" class="preview-header">
         <el-button text @click="handleBack">
@@ -51,16 +54,14 @@
       </div>
     </transition>
 
-    <!-- 复用 CanvasArea readonly 模式:禁用拖拽/缩放/选中/标尺/网格/信息栏 -->
-    <CanvasArea readonly />
-
+    <!-- 加载失败提示 -->
     <div v-if="!loading && loadError" class="preview-error">
       <el-empty :description="loadError">
         <el-button @click="handleBack">返回列表</el-button>
       </el-empty>
     </div>
 
-    <!-- 纯静模式下的悬浮指示 (鼠标静止时给一个轻提示) -->
+    <!-- 纯静模式下的悬浮指示 -->
     <transition name="fade">
       <div v-if="pureMode && !showToolbar" class="pure-hint">
         <el-icon><Menu /></el-icon>
@@ -83,7 +84,9 @@ import {
   Clock,
 } from '@element-plus/icons-vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
-import CanvasArea from '@/views/bi-editor/components/CanvasArea.vue'
+import DashboardScreen from './DashboardScreen.vue'
+import { toJpeg } from 'html-to-image'
+import { updateDashboardTemplate } from '@/api/dashboard-template'
 
 const route = useRoute()
 const router = useRouter()
@@ -108,7 +111,6 @@ function handleMouseMove() {
 
 function scheduleHideToolbar() {
   if (hideTimer) clearTimeout(hideTimer)
-  // 纯静模式下 2.5 秒无操作隐藏工具栏;非纯静模式保持显示
   hideTimer = setTimeout(() => {
     if (pureMode.value) showToolbar.value = false
   }, 2500)
@@ -139,7 +141,6 @@ function handleFullscreenChange() {
 function togglePureMode() {
   pureMode.value = !pureMode.value
   if (pureMode.value) {
-    // 进入纯静模式:先显示工具栏,2.5s 后自动隐藏
     showToolbar.value = true
     scheduleHideToolbar()
   } else {
@@ -149,7 +150,7 @@ function togglePureMode() {
 }
 
 // ========== 自动刷新 ==========
-const autoRefreshInterval = ref(0) // 0 = 关闭,单位秒
+const autoRefreshInterval = ref(0)
 let autoRefreshTimer: ReturnType<typeof setInterval> | null = null
 
 function resetAutoRefresh() {
@@ -171,9 +172,7 @@ async function handleRefresh(silent = false) {
   try {
     await store.refreshAllData()
     lastRefreshAt.value = new Date()
-    if (!silent) {
-      // 静默自动刷新不打扰用户
-    }
+    void silent
   } catch (e) {
     console.error('[Preview] 刷新失败:', e)
   } finally {
@@ -183,7 +182,6 @@ async function handleRefresh(silent = false) {
 
 // ========== 键盘快捷键 ==========
 function handleKeydown(e: KeyboardEvent) {
-  // 避免在输入框中触发
   const target = e.target as HTMLElement
   if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA') return
 
@@ -201,7 +199,6 @@ function handleKeydown(e: KeyboardEvent) {
       handleRefresh()
       break
     case 'escape':
-      // Esc 退出纯静模式 (全屏由浏览器自身处理)
       if (pureMode.value) {
         pureMode.value = false
         showToolbar.value = true
@@ -210,6 +207,42 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
+// ========== 模板缩略图生成 ==========
+async function generateTemplateThumbnail(templateId: number) {
+  try {
+    await new Promise((r) => setTimeout(r, 3000))
+    const canvasEl = document.querySelector('.dashboard-canvas') as HTMLElement | null
+    if (!canvasEl) return
+    const dataUrl = await toJpeg(canvasEl, { quality: 0.7, backgroundColor: '#ffffff' })
+    const thumbnail = await resizeDataUrl(dataUrl, 320)
+    if (thumbnail) {
+      await updateDashboardTemplate(templateId, { thumbnail })
+      console.log('[Preview] 模板缩略图已更新:', templateId)
+    }
+  } catch (e) {
+    console.warn('[Preview] 生成模板缩略图失败:', e)
+  }
+}
+
+function resizeDataUrl(dataUrl: string, maxW: number): Promise<string | null> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const scale = img.width > 0 ? Math.min(1, maxW / img.width) : 1
+      const w = Math.max(1, Math.round(img.width * scale))
+      const h = Math.max(1, Math.round(img.height * scale))
+      const cv = document.createElement('canvas')
+      cv.width = w
+      cv.height = h
+      const ctx = cv.getContext('2d')
+      if (!ctx) { resolve(null); return }
+      ctx.drawImage(img, 0, 0, w, h)
+      resolve(cv.toDataURL('image/jpeg', 0.7))
+    }
+    img.onerror = () => resolve(null)
+    img.src = dataUrl
+  })
+}
 // ========== 工具函数 ==========
 function formatTime(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0')
@@ -217,26 +250,33 @@ function formatTime(d: Date): string {
 }
 
 function handleBack() {
+  const isTemplate = route.name === 'PreviewTemplate'
   if (window.history.length > 1) {
     router.back()
   } else {
-    router.push('/dashboard')
+    router.push(isTemplate ? '/dashboard-templates' : '/dashboard')
   }
 }
 
 // ========== 生命周期 ==========
 onMounted(async () => {
   const id = Number(route.params.id)
+  const isTemplate = route.name === 'PreviewTemplate'
   if (!id || Number.isNaN(id)) {
-    loadError.value = '看板 ID 无效'
+    loadError.value = isTemplate ? '模板 ID 无效' : '看板 ID 无效'
     return
   }
   loading.value = true
   try {
-    await store.loadDashboard(id)
+    if (isTemplate) {
+      await store.loadTemplate(id)
+      generateTemplateThumbnail(id)
+    } else {
+      await store.loadDashboard(id)
+    }
     lastRefreshAt.value = new Date()
   } catch {
-    loadError.value = '看板加载失败,可能已被删除或无访问权限'
+    loadError.value = isTemplate ? '模板加载失败，可能已被删除或无访问权限' : '看板加载失败，可能已被删除或无访问权限'
   } finally {
     loading.value = false
   }
@@ -250,7 +290,6 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
   if (autoRefreshTimer) clearInterval(autoRefreshTimer)
   if (hideTimer) clearTimeout(hideTimer)
-  // 离开预览页时退出全屏
   if (document.fullscreenElement) {
     document.exitFullscreen().catch(() => {})
   }
@@ -261,14 +300,11 @@ onUnmounted(() => {
 .preview-page {
   width: 100vw;
   height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--bi-bg, #111827);
-  overflow: hidden;
   position: relative;
+  overflow: hidden;
+  background: var(--bi-bg);
 
   &.pure-mode {
-    // 纯静模式下鼠标默认隐藏,移动时恢复 (由工具栏逻辑控制)
     cursor: none;
 
     &:hover {
@@ -277,23 +313,31 @@ onUnmounted(() => {
   }
 }
 
+/* 浮动工具栏：absolute 定位不占用画布空间，使用主题玻璃拟态变量 */
 .preview-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
   display: flex;
   align-items: center;
   gap: 8px;
   height: 48px;
-  padding: 0 16px;
-  background: var(--bi-header-bg, #1f2937);
-  border-bottom: 1px solid var(--bi-border-color, #374151);
-  flex-shrink: 0;
-  position: relative;
-  z-index: 10;
+  padding: 0 20px;
+  background: var(--bi-glass-bg);
+  backdrop-filter: blur(var(--bi-glass-blur));
+  -webkit-backdrop-filter: blur(var(--bi-glass-blur));
+  border-bottom: 1px solid var(--bi-glass-border);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 
+  /* 与全局按钮/文本风格统一 */
   .preview-title {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
-    color: var(--bi-text-primary, #f3f4f6);
+    color: var(--bi-text-primary);
     margin-left: 8px;
+    letter-spacing: 0.01em;
   }
 
   .preview-spacer {
@@ -305,47 +349,75 @@ onUnmounted(() => {
     align-items: center;
     gap: 4px;
     font-size: 12px;
-    color: var(--bi-text-secondary, #9ca3af);
+    color: var(--bi-text-secondary);
     margin-right: 4px;
+    font-variant-numeric: tabular-nums;
   }
 
   :deep(.el-button.is-text) {
-    color: var(--bi-text-secondary, #9ca3af);
-    padding: 6px 8px;
+    color: var(--bi-text-secondary);
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: all 0.15s ease;
 
     &:hover {
-      color: var(--bi-text-primary, #f3f4f6);
-      background: var(--bi-hover-bg, rgba(255, 255, 255, 0.08));
+      color: var(--bi-text-primary);
+      background: var(--bi-component-hover-bg);
     }
+  }
+
+  :deep(.el-button.is-text.is-loading) {
+    pointer-events: none;
   }
 
   :deep(.el-divider--vertical) {
-    border-color: var(--bi-border-color, #374151);
-    margin: 0 4px;
+    background-color: var(--bi-border-color);
+    margin: 0 8px;
+    height: 20px;
   }
 
+  /* 自动刷新下拉框：与全局输入框视觉一致 */
   :deep(.el-select) {
     .el-input__wrapper {
-      background: var(--bi-input-bg, rgba(255, 255, 255, 0.05));
-      box-shadow: 0 0 0 1px var(--bi-border-color, #374151) inset;
+      background: var(--bi-input-bg);
+      box-shadow: 0 0 0 1px var(--bi-input-border) inset;
+      transition: box-shadow 0.15s ease;
+
+      &:hover {
+        box-shadow: 0 0 0 1px var(--bi-accent) inset;
+      }
+      &.is-focus {
+        box-shadow: 0 0 0 1px var(--bi-accent) inset,
+          0 0 0 3px var(--bi-accent-glow);
+      }
     }
     .el-input__inner {
-      color: var(--bi-text-primary, #f3f4f6);
+      color: var(--bi-text-primary);
       font-size: 13px;
     }
+  }
+
+  /* 全屏模式下工具栏略微下沉，保留浮层感但不抢画面 */
+  .fullscreen-mode & {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--bi-glass-border);
   }
 }
 
 .preview-error {
   position: absolute;
-  inset: 48px 0 0 0;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bi-bg, #111827);
+  background: var(--bi-bg);
   z-index: 5;
 }
 
+/* 纯净模式提示：胶囊样式，克制点缀 */
 .pure-hint {
   position: absolute;
   top: 16px;
@@ -355,20 +427,22 @@ onUnmounted(() => {
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  background: rgba(31, 41, 55, 0.85);
-  border: 1px solid var(--bi-border-color, #374151);
-  border-radius: 16px;
+  background: var(--bi-glass-bg);
+  border: 1px solid var(--bi-glass-border);
+  border-radius: 999px;
   font-size: 12px;
-  color: var(--bi-text-secondary, #9ca3af);
-  z-index: 20;
+  color: var(--bi-text-secondary);
+  z-index: 30;
   pointer-events: none;
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
-// ========== 过渡动画 ==========
+// ========== 过渡动画：克制，时长统一 ==========
 .toolbar-slide-enter-active,
 .toolbar-slide-leave-active {
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .toolbar-slide-enter-from,
@@ -379,7 +453,7 @@ onUnmounted(() => {
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.4s ease;
+  transition: opacity 0.3s ease;
 }
 
 .fade-enter-from,

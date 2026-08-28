@@ -5,7 +5,7 @@
  * - 登录/登出
  * - 持久化 Token
  * - 获取/缓存当前用户信息
- * - 角色与权限判断
+ * - 路由/权限不在此 store, 统一由 stores/menu.ts 独立拉取
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
@@ -21,37 +21,19 @@ export const useUserStore = defineStore(
     const token = ref<string>(getToken())
     const refreshToken = ref<string>(getRefreshToken())
     const userInfo = ref<User | null>(null)
-    /** 角色代码列表 (如 ['ADMIN', 'EDITOR']) */
-    const roles = ref<string[]>([])
-    /** 权限代码列表 (如 ['dashboard:view', 'chart:edit']) */
-    const permissions = ref<string[]>([])
 
     // ========== 计算属性 ==========
     const isLoggedIn = computed(() => !!token.value || !!refreshToken.value)
     const username = computed(() => userInfo.value?.nickname || userInfo.value?.username || '')
-    const isAdmin = computed(() => roles.value.includes('ADMIN'))
 
     // ========== 方法 ==========
-    /** 登录 */
+    /** 登录: 仅保存 token + 用户信息; 路由/权限由 menuStore 独立拉取 */
     async function login(username: string, password: string) {
       const res = await loginApi({ username, password })
       token.value = res.data.accessToken
       refreshToken.value = res.data.refreshToken
       userInfo.value = res.data.user
       setTokenPair(res.data.accessToken, res.data.refreshToken)
-      // 同步菜单树和权限码到 menu store
-      const menuStore = useMenuStore()
-      if (res.data.routers) {
-        menuStore.syncFromLogin(res.data.routers, res.data.perms || [])
-      }
-      // 登录响应里可能带 permissions
-      if (res.data.user?.permissions) {
-        try {
-          const p = res.data.user.permissions
-          const arr = typeof p === 'string' ? JSON.parse(p) : p
-          if (Array.isArray(arr)) permissions.value = arr
-        } catch (e) { console.warn('[user] ignored error', e) }
-      }
       return res.data
     }
 
@@ -81,8 +63,6 @@ export const useUserStore = defineStore(
       token.value = ''
       refreshToken.value = ''
       userInfo.value = null
-      roles.value = []
-      permissions.value = []
       removeToken()
       useMenuStore().reset()
     }
@@ -96,37 +76,16 @@ export const useUserStore = defineStore(
       refreshToken.value = getRefreshToken()
     }
 
-    /** 判断是否拥有指定权限码 */
-    function hasPermission(code: string): boolean {
-      return permissions.value.includes(code)
-    }
-
-    /** 设置角色代码列表 */
-    function setRoles(codes: string[]) {
-      roles.value = codes
-    }
-
-    /** 设置权限代码列表 */
-    function setPermissions(codes: string[]) {
-      permissions.value = codes
-    }
-
     return {
       token,
       refreshToken,
       userInfo,
-      roles,
-      permissions,
       isLoggedIn,
       username,
-      isAdmin,
       login,
       register,
       fetchProfile,
       logout,
-      hasPermission,
-      setRoles,
-      setPermissions,
       syncTokensFromStorage,
     }
   },

@@ -71,9 +71,19 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
 }
 
 onMounted(() => {
-  // 🔑 按路由参数决定加载已有看板或新建空白看板
+  // 🔑 按路由参数决定加载已有看板/模板或新建空白
   const id = route.params.id
-  if (id) {
+  const isTemplateMode = route.name === 'BiEditorTemplate'
+  if (isTemplateMode) {
+    if (id) {
+      store.loadTemplate(Number(id)).catch((e) => {
+        console.warn('[bi-editor] loadTemplate failed', e)
+        ElMessage.error('模板加载失败,请返回模板库重试')
+      })
+    } else {
+      store.newTemplate()
+    }
+  } else if (id) {
     store.loadDashboard(Number(id)).catch((e) => {
       console.warn('[bi-editor] loadDashboard failed', e)
       ElMessage.error('看板加载失败,请返回列表重试')

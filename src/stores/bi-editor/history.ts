@@ -29,7 +29,11 @@ import type {
  */
 let isRestoring = false
 
-const MAX_HISTORY = 100
+/** 🔑 历史栈容量上限：超过后从栈底（最旧）丢弃，防止长时间编辑造成内存无限增长。
+ *   - 每个 HistoryEntry 约 = canvas + N components + K guides 的 JSON 字符串，百量级才会显著占用内存
+ *   - 设定 200 步上限：既有足够可撤销空间，也不会拖慢整体内存与 GC
+ */
+const MAX_HISTORY = 200
 
 /** 简易深比较：两个可序列化对象是否语义相等（JSON.stringify 对称，保证快速） */
 function deepEqual(a: any, b: any): boolean {
@@ -113,9 +117,16 @@ function mergeGuides(current: Ref<GuideLine[]>, snapGuides: GuideLine[]): boolea
   return true
 }
 
+interface HistoryEntry {
+  /** 完整序列化字符串（含视口状态），用于 undo/redo 恢复 */
+  serialized: string
+  /** 去重签名（排除视口状态 + selectedId），用于 pushHistory 去重比较 */
+  signature: string
+}
+
 export interface HistoryApi {
-  /** 历史栈：仅存储 JSON 字符串，彻底避免 Proxy/响应式对象污染 */
-  history: Ref<string[]>
+  /** 历史栈：存储 { serialized, signature } 对象，避免每次 push 重复计算签名 */
+  history: Ref<HistoryEntry[]>
   historyIndex: Ref<number>
   createSnapshot: () => HistorySnapshot
   restoreSnapshot: (snapshot: HistorySnapshot) => void
@@ -134,12 +145,13 @@ export function useHistory(
   canvas: Ref<CanvasState>,
   guides: Ref<GuideLine[]>,
   selectedId: Ref<string | null>,
+  selectedIds: Ref<string[]>,
 ): HistoryApi {
-  // 🔑 历史栈只存 JSON 字符串：
-  //   - 写入：JSON.stringify 快照对象 → 字符串
-  //   - 读取：JSON.parse 字符串 → 全新普通对象（无 Proxy/响应式引用）
+  // 🔑 历史栈存储 { serialized, signature } 对象：
+  //   - serialized: 完整状态 JSON 字符串（含视口），用于 undo/redo 恢复
+  //   - signature: 去重签名（排除视口 + selectedId），缓存后避免 pushHistory 时重复计算
   //   这样彻底切断与 Vue 响应式系统的引用关系，避免 Proxy 对象被存入历史。
-  const history = ref<string[]>([])
+  const history = ref<HistoryEntry[]>([])
   const historyIndex = ref(-1)
 
   /** 把当前状态序列化为 JSON 字符串（剥离所有 Proxy） */
@@ -149,6 +161,9 @@ export function useHistory(
       canvas: canvas.value,
       guides: guides.value,
       selectedId: selectedId.value,
+      // 🔑 必须序列化多选集合：undo/redo 后要恢复之前的多选态，
+      //   否则框选 3 个 → 对齐 → undo，多选数组丢失，canDistribute 变 false 按钮失效。
+      selectedIds: selectedIds.value,
     })
   }
 
@@ -176,6 +191,12 @@ export function useHistory(
       if (selectedId.value !== snapshot.selectedId) {
         selectedId.value = snapshot.selectedId
       }
+      // 🔑 恢复多选集合：保证 undo/redo 后 RightPanel 分布/对齐按钮的 disabled 状态一致
+      const snapIds = snapshot.selectedIds ?? []
+      const cur = selectedIds.value
+      const same =
+        cur.length === snapIds.length && cur.every((id, i) => id === snapIds[i])
+      if (!same) selectedIds.value = [...snapIds]
     } finally {
       // 🔑 用 setTimeout(0)（宏任务）重置：必须晚于 vue3-drag-resize 的 nextTick 链
       //   (watcher → this.$nextTick → bodyUp → dragstop → pushHistory)，
@@ -187,19 +208,24 @@ export function useHistory(
   }
 
   /**
-   * 生成快照签名（用于去重）：
-   *   只比较「操作类」状态（components / canvas 配置 / guides），
-   *   排除视口状态（zoom / scrollX / scrollY）和 selectedId。
+   * 🔑 性能优化：直接从响应式状态计算签名，省掉 pushHistory/clearHistory 中的
+   *   JSON.parse 往返（原 serializeState→deserializeState→snapshotSignature 三趟 → 两趟）。
+   *   排除视口状态（zoom / scrollX / scrollY）和 selectedId，只比较「操作类」状态。
    */
-  function snapshotSignature(snapshot: HistorySnapshot): string {
-    const { zoom, scrollX, scrollY, ...canvasRest } = snapshot.canvas
+  function computeSignature(): string {
+    const { zoom, scrollX, scrollY, ...canvasRest } = canvas.value
     void zoom
     void scrollX
     void scrollY
     return JSON.stringify({
-      components: snapshot.components,
+      components: components.value,
       canvas: canvasRest,
-      guides: snapshot.guides,
+      guides: guides.value,
+      // 🔑 selectedIds/selectedId 纳入签名：
+      //   纯选中集合变更（如框选后不操作就取消、再重新框选）不算改动、不进栈；
+      //   但组件位置 + 选中集合同时变化（对齐/分布场景）算新状态，入栈。
+      selectedId: selectedId.value,
+      selectedIds: selectedIds.value,
     })
   }
 
@@ -213,15 +239,12 @@ export function useHistory(
 
     // 🔑 序列化当前状态为字符串，彻底剥离 Proxy
     const serialized = serializeState()
-    const snapshot = deserializeState(serialized)
+    // 🔑 性能优化：直接从响应式状态计算签名，省掉 JSON.parse 往返
+    const newSig = computeSignature()
 
-    // 与当前历史项比较（反序列化后再生成签名）
-    const currentSerialized = history.value[historyIndex.value]
-    const currentSnapshot = currentSerialized ? deserializeState(currentSerialized) : null
-    const newSig = snapshotSignature(snapshot)
-    const curSig = currentSnapshot ? snapshotSignature(currentSnapshot) : null
-
-    if (currentSnapshot && newSig === curSig) {
+    // 🔑 直接与上一条历史项的缓存签名比较，无需再次反序列化 + 计算签名
+    const currentEntry = history.value[historyIndex.value]
+    if (currentEntry && newSig === currentEntry.signature) {
       return
     }
 
@@ -229,20 +252,23 @@ export function useHistory(
     if (historyIndex.value < history.value.length - 1) {
       history.value = history.value.slice(0, historyIndex.value + 1)
     }
-    // 🔑 只存字符串，不存对象
-    history.value.push(serialized)
+    // 🔑 存储 { serialized, signature } 对象，signature 供后续 pushHistory 去重比较
+    history.value.push({ serialized, signature: newSig })
+    // 🔑 栈容量上限：超过 MAX_HISTORY 后从栈底裁剪，同时同步调整 historyIndex 保持当前游标相对位置不变，
+    //   否则裁掉 0 后 historyIndex 会等于新数组长度，越界导致 canUndo/canRedo 逻辑错乱
     if (history.value.length > MAX_HISTORY) {
-      history.value.shift()
+      const dropped = history.value.length - MAX_HISTORY
+      history.value.splice(0, dropped)
+      historyIndex.value = Math.max(0, historyIndex.value - dropped)
     }
     historyIndex.value = history.value.length - 1
-    // debug log removed
   }
 
   function undo() {
     if (historyIndex.value > 0) {
       historyIndex.value--
-      // 🔑 从字符串反序列化得到全新普通对象，再恢复状态
-      const snapshot = deserializeState(history.value[historyIndex.value])
+      // 🔑 从缓存的 serialized 字符串反序列化得到全新普通对象，再恢复状态
+      const snapshot = deserializeState(history.value[historyIndex.value].serialized)
       restoreSnapshot(snapshot)
     }
   }
@@ -250,14 +276,15 @@ export function useHistory(
   function redo() {
     if (historyIndex.value < history.value.length - 1) {
       historyIndex.value++
-      const snapshot = deserializeState(history.value[historyIndex.value])
+      const snapshot = deserializeState(history.value[historyIndex.value].serialized)
       restoreSnapshot(snapshot)
     }
   }
 
   function clearHistory() {
     const serialized = serializeState()
-    history.value = [serialized]
+    const signature = computeSignature()
+    history.value = [{ serialized, signature }]
     historyIndex.value = 0
   }
 

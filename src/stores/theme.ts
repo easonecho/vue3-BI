@@ -1,61 +1,44 @@
 /**
- * 主题状态管理 Store
- *
- * 负责:
- * - light/dark 主题切换
- * - 持久化主题到 localStorage
- * - 初始化时从 localStorage 或 prefers-color-scheme 读取
+ * 主题 Store —— 管理全局主题切换
+ * 支持 dark / light 两种主题，持久化到 localStorage
  */
+
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
-type Theme = 'light' | 'dark'
+export type ThemeMode = 'dark' | 'light'
 
-const THEME_KEY = 'bi_theme'
+const STORAGE_KEY = 'bi-theme'
 
 export const useThemeStore = defineStore('theme', () => {
-  // ========== 状态 ==========
-  const theme = ref<Theme>('light')
+  const theme = ref<ThemeMode>(loadTheme())
 
-  // ========== 私有方法 ==========
-
-  /** 将主题应用到 document.documentElement */
-  function applyTheme(t: Theme): void {
-    document.documentElement.setAttribute('data-theme', t)
+  function loadTheme(): ThemeMode {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved === 'dark' || saved === 'light') return saved
+    return 'dark'
   }
 
-  // ========== 方法 ==========
-
-  /** 设置主题并持久化 */
-  function setTheme(t: Theme): void {
-    theme.value = t
-    applyTheme(t)
-    localStorage.setItem(THEME_KEY, t)
+  function applyTheme(mode: ThemeMode) {
+    document.documentElement.setAttribute('data-theme', mode)
   }
 
-  /** 切换主题 */
-  function toggleTheme(): void {
-    setTheme(theme.value === 'light' ? 'dark' : 'light')
+  function toggle() {
+    theme.value = theme.value === 'dark' ? 'light' : 'dark'
   }
 
-  /** 初始化主题：localStorage → prefers-color-scheme → light */
-  function initTheme(): void {
-    const saved = localStorage.getItem(THEME_KEY)
-    if (saved === 'light' || saved === 'dark') {
-      setTheme(saved)
-      return
-    }
-    const prefersDark =
-      typeof window !== 'undefined' &&
-      window.matchMedia &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches
-    setTheme(prefersDark ? 'dark' : 'light')
+  function setTheme(mode: ThemeMode) {
+    theme.value = mode
   }
 
-  return {
+  watch(
     theme,
-    setTheme,
-    toggleTheme,
-    initTheme,
-  }
+    (val) => {
+      localStorage.setItem(STORAGE_KEY, val)
+      applyTheme(val)
+    },
+    { immediate: true },
+  )
+
+  return { theme, toggle, setTheme }
 })

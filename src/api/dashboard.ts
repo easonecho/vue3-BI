@@ -10,6 +10,7 @@ export interface CreateDashboardParams {
   name: string
   description?: string
   layout?: Record<string, unknown>
+  thumbnail?: string
   isPublic?: boolean
   groupId?: number | null
 }

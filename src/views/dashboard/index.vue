@@ -1,7 +1,29 @@
 <template>
   <div class="dashboard-list">
+    <!-- 页面头部 -->
+    <div class="page-header">
+      <div class="header-title-area">
+        <h1 class="page-title">看板管理</h1>
+        <p class="page-subtitle">共 {{ total }} 个看板</p>
+      </div>
+      <div class="header-stats">
+        <div class="stat-chip">
+          <span class="stat-value">{{ total }}</span>
+          <span class="stat-label">总计</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-value">{{ publishedCount }}</span>
+          <span class="stat-label">已发布</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-value">{{ draftCount }}</span>
+          <span class="stat-label">草稿</span>
+        </div>
+      </div>
+    </div>
+
     <!-- 顶部筛选栏 -->
-    <el-card class="filter-card" shadow="never">
+    <div class="filter-card">
       <div class="filter-bar">
         <el-input
           v-model="filters.keyword"
@@ -53,115 +75,108 @@
           :type="filters.onlyFavorites ? 'warning' : 'default'"
           @click="toggleFavoritesFilter"
         >
-          <el-icon><component :is="filters.onlyFavorites ? StarFilled : Star" /></el-icon>&nbsp;我的收藏
+          <el-icon><component :is="filters.onlyFavorites ? StarFilled : Star" /></el-icon
+          >&nbsp;我的收藏
         </el-button>
         <div class="spacer" />
         <!-- P2-3: 分组管理 + 模板库 -->
         <el-button @click="openGroupDialog">
-          <el-icon><FolderOpened /></el-icon>&nbsp;分组管理
-        </el-button>
-        <el-button @click="openTemplateDialog">
-          <el-icon><Files /></el-icon>&nbsp;模板库
+          <el-icon><FolderOpened /></el-icon>&nbsp;{{ t('dashboard.groupManage') }}
         </el-button>
         <el-button type="success" @click="openCreateDialog">
           <el-icon><Plus /></el-icon>&nbsp;新建看板
         </el-button>
       </div>
-    </el-card>
+    </div>
 
     <!-- 看板卡片网格 -->
     <el-row :gutter="16" v-loading="loading" class="card-grid">
-      <el-col v-for="item in list" :key="item.id" :xs="24" :sm="12" :md="8" :lg="6">
-        <el-card class="dashboard-card" shadow="hover">
-          <div class="card-header">
-            <span class="card-title" :title="item.name">{{ item.name }}</span>
-            <div class="card-header-actions">
-              <el-tooltip :content="isFavorited(item) ? '取消收藏' : '收藏'" placement="top">
-                <el-icon
-                  class="favorite-btn"
-                  :class="{ active: isFavorited(item) }"
-                  @click.stop="handleToggleFavorite(item)"
-                >
-                  <component :is="isFavorited(item) ? StarFilled : Star" />
-                </el-icon>
-              </el-tooltip>
-              <el-dropdown trigger="click" @command="(cmd: string) => handleCommand(cmd, item)">
-                <el-icon class="more-btn"><MoreFilled /></el-icon>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item command="rename">
-                      <el-icon><Edit /></el-icon>&nbsp;重命名
-                    </el-dropdown-item>
-                    <el-dropdown-item command="copy">
-                      <el-icon><CopyDocument /></el-icon>&nbsp;复制
-                    </el-dropdown-item>
-                    <el-dropdown-item command="moveGroup">
-                      <el-icon><Rank /></el-icon>&nbsp;移动到分组
-                    </el-dropdown-item>
-                    <el-dropdown-item command="saveAsTemplate">
-                      <el-icon><Files /></el-icon>&nbsp;存为模板
-                    </el-dropdown-item>
-                    <el-dropdown-item command="share">
-                      <el-icon><Share /></el-icon>&nbsp;分享
-                    </el-dropdown-item>
-                    <el-dropdown-item command="toggleStatus" divided>
-                      <el-icon><Promotion /></el-icon>&nbsp;{{ item.status === 1 ? '转为草稿' : '发布' }}
-                    </el-dropdown-item>
-                    <el-dropdown-item command="togglePublic">
-                      <el-icon><Share /></el-icon>&nbsp;{{ item.isPublic ? '设为私有' : '设为公开' }}
-                    </el-dropdown-item>
-                    <el-dropdown-item command="delete" divided>
-                      <el-icon><Delete /></el-icon>&nbsp;删除
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
+      <el-col v-for="(item, idx) in list" :key="item.id" :xs="24" :sm="12" :md="8" :lg="6">
+        <div class="dashboard-card" :style="{ animationDelay: `${idx * 0.04}s` }">
+          <div class="card-thumb" @click="handlePreview(item.id)">
+            <img v-if="item.thumbnail && item.thumbnail.startsWith('data:')" :src="item.thumbnail" :alt="item.name" />
+            <div v-else class="thumb-placeholder">
+              <el-icon :size="32"><DataAnalysis /></el-icon>
+            </div>
+            <div class="thumb-overlay">
+              <el-button size="small" type="primary" @click.stop="handlePreview(item.id)">
+                <el-icon><View /></el-icon>&nbsp;预览
+              </el-button>
+              <el-button size="small" @click.stop="handleEdit(item.id)">
+                <el-icon><Edit /></el-icon>&nbsp;编辑
+              </el-button>
             </div>
           </div>
-
-          <p class="card-desc" :title="item.description">{{ item.description || '暂无描述' }}</p>
-
-          <div class="card-meta">
-            <el-tag size="small" :type="item.isPublic ? 'success' : 'info'">
-              {{ item.isPublic ? '公开' : '私有' }}
-            </el-tag>
-            <el-tag size="small" :type="item.status === 1 ? 'success' : 'warning'">
-              {{ item.status === 1 ? '已发布' : '草稿' }}
-            </el-tag>
-            <el-tag v-if="item.group" size="small" type="primary" effect="plain">
-              <el-icon><Folder /></el-icon>&nbsp;{{ item.group.name }}
-            </el-tag>
-            <el-tag size="small" type="primary" effect="plain">
-              <el-icon><PieChart /></el-icon>&nbsp;{{ item._count?.charts ?? 0 }}
-            </el-tag>
+          <div class="card-body">
+            <!-- 标题行 -->
+            <div class="card-title-row">
+              <div class="footer-left">
+                <span class="status-indicator" :class="item.status === 1 ? 'is-published' : 'is-draft'" />
+                <span class="card-title" :title="item.name">{{ item.name }}</span>
+              </div>
+              <div class="footer-right">
+                <el-tooltip :content="isFavorited(item) ? '取消收藏' : '收藏'" placement="top">
+                  <el-icon class="favorite-btn" :class="{ active: isFavorited(item) }" @click.stop="handleToggleFavorite(item)">
+                    <component :is="isFavorited(item) ? StarFilled : Star" />
+                  </el-icon>
+                </el-tooltip>
+                <el-dropdown trigger="click" @command="(cmd: string) => handleCommand(cmd, item)">
+                  <el-icon class="more-btn"><MoreFilled /></el-icon>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="rename">
+                        <el-icon><Edit /></el-icon>&nbsp;重命名
+                      </el-dropdown-item>
+                      <el-dropdown-item command="copy">
+                        <el-icon><CopyDocument /></el-icon>&nbsp;复制
+                      </el-dropdown-item>
+                      <el-dropdown-item command="moveGroup">
+                        <el-icon><Rank /></el-icon>&nbsp;移动到分组
+                      </el-dropdown-item>
+                      <el-dropdown-item command="saveAsTemplate">
+                        <el-icon><Files /></el-icon>&nbsp;存为模板
+                      </el-dropdown-item>
+                      <el-dropdown-item command="share">
+                        <el-icon><Share /></el-icon>&nbsp;分享
+                      </el-dropdown-item>
+                      <el-dropdown-item command="toggleStatus" divided>
+                        <el-icon><Promotion /></el-icon>&nbsp;{{
+                          item.status === 1 ? '转为草稿' : '发布'
+                        }}
+                      </el-dropdown-item>
+                      <el-dropdown-item command="togglePublic">
+                        <el-icon><Share /></el-icon>&nbsp;{{
+                          item.isPublic ? '设为私有' : '设为公开'
+                        }}
+                      </el-dropdown-item>
+                      <el-dropdown-item command="delete" divided>
+                        <el-icon><Delete /></el-icon>&nbsp;删除
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
+            </div>
+            <!-- 描述行 -->
+            <p class="card-desc" :title="item.description">{{ item.description || '暂无描述' }}</p>
+            <!-- 标签行 -->
+            <div class="card-tags">
+              <el-tag size="small" :type="item.isPublic ? 'success' : 'info'">{{ item.isPublic ? '公开' : '私有' }}</el-tag>
+              <el-tag size="small" :type="item.status === 1 ? 'success' : 'warning'">{{ item.status === 1 ? '已发布' : '草稿' }}</el-tag>
+              <el-tag v-if="item._count?.charts" size="small" type="primary" effect="plain">
+                <el-icon><PieChart /></el-icon>&nbsp;{{ item._count.charts }}
+              </el-tag>
+            </div>
           </div>
-
-          <div class="card-info">
-            <span class="info-item" :title="`创建者: ${item.creator?.nickname || item.creator?.username || '-'}`">
-              <el-icon><User /></el-icon>
-              {{ item.creator?.nickname || item.creator?.username || '-' }}
-            </span>
-            <span class="info-item" :title="`创建时间: ${formatTime(item.createdAt)}`">
-              <el-icon><Clock /></el-icon>
-              {{ formatTime(item.createdAt) }}
-            </span>
-          </div>
-
-          <div class="card-actions">
-            <el-button size="small" @click="handleEdit(item.id)">
-              <el-icon><Edit /></el-icon>&nbsp;编辑
-            </el-button>
-            <el-button size="small" @click="handlePreview(item.id)">
-              <el-icon><View /></el-icon>&nbsp;预览
-            </el-button>
-          </div>
-        </el-card>
+        </div>
       </el-col>
 
       <el-col v-if="!loading && list.length === 0" :span="24">
-        <el-empty description="暂无看板,点击右上角新建">
-          <el-button type="primary" @click="openCreateDialog">新建看板</el-button>
-        </el-empty>
+        <div class="empty-state">
+          <el-empty description="暂无看板,点击右上角新建">
+            <el-button type="primary" @click="openCreateDialog">新建看板</el-button>
+          </el-empty>
+        </div>
       </el-col>
     </el-row>
 
@@ -185,41 +200,123 @@
       </template>
     </el-dialog>
 
-    <!-- 新建看板对话框 -->
-    <el-dialog v-model="createVisible" title="新建看板" width="440px">
-      <el-form :model="createForm" label-width="80px">
-        <el-form-item label="看板名称">
+    <!-- 新建看板对话框（含模板选择步骤） -->
+    <el-dialog v-model="createVisible" :title="t('dashboard.createTitle')" width="760px">
+      <!-- 步骤 1: 选择模板 -->
+      <div v-if="createStep === 1" class="template-picker">
+        <p class="picker-hint">{{ t('dashboard.templateHint') }}</p>
+        <el-tabs v-model="templateTab" class="picker-tabs">
+          <!-- Tab 2: 用户模板库 -->
+          <el-tab-pane :label="t('dashboard.userTemplateTab')" name="user">
+            <div v-loading="userTemplatesLoading">
+              <el-row :gutter="12">
+                <el-col v-for="tpl in userTemplates" :key="tpl.id" :xs="24" :sm="12" :md="8">
+                  <div
+                    class="tpl-picker-card"
+                    :class="{ active: selectedKind === 'user' && selectedUserTplId === tpl.id }"
+                    @click="selectUserTemplate(tpl.id)"
+                  >
+                    <!-- 缩略图主体 -->
+                    <div class="tpl-picker-thumb">
+                      <img
+                        v-if="tpl.thumbnail && tpl.thumbnail.startsWith('data:')"
+                        :src="tpl.thumbnail"
+                        :alt="tpl.name"
+                        class="thumb-img"
+                      />
+                      <div v-else class="thumb-placeholder">
+                        <el-icon :size="36" color="#94a3b8"><DataAnalysis /></el-icon>
+                        <span class="thumb-emoji">{{ tpl.thumbnail || '' }}</span>
+                      </div>
+                      <!-- hover 遮罩 -->
+                      <div class="thumb-overlay">
+                        <el-icon class="overlay-icon"><ZoomIn /></el-icon>
+                        <span class="overlay-text">预览</span>
+                      </div>
+                      <!-- 选中徽标 -->
+                      <div v-if="selectedKind === 'user' && selectedUserTplId === tpl.id" class="selected-badge">
+                        <el-icon><CircleCheckFilled /></el-icon>
+                      </div>
+                    </div>
+                    <!-- 信息区 -->
+                    <div class="tpl-picker-info">
+                      <div class="tpl-picker-name" :title="tpl.name">{{ tpl.name }}</div>
+                      <p class="tpl-picker-desc" :title="tpl.description || ''">{{ tpl.description || t('dashboard.noDesc') }}</p>
+                      <div class="tpl-picker-tags">
+                        <el-tag v-if="tpl.category" size="small" effect="plain" type="primary">{{
+                          tpl.category
+                        }}</el-tag>
+                        <el-tag v-if="tpl.isSystem" size="small" type="warning" effect="dark">预置</el-tag>
+                        <el-tag v-else size="small" :type="tpl.isPublic ? 'success' : 'info'" effect="plain">{{
+                          tpl.isPublic ? t('dashboard.public') : t('dashboard.private')
+                        }}</el-tag>
+                      </div>
+                    </div>
+                  </div>
+                </el-col>
+                <el-col v-if="!userTemplatesLoading && userTemplates.length === 0" :span="24">
+                  <el-empty :description="t('dashboard.noUserTemplates')">
+                    <el-button type="primary" @click="goToTemplateManage">{{
+                      t('dashboard.goTemplateLib')
+                    }}</el-button>
+                  </el-empty>
+                </el-col>
+              </el-row>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+      <!-- 步骤 2: 填写看板信息 -->
+      <el-form v-else :model="createForm" label-width="80px">
+        <el-form-item :label="t('dashboard.name')">
           <el-input
             v-model="createForm.name"
-            placeholder="请输入看板名称"
+            :placeholder="t('dashboard.namePlaceholder')"
             maxlength="50"
             show-word-limit
             @keyup.enter="confirmCreate"
           />
         </el-form-item>
-        <el-form-item label="描述">
+        <el-form-item :label="t('dashboard.description')">
           <el-input
             v-model="createForm.description"
             type="textarea"
             :rows="3"
-            placeholder="可选, 看板用途说明"
+            :placeholder="t('dashboard.descPlaceholder')"
             maxlength="200"
             show-word-limit
           />
         </el-form-item>
-        <el-form-item label="所属分组">
-          <el-select v-model="createForm.groupId" placeholder="不选择则归为未分组" clearable style="width: 100%">
+        <el-form-item :label="t('dashboard.group')">
+          <el-select
+            v-model="createForm.groupId"
+            :placeholder="t('dashboard.groupPlaceholder')"
+            clearable
+            style="width: 100%"
+          >
             <el-option v-for="g in groups" :key="g.id" :label="g.name" :value="g.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="是否公开">
+        <el-form-item :label="t('dashboard.isPublic')">
           <el-switch v-model="createForm.isPublic" />
-          <span class="form-hint">公开看板可通过分享链接访问</span>
+          <span class="form-hint">{{ t('dashboard.publicHint') }}</span>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="createVisible = false">取消</el-button>
-        <el-button type="primary" :loading="creating" @click="confirmCreate">创建并编辑</el-button>
+        <el-button v-if="createStep === 2" @click="createStep = 1">{{
+          t('common.back')
+        }}</el-button>
+        <el-button @click="createVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button v-if="createStep === 1" type="primary" @click="goToCreateStep2">{{
+          t('common.next')
+        }}</el-button>
+        <el-button
+          v-if="createStep === 2"
+          type="primary"
+          :loading="creating"
+          @click="confirmCreate"
+          >{{ t('dashboard.createAndEdit') }}</el-button
+        >
       </template>
     </el-dialog>
 
@@ -258,7 +355,13 @@
               <span class="form-hint">开启后访问者需输入密码</span>
             </el-form-item>
             <el-form-item v-if="shareForm.enablePassword" label="访问密码">
-              <el-input v-model="shareForm.password" type="password" placeholder="请输入访问密码" show-password maxlength="50" />
+              <el-input
+                v-model="shareForm.password"
+                type="password"
+                placeholder="请输入访问密码"
+                show-password
+                maxlength="50"
+              />
             </el-form-item>
             <el-form-item label="有效期">
               <el-select v-model="shareForm.expiresInHours" style="width: 100%">
@@ -282,7 +385,9 @@
           </el-popconfirm>
         </template>
         <template v-else-if="shareConfig && !shareConfig.isShared">
-          <el-button type="primary" :loading="creatingShare" @click="handleCreateShare">创建分享链接</el-button>
+          <el-button type="primary" :loading="creatingShare" @click="handleCreateShare"
+            >创建分享链接</el-button
+          >
         </template>
       </template>
     </el-dialog>
@@ -305,7 +410,9 @@
         <el-table-column label="操作" width="140" align="center">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openGroupForm(row)">编辑</el-button>
-            <el-button link type="danger" size="small" @click="handleDeleteGroup(row)">删除</el-button>
+            <el-button link type="danger" size="small" @click="handleDeleteGroup(row)"
+              >删除</el-button
+            >
           </template>
         </el-table-column>
       </el-table>
@@ -315,13 +422,29 @@
     </el-dialog>
 
     <!-- P2-3: 分组表单对话框 -->
-    <el-dialog v-model="groupFormVisible" :title="groupForm.id ? '编辑分组' : '新增分组'" width="420px" append-to-body>
+    <el-dialog
+      v-model="groupFormVisible"
+      :title="groupForm.id ? '编辑分组' : '新增分组'"
+      width="420px"
+      append-to-body
+    >
       <el-form :model="groupForm" label-width="80px">
         <el-form-item label="名称">
-          <el-input v-model="groupForm.name" placeholder="请输入分组名称" maxlength="50" show-word-limit />
+          <el-input
+            v-model="groupForm.name"
+            placeholder="请输入分组名称"
+            maxlength="50"
+            show-word-limit
+          />
         </el-form-item>
         <el-form-item label="描述">
-          <el-input v-model="groupForm.description" type="textarea" :rows="2" placeholder="可选" maxlength="200" />
+          <el-input
+            v-model="groupForm.description"
+            type="textarea"
+            :rows="2"
+            placeholder="可选"
+            maxlength="200"
+          />
         </el-form-item>
         <el-form-item label="排序">
           <el-input-number v-model="groupForm.sort" :min="0" :max="9999" />
@@ -337,7 +460,12 @@
     <el-dialog v-model="moveGroupVisible" title="移动到分组" width="420px">
       <el-form label-width="80px">
         <el-form-item label="目标分组">
-          <el-select v-model="moveGroupTarget" placeholder="选择分组 (选空=移出分组)" clearable style="width: 100%">
+          <el-select
+            v-model="moveGroupTarget"
+            placeholder="选择分组 (选空=移出分组)"
+            clearable
+            style="width: 100%"
+          >
             <el-option v-for="g in groups" :key="g.id" :label="g.name" :value="g.id" />
           </el-select>
         </el-form-item>
@@ -352,13 +480,28 @@
     <el-dialog v-model="saveTplVisible" title="保存为模板" width="440px">
       <el-form :model="saveTplForm" label-width="80px">
         <el-form-item label="模板名称">
-          <el-input v-model="saveTplForm.name" placeholder="请输入模板名称" maxlength="50" show-word-limit />
+          <el-input
+            v-model="saveTplForm.name"
+            placeholder="请输入模板名称"
+            maxlength="50"
+            show-word-limit
+          />
         </el-form-item>
         <el-form-item label="描述">
-          <el-input v-model="saveTplForm.description" type="textarea" :rows="2" placeholder="可选" maxlength="200" />
+          <el-input
+            v-model="saveTplForm.description"
+            type="textarea"
+            :rows="2"
+            placeholder="可选"
+            maxlength="200"
+          />
         </el-form-item>
         <el-form-item label="分类">
-          <el-input v-model="saveTplForm.category" placeholder="如: 销售/运营/财务 (可选)" maxlength="50" />
+          <el-input
+            v-model="saveTplForm.category"
+            placeholder="如: 销售/运营/财务 (可选)"
+            maxlength="50"
+          />
         </el-form-item>
         <el-form-item label="是否公开">
           <el-switch v-model="saveTplForm.isPublic" />
@@ -367,100 +510,79 @@
       </el-form>
       <template #footer>
         <el-button @click="saveTplVisible = false">取消</el-button>
-        <el-button type="primary" :loading="savingTpl" @click="confirmSaveAsTemplate">保存</el-button>
+        <el-button type="primary" :loading="savingTpl" @click="confirmSaveAsTemplate"
+          >保存</el-button
+        >
       </template>
     </el-dialog>
 
-    <!-- P2-3: 模板库对话框 -->
-    <el-dialog v-model="templateDialogVisible" title="模板库" width="860px">
-      <div v-loading="templatesLoading">
-        <el-row :gutter="12">
-          <el-col v-for="tpl in templates" :key="tpl.id" :xs="24" :sm="12" :md="8">
-            <el-card class="template-card" shadow="hover">
-              <div class="tpl-card-header">
-                <span class="tpl-name" :title="tpl.name">{{ tpl.name }}</span>
-                <el-tag v-if="tpl.category" size="small" effect="plain">{{ tpl.category }}</el-tag>
-              </div>
-              <p class="tpl-desc">{{ tpl.description || '暂无描述' }}</p>
-              <div class="tpl-meta">
-                <el-tag size="small" :type="tpl.isPublic ? 'success' : 'info'">
-                  {{ tpl.isPublic ? '公开' : '私有' }}
-                </el-tag>
-                <span class="tpl-creator">
-                  <el-icon><User /></el-icon>
-                  {{ tpl.creator?.nickname || tpl.creator?.username || '-' }}
-                </span>
-              </div>
-              <div class="tpl-actions">
-                <el-button size="small" type="primary" @click="handleApplyTemplate(tpl)">
-                  <el-icon><Plus /></el-icon>&nbsp;应用此模板
-                </el-button>
-                <el-button size="small" type="danger" plain @click="handleDeleteTemplate(tpl)">删除</el-button>
-              </div>
-            </el-card>
-          </el-col>
-          <el-col v-if="!templatesLoading && templates.length === 0" :span="24">
-            <el-empty description="暂无模板" />
-          </el-col>
-        </el-row>
-      </div>
-      <template #footer>
-        <el-button @click="templateDialogVisible = false">关闭</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- P2-3: 应用模板对话框 -->
-    <el-dialog v-model="applyTplVisible" title="从模板创建看板" width="440px">
-      <el-form :model="applyTplForm" label-width="80px">
-        <el-form-item label="看板名称">
-          <el-input v-model="applyTplForm.name" placeholder="请输入看板名称" maxlength="50" show-word-limit />
-        </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="applyTplForm.description" type="textarea" :rows="2" placeholder="可选" maxlength="200" />
-        </el-form-item>
-        <el-form-item label="是否公开">
-          <el-switch v-model="applyTplForm.isPublic" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="applyTplVisible = false">取消</el-button>
-        <el-button type="primary" :loading="applyingTpl" @click="confirmApplyTemplate">创建并编辑</el-button>
-      </template>
-    </el-dialog>
+    <!-- P2-3: 模板库已迁移至独立菜单 /dashboard-templates -->
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Plus, MoreFilled, Edit, View, Search, Refresh, CopyDocument,
-  Delete, Promotion, Share, PieChart, User, Clock, Lock, Star, StarFilled,
-  FolderOpened, Files, Folder, Rank,
-} from '@element-plus/icons-vue'
+  Plus,
+  MoreFilled,
+  Edit,
+  View,
+  Search,
+  Refresh,
+  CopyDocument,
+  DataAnalysis,
+  Delete,
+  Promotion,
+  Share,
+  PieChart,
+  User,
+  Clock,
+  Lock,
+  Star,
+  StarFilled,
+  FolderOpened,
+  Files,
+  Folder,
+  Rank,
+  ZoomIn,
+  CircleCheckFilled} from '@element-plus/icons-vue'
 import {
-  getDashboardList, deleteDashboard, updateDashboard, createDashboard,
-  copyDashboard, toggleFavorite, moveDashboardToGroup,
+  getDashboardList,
+  deleteDashboard,
+  updateDashboard,
+  createDashboard,
+  copyDashboard,
+  toggleFavorite,
+  moveDashboardToGroup,
 } from '@/api/dashboard'
 import type { CreateDashboardParams, DashboardListQuery } from '@/api/dashboard'
 import type { Dashboard, DashboardGroup, DashboardTemplate } from '@/api/types'
 import { getShareConfig, createShare, revokeShare } from '@/api/share'
 import type { ShareConfig } from '@/api/share'
 import {
-  getDashboardGroupList, createDashboardGroup, updateDashboardGroup, deleteDashboardGroup,
+  getDashboardGroupList,
+  createDashboardGroup,
+  updateDashboardGroup,
+  deleteDashboardGroup,
 } from '@/api/dashboard-group'
-import {
-  getDashboardTemplateList, saveAsTemplate, applyTemplate, deleteDashboardTemplate,
-} from '@/api/dashboard-template'
+import { getDashboardTemplateList, saveAsTemplate, applyTemplate } from '@/api/dashboard-template'
+// preset-templates 已移除：新建看板模板统一从后端模板库获取
 
 const router = useRouter()
+const { t } = useI18n()
 
 const list = ref<Dashboard[]>([])
 const loading = ref(false)
 const page = ref(1)
 const pageSize = ref(12)
 const total = ref(0)
+
+// 统计
+const publishedCount = computed(() => list.value.filter((d) => d.status === 1).length)
+const draftCount = computed(() => list.value.filter((d) => d.status === 0).length)
 
 // 筛选条件
 const filters = reactive({
@@ -486,6 +608,14 @@ const createForm = reactive<CreateDashboardParams>({
   isPublic: false,
   groupId: null,
 })
+/** 模板选择步骤：1=选模板，2=填信息 */
+const createStep = ref(1)
+/** 新建对话框模板选择：tab + 选中类型 + 选中ID */
+const templateTab = ref<'user'>('user')
+const selectedKind = ref<'user'>('user')
+const selectedUserTplId = ref<number | null>(null)
+const userTemplates = ref<DashboardTemplate[]>([])
+const userTemplatesLoading = ref(false)
 
 function formatTime(t?: string): string {
   if (!t) return '-'
@@ -573,30 +703,91 @@ function toggleFavoritesFilter() {
 }
 
 function openCreateDialog() {
+  createStep.value = 1
+  templateTab.value = 'user'
+  selectedKind.value = 'user'
+  selectedUserTplId.value = null
   createForm.name = ''
   createForm.description = ''
   createForm.isPublic = false
   createForm.groupId = null
   createVisible.value = true
+  // 异步加载用户模板列表
+  loadUserTemplatesForCreate()
+}
+
+/** 加载用户模板库（新建对话框 Tab 用） */
+async function loadUserTemplatesForCreate() {
+  userTemplatesLoading.value = true
+  try {
+    const res = await getDashboardTemplateList()
+    userTemplates.value = res.data
+  } catch {
+    // 错误提示由 request 拦截器统一处理
+  } finally {
+    userTemplatesLoading.value = false
+  }
+}
+
+
+function selectUserTemplate(id: number) {
+  selectedKind.value = 'user'
+  selectedUserTplId.value = id
+}
+
+function goToTemplateManage() {
+  router.push('/dashboard-templates')
+}
+
+/** 步骤 1 → 2：预填看板名称（用模板名作为默认值） */
+function goToCreateStep2() {
+  if (selectedUserTplId.value !== null) {
+    const tpl = userTemplates.value.find((x) => x.id === selectedUserTplId.value)
+    if (tpl && !createForm.name) {
+      createForm.name = `${tpl.name}_${t('dashboard.title')}`
+    }
+  }
+  createStep.value = 2
 }
 
 async function confirmCreate() {
   const name = createForm.name.trim()
   if (!name) {
-    ElMessage.warning('看板名称不能为空')
+    ElMessage.warning(t('dashboard.nameRequired'))
     return
   }
   creating.value = true
   try {
-    const res = await createDashboard({
-      name,
-      description: createForm.description?.trim() || undefined,
-      isPublic: createForm.isPublic,
-      groupId: createForm.groupId ?? undefined,
-    })
-    ElMessage.success('创建成功, 正在跳转编辑器...')
-    createVisible.value = false
-    router.push(`/bi-editor/${res.data.id}`)
+    if (selectedUserTplId.value !== null) {
+      // 🔑 选了模板：调用 applyTemplate API，由后端复制 layout
+      const res = await applyTemplate(selectedUserTplId.value, {
+        name,
+        description: createForm.description?.trim() || undefined,
+        isPublic: createForm.isPublic,
+      })
+      // 如果用户选了分组，则再更新一次 groupId
+      if (createForm.groupId !== null && createForm.groupId !== undefined) {
+        try {
+          await moveDashboardToGroup(res.data.id, createForm.groupId)
+        } catch {
+          // 分组归属更新失败不阻塞创建流程
+        }
+      }
+      ElMessage.success(t('dashboard.createSuccess'))
+      createVisible.value = false
+      router.push(`/bi-editor/${res.data.id}`)
+    } else {
+      // 🔑 未选模板：创建空白看板
+      const res = await createDashboard({
+        name,
+        description: createForm.description?.trim() || undefined,
+        isPublic: createForm.isPublic,
+        groupId: createForm.groupId ?? undefined,
+      })
+      ElMessage.success(t('dashboard.createSuccess'))
+      createVisible.value = false
+      router.push(`/bi-editor/${res.data.id}`)
+    }
   } catch {
     // 错误提示由 request 拦截器统一处理
   } finally {
@@ -850,7 +1041,11 @@ async function handleSaveGroup() {
   }
   groupSaving.value = true
   try {
-    const data = { name, description: groupForm.description.trim() || undefined, sort: groupForm.sort }
+    const data = {
+      name,
+      description: groupForm.description.trim() || undefined,
+      sort: groupForm.sort,
+    }
     if (groupForm.id) {
       await updateDashboardGroup(groupForm.id, data)
       ElMessage.success('更新成功')
@@ -948,78 +1143,12 @@ async function confirmSaveAsTemplate() {
   }
 }
 
-// ========== P2-3: 模板库 ==========
-const templates = ref<DashboardTemplate[]>([])
-const templatesLoading = ref(false)
-const templateDialogVisible = ref(false)
-const applyTplVisible = ref(false)
-const applyingTpl = ref(false)
-const applyTplTarget = ref<DashboardTemplate | null>(null)
-const applyTplForm = reactive({ name: '', description: '', isPublic: false })
-
-async function openTemplateDialog() {
-  templateDialogVisible.value = true
-  templatesLoading.value = true
-  try {
-    const res = await getDashboardTemplateList()
-    templates.value = res.data
-  } catch {
-    // 错误提示由 request 拦截器统一处理
-  } finally {
-    templatesLoading.value = false
-  }
-}
-
-function handleApplyTemplate(tpl: DashboardTemplate) {
-  applyTplTarget.value = tpl
-  applyTplForm.name = `${tpl.name}_看板`
-  applyTplForm.description = tpl.description || ''
-  applyTplForm.isPublic = false
-  applyTplVisible.value = true
-}
-
-async function confirmApplyTemplate() {
-  if (!applyTplTarget.value) return
-  const name = applyTplForm.name.trim()
-  if (!name) {
-    ElMessage.warning('看板名称不能为空')
-    return
-  }
-  applyingTpl.value = true
-  try {
-    const res = await applyTemplate(applyTplTarget.value.id, {
-      name,
-      description: applyTplForm.description.trim() || undefined,
-      isPublic: applyTplForm.isPublic,
-    })
-    ElMessage.success('已从模板创建看板')
-    applyTplVisible.value = false
-    templateDialogVisible.value = false
-    router.push(`/bi-editor/${res.data.id}`)
-  } catch {
-    // 错误提示由 request 拦截器统一处理
-  } finally {
-    applyingTpl.value = false
-  }
-}
-
-async function handleDeleteTemplate(tpl: DashboardTemplate) {
-  try {
-    await ElMessageBox.confirm(`确定删除模板「${tpl.name}」吗?`, '提示', {
-      type: 'warning',
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-    })
-    await deleteDashboardTemplate(tpl.id)
-    ElMessage.success('删除成功')
-    templates.value = templates.value.filter((t) => t.id !== tpl.id)
-  } catch {
-    // 用户取消或请求失败
-  }
-}
+// ========== P2-3: 模板库已迁移至独立页面 /dashboard-templates ==========
+// 此处保留 saveAsTemplate 入口用于「存为模板」功能；CRUD 操作移至 views/dashboard-templates
 
 onMounted(() => {
   loadList()
+  loadGroups()
 })
 </script>
 
@@ -1028,14 +1157,70 @@ onMounted(() => {
   padding: 16px;
 }
 
-.filter-card {
-  margin-bottom: 16px;
-  background: var(--bi-card-bg, #1f2937);
-  border: 1px solid var(--bi-border-color, #374151);
+/* 页面头部 */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
 
-  :deep(.el-card__body) {
-    padding: 16px;
+.header-title-area {
+  .page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--bi-text-primary);
+    margin: 0;
+    line-height: 1.3;
   }
+  .page-subtitle {
+    font-size: 13px;
+    color: var(--bi-text-muted);
+    margin: 4px 0 0 0;
+  }
+}
+
+.header-stats {
+  display: flex;
+  gap: 10px;
+
+  .stat-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 16px;
+    border-radius: 8px;
+    background: var(--bi-card-bg);
+    border: 1px solid var(--bi-card-border);
+    min-width: 64px;
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--bi-accent);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-label {
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: var(--bi-text-muted);
+      margin-top: 2px;
+    }
+  }
+}
+
+/* 筛选栏 */
+.filter-card {
+  position: relative;
+  margin-bottom: 20px;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--bi-card-bg);
+  border: 1px solid var(--bi-card-border);
+  box-shadow: var(--bi-shadow-sm);
 }
 
 .filter-bar {
@@ -1049,18 +1234,113 @@ onMounted(() => {
   }
 }
 
+/* 卡片网格 */
 .card-grid {
   min-height: 200px;
 }
 
+/* 看板卡片 */
 .dashboard-card {
+  position: relative;
   margin-bottom: 16px;
-  background: var(--bi-card-bg, #1f2937);
-  border: 1px solid var(--bi-border-color, #374151);
-  color: var(--bi-text-primary, #f3f4f6);
+  border-radius: 8px;
+  background: var(--bi-card-bg);
+  border: 1px solid var(--bi-card-border);
+  overflow: hidden;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+  animation: cardEnter 0.3s ease both;
 
-  :deep(.el-card__body) {
-    padding: 16px;
+  &:hover {
+    border-color: var(--bi-border-accent);
+    box-shadow: var(--bi-shadow-sm);
+  }
+
+  .card-inner {
+    padding: 0;
+  }
+}
+
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-thumb {
+  position: relative;
+  height: 160px;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.thumb-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bi-text-secondary);
+}
+
+.thumb-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.card-thumb:hover .thumb-overlay {
+  opacity: 1;
+}
+
+.card-body {
+  padding: 12px 14px;
+}
+
+.card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-left,
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &.is-published {
+    background: var(--bi-success);
+  }
+  &.is-draft {
+    background: var(--bi-warning);
   }
 }
 
@@ -1069,17 +1349,40 @@ onMounted(() => {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 8px;
+  gap: 8px;
+}
+
+.card-title-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+
+  .status-indicator {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+
+    &.is-published {
+      background: var(--bi-success);
+    }
+    &.is-draft {
+      background: var(--bi-warning);
+    }
+  }
 }
 
 .card-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  color: var(--bi-text-primary, #f3f4f6);
+  color: var(--bi-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
-  margin-right: 8px;
+  min-width: 0;
 }
 
 .card-header-actions {
@@ -1091,13 +1394,12 @@ onMounted(() => {
 
 .favorite-btn {
   cursor: pointer;
-  color: var(--bi-text-secondary, #9ca3af);
-  font-size: 18px;
-  transition: color 0.2s, transform 0.2s;
+  color: var(--bi-text-muted);
+  font-size: 17px;
+  transition: color 0.15s ease;
 
   &:hover {
     color: #fbbf24;
-    transform: scale(1.15);
   }
 
   &.active {
@@ -1107,28 +1409,34 @@ onMounted(() => {
 
 .more-btn {
   cursor: pointer;
-  color: var(--bi-text-secondary, #9ca3af);
+  color: var(--bi-text-secondary);
   font-size: 18px;
   flex-shrink: 0;
+  transition: color 0.2s;
 
   &:hover {
-    color: var(--bi-text-primary, #f3f4f6);
+    color: var(--bi-accent);
   }
 }
 
 .card-desc {
-  font-size: 13px;
-  color: var(--bi-text-secondary, #9ca3af);
-  margin: 0 0 12px 0;
-  min-height: 18px;
+  margin: 6px 0 8px;
+  font-size: 12px;
+  color: var(--bi-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.card-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
 .card-meta {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 12px;
   flex-wrap: wrap;
 }
@@ -1139,15 +1447,15 @@ onMounted(() => {
   gap: 6px;
   margin-bottom: 12px;
   padding: 8px 0;
-  border-top: 1px solid var(--bi-border-color, #374151);
-  border-bottom: 1px solid var(--bi-border-color, #374151);
+  border-top: 1px solid var(--bi-border-color);
+  border-bottom: 1px solid var(--bi-border-color);
 
   .info-item {
     display: flex;
     align-items: center;
     gap: 6px;
     font-size: 12px;
-    color: var(--bi-text-secondary, #9ca3af);
+    color: var(--bi-text-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1163,6 +1471,10 @@ onMounted(() => {
   }
 }
 
+.empty-state {
+  padding: 40px 0;
+}
+
 .pagination {
   display: flex;
   justify-content: center;
@@ -1172,7 +1484,7 @@ onMounted(() => {
 .form-hint {
   margin-left: 8px;
   font-size: 12px;
-  color: var(--bi-text-secondary, #9ca3af);
+  color: var(--bi-text-secondary);
 }
 
 .share-meta {
@@ -1182,70 +1494,175 @@ onMounted(() => {
 }
 
 :deep(.el-empty__description) {
-  color: var(--bi-text-secondary, #9ca3af);
+  color: var(--bi-text-secondary);
 }
 
-/* P2-3: 模板卡片样式 */
-.template-card {
-  margin-bottom: 12px;
-  background: var(--bi-card-bg, #1f2937);
-  border: 1px solid var(--bi-border-color, #374151);
+/* 模板选择器 */
+.template-picker {
+  .picker-hint {
+    font-size: 13px;
+    color: var(--bi-text-secondary);
+    margin: 0 0 16px 0;
+  }
 
-  :deep(.el-card__body) {
-    padding: 12px;
+  .picker-tabs {
+    :deep(.el-tabs__header) {
+      margin-bottom: 12px;
+    }
+    :deep(.el-tabs__content) {
+      max-height: 420px;
+      overflow-y: auto;
+    }
   }
 }
 
-.tpl-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-  gap: 8px;
-}
-
-.tpl-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--bi-text-primary, #f3f4f6);
+/* ========== 新建看板 — 模板选择卡片 ========== */
+.tpl-picker-card {
+  background: var(--bi-card-bg);
+  border: 1.5px solid var(--bi-card-border);
+  border-radius: 12px;
+  cursor: pointer;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-}
-
-.tpl-desc {
-  font-size: 12px;
-  color: var(--bi-text-secondary, #9ca3af);
-  margin: 0 0 8px 0;
-  min-height: 16px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tpl-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-
-.tpl-creator {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--bi-text-secondary, #9ca3af);
-}
+  flex-direction: column;
+  min-height: 220px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 
-.tpl-actions {
-  display: flex;
-  gap: 8px;
+  &:hover {
+    border-color: var(--bi-border-accent);
+    box-shadow: 0 8px 24px -8px rgba(64, 158, 255, 0.25);
+    transform: translateY(-2px);
 
-  .el-button {
+    .thumb-overlay {
+      opacity: 1;
+    }
+  }
+
+  &.active {
+    border-color: var(--bi-accent);
+    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2), 0 8px 24px -8px rgba(64, 158, 255, 0.3);
+
+    .selected-badge {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* --- 缩略图区 --- */
+  .tpl-picker-thumb {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    overflow: hidden;
+    flex-shrink: 0;
+
+    .thumb-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .thumb-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+
+      .thumb-emoji {
+        font-size: 20px;
+      }
+    }
+
+    /* hover 遮罩 */
+    .thumb-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      color: #fff;
+
+      .overlay-icon {
+        font-size: 24px;
+      }
+      .overlay-text {
+        font-size: 12px;
+        font-weight: 500;
+      }
+    }
+
+    /* 选中徽标 */
+    .selected-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--bi-accent);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      opacity: 0;
+      transform: scale(0.6);
+      transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+      box-shadow: 0 2px 8px rgba(64, 158, 255, 0.5);
+    }
+  }
+
+  /* --- 信息区 --- */
+  .tpl-picker-info {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     flex: 1;
   }
+
+  .tpl-picker-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--bi-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.4;
+  }
+
+  .tpl-picker-desc {
+    margin: 0;
+    font-size: 12px;
+    color: var(--bi-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.5;
+  }
+
+  .tpl-picker-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: auto;
+  }
 }
+
+/* 模板库相关样式已迁移至独立页面 /dashboard-templates */
 </style>
