@@ -43,6 +43,16 @@ const router = createRouter({
           meta: { title: '模板库', requiresAuth: true },
         },
         {
+          path: 'material',
+          name: 'Material',
+          component: () => import('@/views/material/index.vue'),
+          meta: {
+            title: '素材管理',
+            requiresAuth: true,
+            permissions: ['material:view', 'material:upload', 'material:delete'],
+          },
+        },
+        {
           path: 'system/users',
           name: 'SystemUsers',
           component: () => import('@/views/system/users.vue'),

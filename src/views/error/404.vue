@@ -18,12 +18,12 @@ function goBack(): void {
   if (window.history.length > 1) {
     router.back()
   } else {
-    router.push('/bi-editor')
+    router.push('/dashboard')
   }
 }
 
 function goHome(): void {
-  router.push('/bi-editor')
+  router.push('/dashboard')
 }
 </script>
 

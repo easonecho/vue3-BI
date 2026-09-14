@@ -188,24 +188,63 @@ function isEChartsZoomWidget(target: EventTarget | null): boolean {
   return false
 }
 
-/** 🔑 标记「这个 mousedown 是否发生在 .base-chart / .el-table 这类有内部交互的容器内」。
+/** 🔑 标记「这个 mousedown 是否发生在 .el-table 这类有内部交互的容器内」。
  *   不在 capture 阶段直接拦截，而是给事件打标记，让 useCanvasInteraction 用高阈值策略。
- *   这样用户小范围操作（inside 数据平移、table 滚动条微拖、slider 拖动）由内部组件接管，
- *   大范围拖动（>12px）仍然能拖走整个组件，兼顾专业度与可用性。
+ *   table 内部滚动条微拖、单元格选择等小范围操作由 table 接管，
+ *   大范围拖动（>12px）仍然能拖走整个组件，兼顾内部交互与布局移动。
  */
 function isInsideInteractiveContainer(target: EventTarget | null): boolean {
   if (!target) return false
   const el = target as HTMLElement
   if (!el || typeof el.closest !== 'function') return false
-  if (el.closest('.base-chart')) return true
   if (el.closest('.component-content .el-table')) return true
   return false
 }
 
+/** 🔑 判断 mousedown 是否发生在 ECharts canvas（.base-chart）内 */
+function isInsideEChartsCanvas(target: EventTarget | null): boolean {
+  if (!target) return false
+  const el = target as HTMLElement
+  if (!el || typeof el.closest !== 'function') return false
+  return el.closest('.base-chart') !== null
+}
+
+/** 🔑 判断组件是否开启了 ECharts 内部拖拽类交互（节点 draggable）。
+ *   🔑 roam（缩放平移）已全局禁用：所有图表的 roam 一律硬编码 false，
+ *      不再有 ECharts 内部平移交互，因此只检查 draggable。
+ *   开启 draggable 时，在 .base-chart 内拖拽由 ECharts 独占（拖拽节点），
+ *   不启动组件拖拽，实现「框内交互」与「拖拽框」隔离。
+ *   未开启时，.base-chart 内拖拽正常移动组件。
+ */
+function hasInternalDragInteraction(comp: BiComponent): boolean {
+  return comp.props?.draggable === true
+}
+
+/** 🔑 识别 mousedown 是否发生在自定义 resize 手柄上。
+ *   resize 手柄的 @mousedown.stop 是 bubbling 阶段阻止冒泡，但本组件根 div 的
+ *   @mousedown.capture 在 capture 阶段先执行，会先 emit wrapper-mousedown 启动拖拽会话，
+ *   导致 resize 和 drag 同时触发。这里在 capture 阶段先判断 target 是否 resize 手柄，
+ *   是则跳过拖拽启动，让 resize 独占 mousedown。
+ */
+function isResizeHandleTarget(target: EventTarget | null): boolean {
+  if (!target) return false
+  const el = target as HTMLElement
+  if (!el || typeof el.closest !== 'function') return false
+  return el.closest('.resize-handle') !== null
+}
+
 const onWrapperMouseDownCapture = (e: MouseEvent) => {
-  // 1) 精确排除：dataZoom slider 手柄/条这类独立拖拽元素，完全不启动组件拖拽
+  // 1) resize 手柄：完全不启动组件拖拽，让 resize 独占
+  if (isResizeHandleTarget(e.target)) return
+  // 2) 精确排除：dataZoom slider 手柄/条这类独立拖拽元素，完全不启动组件拖拽
   if (isEChartsZoomWidget(e.target)) return
-  // 2) 打标记：其他内部交互区，走 useCanvasInteraction 的高阈值启动（12px vs 2px）
+  // 3) 🔑 隔离：ECharts canvas 内 + 组件开启了内部拖拽交互（roam/draggable）
+  //    → 不启动组件拖拽，让 ECharts 独占内部交互（地图平移、节点拖拽等），
+  //      避免「框内交互」污染「拖拽框」（组件整体移动）。
+  //    未开启内部交互时（roam/draggable=false），ECharts 不消费 mousemove，
+  //    .base-chart 内拖拽正常移动组件。
+  if (isInsideEChartsCanvas(e.target) && hasInternalDragInteraction(props.comp)) return
+  // 4) 打标记：el-table 内部交互区，走 useCanvasInteraction 的高阈值启动（12px vs 2px）
   ;(e as any).__biInternalInteractive = isInsideInteractiveContainer(e.target)
   emit('wrapper-mousedown', e, props.comp.id)
 }

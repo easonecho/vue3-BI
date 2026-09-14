@@ -12,7 +12,14 @@ export const imageDefinition: ComponentDefinition = {
   },
   widget: Widget,
   propsSchema: [
-    { key: 'src', label: '图片地址', type: 'input', default: '', placeholder: '请输入图片 URL' },
+    {
+      key: 'src',
+      label: '图片素材',
+      type: 'asset',
+      assetType: 'image',
+      default: '',
+      tip: '从素材库选择图片',
+    },
     { key: 'alt', label: '替代文本', type: 'input', default: '' },
     {
       key: 'objectFit',

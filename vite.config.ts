@@ -44,6 +44,11 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
+      // 🔑 素材静态文件代理 (前端 <img>/<video> 用相对路径 /uploads/xxx.jpg 即可加载)
+      '/uploads': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
     },
   },
   build: {

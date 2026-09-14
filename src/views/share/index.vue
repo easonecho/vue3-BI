@@ -14,9 +14,16 @@
           show-password
           @keyup.enter="submitPassword"
         >
-          <template #prefix><el-icon><Key /></el-icon></template>
+          <template #prefix
+            ><el-icon><Key /></el-icon
+          ></template>
         </el-input>
-        <el-button type="primary" :loading="verifying" @click="submitPassword" style="width: 100%; margin-top: 12px">
+        <el-button
+          type="primary"
+          :loading="verifying"
+          @click="submitPassword"
+          style="width: 100%; margin-top: 12px"
+        >
           验证并查看
         </el-button>
         <p v-if="passwordError" class="error-text">{{ passwordError }}</p>
@@ -136,7 +143,7 @@ async function submitPassword() {
 }
 
 function goHome() {
-  router.push('/')
+  router.push('/dashboard')
 }
 </script>
 

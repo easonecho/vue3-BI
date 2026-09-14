@@ -15,6 +15,7 @@ export type PropFieldType =
   | 'checkbox' // 复选框
   | 'table' // 表格（列配置）
   | 'json' // JSON 编辑器
+  | 'asset' // 🔑 素材选择器（从素材库选择 video/image/decor 素材）
 
 /** 🔑 条件显隐：根据其他 props 字段的值决定当前字段是否显示 */
 export interface VisibleWhen {
@@ -163,6 +164,10 @@ export interface PropField {
   visibleWhen?: VisibleWhen
   /** table 类型字段的列定义 */
   columns?: TableColumnSchema[]
+  /** 🔑 asset 类型字段：素材分类（video/image/decor），决定 AssetPicker 只展示哪类素材 */
+  assetType?: 'video' | 'image' | 'decor'
+  /** 🔑 asset 类型字段：是否多选（如轮播图选多张图片），单选返回 string（url），多选返回 string[] */
+  multiple?: boolean
 }
 
 /**
