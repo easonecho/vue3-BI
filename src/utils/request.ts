@@ -253,6 +253,10 @@ export function put<T = unknown>(url: string, data?: unknown, config?: AxiosRequ
   return request.put(url, data, config) as unknown as Promise<ApiResult<T>>
 }
 
+export function patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResult<T>> {
+  return request.patch(url, data, config) as unknown as Promise<ApiResult<T>>
+}
+
 export function del<T = unknown>(url: string, params?: Record<string, unknown>, config?: AxiosRequestConfig): Promise<ApiResult<T>> {
   return request.delete(url, { params, ...config }) as unknown as Promise<ApiResult<T>>
 }

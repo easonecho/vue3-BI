@@ -1,7 +1,7 @@
 /**
  * 用户管理模块 API
  */
-import { get, post, put, del } from '@/utils/request'
+import { get, post, put, patch, del } from '@/utils/request'
 import type { User, PageQuery } from './types'
 import type { PaginateData } from '@/utils/request'
 
@@ -49,7 +49,7 @@ export function changePassword(id: number, data: { oldPassword?: string; newPass
 
 /** 修改用户角色 */
 export function changeUserRole(id: number, roleId: number) {
-  return put<User>(`/api/users/${id}/role`, { roleId })
+  return patch<User>(`/api/users/${id}/role`, { roleId })
 }
 
 /** 获取所有角色 (走 role 模块新接口) */

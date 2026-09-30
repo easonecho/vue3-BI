@@ -8,7 +8,7 @@ import type { PaginateData } from '@/utils/request'
 /** 创建数据源参数 */
 export interface CreateDataSourceParams {
   name: string
-  type: 'mysql' | 'postgresql'
+  type: 'mysql' | 'postgresql' | 'mongodb'
   host: string
   port: number
   username: string

@@ -20,7 +20,7 @@
         >
           <el-option label="MySQL" value="mysql" />
           <el-option label="PostgreSQL" value="postgresql" />
-          <el-option label="SQLite" value="sqlite" />
+          <el-option label="MongoDB" value="mongodb" />
         </el-select>
         <el-button type="primary" @click="handleSearch">
           <el-icon><Search /></el-icon>&nbsp;查询
@@ -87,11 +87,12 @@
           <el-input v-model="form.name" maxlength="100" placeholder="便于识别的显示名" />
         </el-form-item>
         <el-form-item label="数据源类型" prop="type">
-          <el-select v-model="form.type" style="width: 100%" placeholder="请选择数据库类型">
+          <el-select v-model="form.type" style="width: 100%" placeholder="请选择数据库类型" :disabled="mode === 'edit'">
             <el-option label="MySQL" value="mysql" />
             <el-option label="PostgreSQL" value="postgresql" />
-            <el-option label="SQLite (占位, 后续支持)" value="sqlite" />
+            <el-option label="MongoDB" value="mongodb" />
           </el-select>
+          <div v-if="mode === 'edit'" style="color: #9ca3af; font-size: 12px; margin-top: 4px">数据源类型创建后不可修改</div>
         </el-form-item>
         <el-form-item label="主机" prop="host"><el-input v-model="form.host" placeholder="127.0.0.1" /></el-form-item>
         <el-form-item label="端口" prop="port"><el-input-number v-model="form.port" :min="1" :max="65535" controls-position="right" style="width:100%" /></el-form-item>
@@ -192,7 +193,7 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref, computed, watch } from 'vue'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { ElMessage, type FormInstance, type FormRules, type FormItemRule } from 'element-plus'
 import { Search, Refresh, Plus, Coin, Document } from '@element-plus/icons-vue'
 import {
   type CreateDataSourceParams,
@@ -240,15 +241,21 @@ const form = reactive<CreateDataSourceParams & { id?: number }>({
   username: '', password: '', database: '', description: '',
 })
 
-const rules: FormRules = {
-  name: [{ required: true, message: '请输入名称', trigger: 'blur' }, { max: 100, trigger: 'blur' }],
-  type: [{ required: true, message: '请选择类型', trigger: 'change' }],
-  host: [{ required: true, message: '请输入主机地址', trigger: 'blur' }],
-  port: [{ required: true, message: '请输入端口', trigger: 'blur' }],
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-  database: [{ required: true, message: '请输入数据库名', trigger: 'blur' }],
-}
+const rules = computed<FormRules>(() => {
+  // 编辑模式 password 非必填 (留空表示不修改)
+  const passwordRules: FormItemRule[] = mode.value === 'create'
+    ? [{ required: true, message: '请输入密码', trigger: 'blur' }]
+    : []
+  return {
+    name: [{ required: true, message: '请输入名称', trigger: 'blur' }, { max: 100, trigger: 'blur' }],
+    type: [{ required: true, message: '请选择类型', trigger: 'change' }],
+    host: [{ required: true, message: '请输入主机地址', trigger: 'blur' }],
+    port: [{ required: true, message: '请输入端口', trigger: 'blur' }],
+    username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+    password: passwordRules,
+    database: [{ required: true, message: '请输入数据库名', trigger: 'blur' }],
+  }
+})
 
 function openCreateDialog() {
   mode.value = 'create'
@@ -276,8 +283,9 @@ async function submitForm() {
       await createDataSource(form)
       ElMessage.success('创建数据源成功')
     } else if (form.id) {
+      // type 不在更新字段中 (创建后不可改)
       const payload: Partial<DataSource> & { password?: string } = {
-        name: form.name, type: form.type, host: form.host, port: form.port,
+        name: form.name, host: form.host, port: form.port,
         username: form.username, database: form.database, description: form.description,
       }
       if (form.password) payload.password = form.password
@@ -296,14 +304,26 @@ async function testConn(row: DataSource) {
   } catch { /* noop */ }
 }
 async function testCurrent() {
+  if (!formRef.value) return
   try {
-    if (!formRef.value) return
     await formRef.value.validate()
   } catch {
     ElMessage.warning('请先完善连接参数')
     return
   }
-  ElMessage.info('新增数据源后点击列表中的"测试连接"按钮验证 (服务端校验)')
+  // 编辑模式: 已有 id 可直接调用后端测试接口
+  if (mode.value === 'edit' && form.id) {
+    submitting.value = true
+    try {
+      await testDataSource(form.id)
+      ElMessage.success('连接正常')
+    } finally {
+      submitting.value = false
+    }
+    return
+  }
+  // 创建模式: 服务端尚无此数据源, 无法测试, 提示用户先保存
+  ElMessage.info('请先保存数据源, 再使用列表中的"测试连接"按钮验证')
 }
 
 async function handleDelete(row: DataSource) {

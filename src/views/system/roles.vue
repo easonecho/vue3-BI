@@ -22,7 +22,7 @@
           </template>
         </el-table-column>
         <el-table-column label="关联用户" width="100" align="center">
-          <template #default="{ row }">{{ row._count?.users ?? row._count?.userRoles ?? 0 }}</template>
+          <template #default="{ row }">{{ (row._count?.users ?? 0) + (row._count?.userRoles ?? 0) }}</template>
         </el-table-column>
         <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
         <el-table-column prop="createdAt" label="创建时间" width="170" align="center" />
@@ -95,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, nextTick } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import { getRoleList, createRole, updateRole, deleteRole } from '@/api/role'
@@ -162,8 +162,19 @@ function openCreateDialog() {
 }
 function openEditDialog(row: Role) {
   mode.value = 'edit'
-  Object.assign(form, { id: row.id, name: row.name, code: row.code, description: row.description ?? '', dsType: row.dsType ?? 'all', permissions: Array.isArray(row.permissions) ? row.permissions : [] })
-  permissionsText.value = Array.isArray(row.permissions) ? row.permissions.join('\n') : ''
+  // permissions 在 DB 是 Json 字段, 可能是数组或 JSON 字符串
+  let perms: string[] = []
+  if (Array.isArray(row.permissions)) perms = row.permissions as string[]
+  else if (typeof row.permissions === 'string') {
+    try {
+      const p = JSON.parse(row.permissions)
+      perms = Array.isArray(p) ? p : []
+    } catch {
+      perms = (row.permissions as string).split(/[\n,]/).map((s) => s.trim()).filter(Boolean)
+    }
+  }
+  Object.assign(form, { id: row.id, name: row.name, code: row.code, description: row.description ?? '', dsType: row.dsType ?? 'all', permissions: perms })
+  permissionsText.value = perms.join('\n')
   dialogVisible.value = true
 }
 function parsePerms(): string[] {
@@ -234,7 +245,6 @@ async function submitMenuAssign() {
   } catch { /* noop */ } finally { menuSubmitting.value = false }
 }
 
-import { nextTick } from 'vue'
 onMounted(loadList)
 </script>
 
