@@ -14,6 +14,22 @@ export const tableDefinition: ComponentDefinition = {
     { key: 'headerBg', label: '表头背景', type: 'colorpicker', default: '#f9fafb', group: '表头' },
     { key: 'headerColor', label: '表头文字', type: 'colorpicker', default: '#374151', group: '表头' },
     { key: 'color', label: '单元格文字', type: 'colorpicker', default: '#374151', group: '外观' },
+    { key: 'sortable', label: '列排序', type: 'switch', default: true, group: '交互' },
+    {
+      key: 'pageSize',
+      label: '每页行数',
+      type: 'select',
+      default: 20,
+      group: '交互',
+      options: [
+        { label: '不分页', value: 0 },
+        { label: '10 行', value: 10 },
+        { label: '20 行', value: 20 },
+        { label: '50 行', value: 50 },
+        { label: '100 行', value: 100 },
+      ],
+    },
+    { key: 'showSummary', label: '合计行(当前页)', type: 'switch', default: false, group: '交互' },
   ],
   extraDefaults: {
     columns: [

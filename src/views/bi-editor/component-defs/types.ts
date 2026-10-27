@@ -170,6 +170,28 @@ export interface PropField {
   multiple?: boolean
 }
 
+/** 🔑 聚合方式选项 (图表数据下推) */
+export const AGGREGATE_OPTIONS: readonly SelectOption[] = [
+  { label: '不聚合（原始行）', value: 'none' },
+  { label: '求和', value: 'sum' },
+  { label: '平均值', value: 'avg' },
+  { label: '计数', value: 'count' },
+  { label: '去重计数', value: 'countDistinct' },
+  { label: '最大值', value: 'max' },
+  { label: '最小值', value: 'min' },
+] as const
+
+/** 🔑 图表通用「聚合方式」属性字段 —— 启用后按类目字段在服务端 GROUP BY */
+export const aggregatePropField: PropField = {
+  key: 'aggregate',
+  label: '聚合方式',
+  type: 'select',
+  options: [...AGGREGATE_OPTIONS],
+  default: 'sum',
+  group: '数据聚合',
+  tip: '选择聚合方式后, GROUP BY 在数据源侧执行, 指标不受前端采样影响',
+}
+
 /**
  * 🔑 组件定义 — 每个组件类型的单一真相源。
  *   新增组件只需：创建 definition + 创建 widget，然后在 index.ts 注册。

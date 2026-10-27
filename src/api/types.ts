@@ -84,11 +84,32 @@ export interface Dataset {
   id: number
   name: string
   description?: string
-  datasourceId: number
+  /** 类型: sql=SQL查询, file=文件上传(Excel/CSV) */
+  type?: 'sql' | 'file'
+  /** 关联数据源 (file 类型数据集为 null) */
+  datasourceId?: number | null
+  datasource?: { id: number; name: string; type: string } | null
   sql: string
   fields?: Record<string, unknown>
+  params?: Record<string, unknown>
   cacheEnabled?: boolean
   cacheTtl?: number
+  /** 文件数据集的上传文件摘要 */
+  fileData?: {
+    fileName: string
+    fileSize: number
+    rowCount: number
+    updatedAt: string
+  } | null
+  /** 抽取模式快照摘要 (SQL 数据集可选) */
+  extract?: {
+    rowCount: number
+    lastExtractAt: string
+  } | null
+  creator?: { id: number; username: string; nickname?: string }
+  chartCount?: number
+  createdAt?: string
+  updatedAt?: string
 }
 
 /** 仪表板分组 (P2-3) */

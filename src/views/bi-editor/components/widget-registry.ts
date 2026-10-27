@@ -13,9 +13,9 @@ export const WIDGET_REGISTRY: Record<ComponentType, Component> = Object.fromEntr
 
 const FallbackWidget = componentDefinitions['text']?.widget as Component
 
-/** 根据组件类型获取对应 widget 组件 */
+/** 根据组件类型获取对应 widget 组件 (运行时动态查找, 兼容插件注册的组件) */
 export function getWidgetComponent(type: ComponentType): Component {
-  return WIDGET_REGISTRY[type] || FallbackWidget
+  return componentDefinitions[type]?.widget || FallbackWidget
 }
 
 /**
@@ -25,7 +25,7 @@ export function getWidgetComponent(type: ComponentType): Component {
  * 这样用户真正开始拖拽时，chunk 已经加载完毕。
  */
 export function preloadWidgetComponent(type: ComponentType): void {
-  const widget = WIDGET_REGISTRY[type]
+  const widget = componentDefinitions[type]?.widget
   if (!widget) return
 
   const w = widget as any

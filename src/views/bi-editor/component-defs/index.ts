@@ -1,8 +1,12 @@
 import type { ComponentDefinition } from './types'
 import { deriveDefaultProps, buildInitialSeriesStyles } from './types'
-import { rawDefinitions, componentDefinitions } from './registry'
+import { rawDefinitions, componentDefinitions, registerComponentDefinition } from './registry'
 
-export { rawDefinitions, componentDefinitions } from './registry'
+export {
+  rawDefinitions,
+  componentDefinitions,
+  registerComponentDefinition,
+} from './registry'
 
 /**
  * 🔑 组件定义注册表 — 每个组件类型的单一真相源。
@@ -74,4 +78,31 @@ export const CATEGORY_LABELS: Record<string, string> = {
 /** 按类型查找 definition */
 export function getDefinition(type: string): ComponentDefinition | undefined {
   return componentDefinitions[type]
+}
+
+/** 🔑 P2-2 插件 SDK: 外部组件注册入口 (会同步分类分组并清理默认值缓存) */
+export function registerExternalDefinition(def: ComponentDefinition): boolean {
+  const category = def?.meta?.category
+  if (category && !CATEGORY_GROUPS[category]) {
+    throw new Error(
+      `[BI Plugin] 不支持的分类 "${category}", 可选: ${Object.keys(CATEGORY_GROUPS).join(' / ')}`,
+    )
+  }
+  const ok = registerComponentDefinition(def)
+  if (ok) {
+    syncCategoryGroups()
+    invalidateDefaultPropsCache(def.type)
+  }
+  return ok
+}
+
+/** 重新按 rawDefinitions 填充分类数组 (保持数组引用不变, 已渲染列表可直接复用) */
+function syncCategoryGroups(): void {
+  for (const key of Object.keys(CATEGORY_GROUPS)) {
+    const list = CATEGORY_GROUPS[key]
+    list.length = 0
+    for (const def of rawDefinitions) {
+      if (def.meta.category === key) list.push(def)
+    }
+  }
 }

@@ -139,6 +139,12 @@
                       <el-dropdown-item command="share">
                         <el-icon><Share /></el-icon>&nbsp;分享
                       </el-dropdown-item>
+                      <el-dropdown-item command="report">
+                        <el-icon><Clock /></el-icon>&nbsp;定时报表
+                      </el-dropdown-item>
+                      <el-dropdown-item command="versions">
+                        <el-icon><Tickets /></el-icon>&nbsp;版本管理
+                      </el-dropdown-item>
                       <el-dropdown-item command="toggleStatus" divided>
                         <el-icon><Promotion /></el-icon>&nbsp;{{
                           item.status === 1 ? '转为草稿' : '发布'
@@ -344,6 +350,14 @@
             </el-tag>
             <el-tag v-else size="small" type="success">永久有效</el-tag>
           </div>
+          <!-- 🔑 P1-C: iframe 嵌入代码 (第三方系统无登录集成) -->
+          <div class="embed-block">
+            <div class="embed-title">iframe 嵌入代码</div>
+            <el-input :model-value="embedCode" type="textarea" :rows="2" readonly />
+            <el-button size="small" style="margin-top: 8px" @click="copyEmbedCode">
+              <el-icon><CopyDocument /></el-icon>&nbsp;复制嵌入代码
+            </el-button>
+          </div>
         </template>
         <template v-else-if="shareConfig && !shareConfig.isShared">
           <el-alert type="info" :closable="false" style="margin-bottom: 16px">
@@ -516,6 +530,16 @@
       </template>
     </el-dialog>
 
+    <!-- 定时报表订阅 -->
+    <ReportSubscriptionDialog v-model="reportVisible" :dashboard="reportTarget" />
+
+    <!-- 版本管理 -->
+    <DashboardVersionDialog
+      v-model="versionVisible"
+      :dashboard="versionTarget"
+      @restored="loadList"
+    />
+
     <!-- P2-3: 模板库已迁移至独立菜单 /dashboard-templates -->
   </div>
 </template>
@@ -548,7 +572,8 @@ import {
   Folder,
   Rank,
   ZoomIn,
-  CircleCheckFilled} from '@element-plus/icons-vue'
+  CircleCheckFilled,
+  Tickets } from '@element-plus/icons-vue'
 import {
   getDashboardList,
   deleteDashboard,
@@ -569,6 +594,8 @@ import {
   deleteDashboardGroup,
 } from '@/api/dashboard-group'
 import { getDashboardTemplateList, saveAsTemplate, applyTemplate } from '@/api/dashboard-template'
+import ReportSubscriptionDialog from './components/ReportSubscriptionDialog.vue'
+import DashboardVersionDialog from './components/DashboardVersionDialog.vue'
 // preset-templates 已移除：新建看板模板统一从后端模板库获取
 
 const router = useRouter()
@@ -592,6 +619,14 @@ const filters = reactive({
   onlyFavorites: false,
 })
 const groupFilter = ref<number | 'ungrouped' | undefined>(undefined)
+
+// 定时报表订阅
+const reportVisible = ref(false)
+const reportTarget = ref<Dashboard | null>(null)
+
+// 版本管理
+const versionVisible = ref(false)
+const versionTarget = ref<Dashboard | null>(null)
 
 // 重命名对话框
 const renameVisible = ref(false)
@@ -808,6 +843,12 @@ function handleCommand(cmd: string, item: Dashboard) {
     openSaveAsTemplateDialog(item)
   } else if (cmd === 'share') {
     handleShare(item)
+  } else if (cmd === 'report') {
+    reportTarget.value = item
+    reportVisible.value = true
+  } else if (cmd === 'versions') {
+    versionTarget.value = item
+    versionVisible.value = true
   } else if (cmd === 'delete') {
     handleDelete(item)
   } else if (cmd === 'toggleStatus') {
@@ -834,6 +875,13 @@ const shareFullUrl = computed(() => {
   if (!shareConfig.value?.shareUrl) return ''
   const origin = window.location.origin
   return `${origin}${shareConfig.value.shareUrl}`
+})
+
+/** 🔑 P1-C: iframe 嵌入地址 (嵌入模式隐藏标题栏) */
+const embedCode = computed(() => {
+  const token = shareConfig.value?.shareToken
+  if (!token) return ''
+  return `<iframe src="${window.location.origin}/embed/${token}" width="100%" height="720" style="border:0;border-radius:8px;" allowfullscreen></iframe>`
 })
 
 function handleShare(item: Dashboard) {
@@ -894,21 +942,28 @@ async function handleRevokeShare() {
   }
 }
 
-async function copyShareUrl() {
-  const url = shareFullUrl.value
-  if (!url) return
+async function copyToClipboard(text: string, successMsg: string) {
+  if (!text) return
   try {
-    await navigator.clipboard.writeText(url)
-    ElMessage.success('链接已复制到剪贴板')
+    await navigator.clipboard.writeText(text)
+    ElMessage.success(successMsg)
   } catch {
     const ta = document.createElement('textarea')
-    ta.value = url
+    ta.value = text
     document.body.appendChild(ta)
     ta.select()
     document.execCommand('copy')
     document.body.removeChild(ta)
-    ElMessage.success('链接已复制')
+    ElMessage.success(successMsg)
   }
+}
+
+async function copyShareUrl() {
+  await copyToClipboard(shareFullUrl.value, '链接已复制到剪贴板')
+}
+
+async function copyEmbedCode() {
+  await copyToClipboard(embedCode.value, '嵌入代码已复制')
 }
 
 async function confirmRename() {
@@ -1493,6 +1548,18 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
+.embed-block {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--bi-border-color);
+
+  .embed-title {
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: var(--bi-text-secondary);
+  }
+}
+
 :deep(.el-empty__description) {
   color: var(--bi-text-secondary);
 }
@@ -1665,4 +1732,28 @@ onMounted(() => {
 }
 
 /* 模板库相关样式已迁移至独立页面 /dashboard-templates */
+
+/* ========== 移动端适配 ========== */
+@media (max-width: 768px) {
+  .filter-bar {
+    gap: 8px;
+
+    :deep(.el-input),
+    :deep(.el-select) {
+      width: 100% !important;
+    }
+
+    .spacer {
+      display: none;
+    }
+
+    :deep(.el-button + .el-button) {
+      margin-left: 0;
+    }
+  }
+
+  .card-thumb {
+    height: 140px;
+  }
+}
 </style>

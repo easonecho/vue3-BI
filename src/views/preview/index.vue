@@ -84,6 +84,7 @@ import {
   Clock,
 } from '@element-plus/icons-vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
+import { useLinkageStore } from '@/stores/linkage'
 import DashboardScreen from './DashboardScreen.vue'
 import { toJpeg } from 'html-to-image'
 import { updateDashboardTemplate } from '@/api/dashboard-template'
@@ -91,6 +92,7 @@ import { updateDashboardTemplate } from '@/api/dashboard-template'
 const route = useRoute()
 const router = useRouter()
 const store = useBiEditorStore()
+const linkageStore = useLinkageStore()
 
 const loading = ref(false)
 const loadError = ref('')
@@ -260,6 +262,8 @@ function handleBack() {
 
 // ========== 生命周期 ==========
 onMounted(async () => {
+  // 🔑 预览页开启图表点击联动/钻取（编辑器内关闭，避免与选中交互冲突）
+  linkageStore.setLinkageEnabled(true)
   const id = Number(route.params.id)
   const isTemplate = route.name === 'PreviewTemplate'
   if (!id || Number.isNaN(id)) {
@@ -286,6 +290,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  linkageStore.setLinkageEnabled(false)
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
   window.removeEventListener('keydown', handleKeydown)
   if (autoRefreshTimer) clearInterval(autoRefreshTimer)
@@ -459,5 +464,33 @@ onUnmounted(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* ========== 移动端适配：工具栏紧凑, 隐藏次要控件 ========== */
+@media (max-width: 768px) {
+  .preview-header {
+    height: 44px;
+    padding: 0 8px;
+    gap: 2px;
+  }
+
+  .preview-title {
+    margin-left: 2px;
+    font-size: 13px;
+    max-width: 32vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .refresh-time,
+  :deep(.el-divider--vertical),
+  :deep(.el-select) {
+    display: none;
+  }
+
+  :deep(.el-button.is-text) {
+    padding: 4px 6px;
+  }
 }
 </style>

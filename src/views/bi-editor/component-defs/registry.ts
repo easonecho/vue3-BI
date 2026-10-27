@@ -18,8 +18,33 @@ export const rawDefinitions: ComponentDefinition[] = Object.entries(rawModules)
 
 /** 按 type 建立索引，供快速查找 */
 export const componentDefinitions: Record<string, ComponentDefinition> = Object.fromEntries(
-  rawDefinitions.map((d) => [d.type, d]),
+  rawDefinitions.map((d) => [d.type, d])
 )
+
+/**
+ * 🔑 P2-2 插件 SDK: 运行时注册外部组件
+ *   由 window.BI.registerComponent(def) 调用 (见 src/plugins/plugin-sdk.ts)。
+ *   要求: 必须在 app.mount 之前完成注册, 否则左侧组件面板分组不会刷新。
+ */
+export function registerComponentDefinition(def: ComponentDefinition): boolean {
+  const type = String(def?.type ?? '').trim()
+  if (
+    !type ||
+    !def?.meta ||
+    !def?.widget ||
+    !Array.isArray(def?.propsSchema)
+  ) {
+    throw new Error('[BI Plugin] 组件定义不完整: 需要 type / meta / widget / propsSchema')
+  }
+  if (componentDefinitions[type]) {
+    console.warn(`[BI Plugin] 组件类型 "${type}" 已存在, 已跳过注册`)
+    return false
+  }
+  const normalized = { ...def, type: type as ComponentDefinition['type'] }
+  rawDefinitions.push(normalized)
+  componentDefinitions[type] = normalized
+  return true
+}
 
 /**
  * 🔑 预加载组件 widget chunk（用于拖拽栏 hover 时提前加载）。

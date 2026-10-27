@@ -32,7 +32,7 @@
 
     <!-- 看板预览 -->
     <template v-if="!needPassword && dashboard">
-      <div class="share-header">
+      <div v-if="!isEmbed" class="share-header">
         <div class="share-title">
           <h2>{{ dashboard.name }}</h2>
           <p v-if="dashboard.description">{{ dashboard.description }}</p>
@@ -52,18 +52,27 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Lock, Key } from '@element-plus/icons-vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
+import { useLinkageStore } from '@/stores/linkage'
 import CanvasArea from '@/views/bi-editor/components/CanvasArea.vue'
 import { getPublicDashboard, verifyPublicDashboard, isPasswordRequired } from '@/api/share'
 import type { PublicDashboard } from '@/api/share'
+import {
+  setPublicDashboardContext,
+  clearPublicDashboardContext,
+} from '@/utils/public-dashboard-context'
 import type { DashboardLayout } from '@/views/bi-editor/types'
 
 const route = useRoute()
 const router = useRouter()
 const store = useBiEditorStore()
+const linkageStore = useLinkageStore()
+
+/** 🔑 嵌入模式 (/embed/:token): 隐藏顶部标题栏, 仅渲染画布 */
+const isEmbed = computed(() => route.meta.embed === true)
 
 const loading = ref(false)
 const verifying = ref(false)
@@ -74,12 +83,19 @@ const passwordError = ref('')
 const dashboard = ref<PublicDashboard | null>(null)
 
 onMounted(async () => {
+  // 🔑 公开分享页开启图表联动/钻取
+  linkageStore.setLinkageEnabled(true)
   const token = route.params.token as string
   if (!token) {
     loadError.value = '分享链接无效'
     return
   }
   await loadPublicDashboard(token)
+})
+
+onUnmounted(() => {
+  linkageStore.setLinkageEnabled(false)
+  clearPublicDashboardContext()
 })
 
 async function loadPublicDashboard(token: string, password?: string) {
@@ -103,6 +119,12 @@ async function loadPublicDashboard(token: string, password?: string) {
 
     dashboard.value = result
     needPassword.value = false
+
+    // 🔑 写入公开访问上下文:图表取数改走匿名公开接口 (仅允许看板绑定的数据集)
+    setPublicDashboardContext({
+      token,
+      password: password || undefined,
+    })
 
     // 将 layout 应用到 store, 复用 CanvasArea readonly 渲染
     const layout = (result.layout ?? {
@@ -222,5 +244,24 @@ function goHome() {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* ========== 移动端适配 ========== */
+@media (max-width: 768px) {
+  .share-header {
+    padding: 8px 12px;
+  }
+
+  .share-header .share-title h2 {
+    font-size: 15px;
+  }
+
+  .share-header .share-title p {
+    font-size: 12px;
+  }
+
+  .password-card {
+    width: calc(100vw - 32px);
+  }
 }
 </style>

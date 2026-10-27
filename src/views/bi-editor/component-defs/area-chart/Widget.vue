@@ -10,10 +10,13 @@ import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
 import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
+import { useChartAggregation } from '../../composables/useChartAggregation'
+import { useLinkageStore } from '@/stores/linkage'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
+const linkageStore = useLinkageStore()
 let initTimer: number | undefined
 
 let debounceTimer: number | null = null
@@ -21,19 +24,35 @@ let pendingBuilder: (() => ECOption) | null = null
 
 // 🔑 数据绑定:有 datasetId 时走动态取数 + 字段映射,无则走静态兜底
 const dataSourceRef = computed(() => props.comp.dataSource)
-const { rows } = useDatasetBinding(dataSourceRef)
+
+/** 🔑 类目字段 (钻取时切换为 drillFields[N-1]) */
+const categoryField = computed(() =>
+  linkageStore.getDrillField(
+    props.comp.id,
+    (props.comp.dataConfig as any)?.drillFields ?? [],
+    ((props.comp.dataConfig as any)?.categoryField as string) ?? '',
+  ),
+)
+const valueFields = computed<string[]>(() => {
+  const value = (props.comp.dataConfig as any)?.valueFields
+  return Array.isArray(value) ? value : []
+})
+
+/** 🔑 聚合下推:按类目在服务端 GROUP BY;未启用聚合时为 null → 原始行 */
+const aggregateRequest = useChartAggregation(props.comp, {
+  groupBy: () => categoryField.value,
+  metrics: () => valueFields.value,
+  orderBy: () => (categoryField.value ? { field: categoryField.value, direction: 'asc' } : undefined),
+})
+const { rows } = useDatasetBinding(dataSourceRef, true, aggregateRequest)
 
 /** 字段映射:把数据集行数据映射成面积图所需的 {categories, series} */
 const mappedData = computed(() => {
   if (!props.comp.dataSource.datasetId || rows.value.length === 0) return null
-  const { categoryField, valueFields } = (props.comp.dataConfig ?? {}) as {
-    categoryField?: string
-    valueFields?: string[]
-  }
-  if (!categoryField || !valueFields?.length) return null
+  if (!categoryField.value || valueFields.value.length === 0) return null
   return {
-    categories: rows.value.map((r) => String(r[categoryField] ?? '')),
-    series: valueFields.map((f) => ({
+    categories: rows.value.map((r) => String(r[categoryField.value] ?? '')),
+    series: valueFields.value.map((f) => ({
       name: f,
       data: rows.value.map((r) => Number(r[f] ?? 0)),
     })),

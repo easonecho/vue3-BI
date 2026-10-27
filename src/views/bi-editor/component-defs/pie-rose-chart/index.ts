@@ -4,6 +4,7 @@ import {
   chartBaseSchema,
   baseSeriesStylesNoAxesColumns,
   buildSeriesLabelSchema,
+  aggregatePropField,
 } from '../types'
 
 /** 🔑 玫瑰图默认真实数据（[{name, value}, ...]） */
@@ -36,6 +37,7 @@ export const pieRoseChartDefinition: ComponentDefinition = {
   widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
     ...chartBaseSchema,
+    aggregatePropField,
     {
       key: 'roseType',
       label: '玫瑰模式',
@@ -73,6 +75,7 @@ export const pieRoseChartDefinition: ComponentDefinition = {
   dataBindingSchema: [
     { key: 'nameField', label: '名称字段', type: 'name' },
     { key: 'valueField', label: '数值字段', type: 'value' },
+    { key: 'drillFields', label: '钻取字段', type: 'category', multiple: true },
   ],
 }
 

@@ -10,17 +10,38 @@ import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
 import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
+import { useChartAggregation } from '../../composables/useChartAggregation'
+import { useLinkageStore } from '@/stores/linkage'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
+const linkageStore = useLinkageStore()
 let initTimer: number | undefined
 
 let debounceTimer: number | null = null
 let pendingBuilder: (() => ECOption) | null = null
 
 const dataSourceRef = computed(() => props.comp.dataSource)
-const { rows } = useDatasetBinding(dataSourceRef)
+
+/** 🔑 类目字段 (钻取时切换为 drillFields[N-1]) */
+const categoryField = computed(() =>
+  linkageStore.getDrillField(
+    props.comp.id,
+    (props.comp.dataConfig as any)?.drillFields ?? [],
+    ((props.comp.dataConfig as any)?.categoryField as string) ?? '',
+  ),
+)
+const barField = computed(() => (props.comp.dataConfig as any)?.barField as string | undefined)
+const lineField = computed(() => (props.comp.dataConfig as any)?.lineField as string | undefined)
+
+/** 🔑 聚合下推:按类目在服务端 GROUP BY 两个度量;未启用聚合时为 null → 原始行 */
+const aggregateRequest = useChartAggregation(props.comp, {
+  groupBy: () => categoryField.value,
+  metrics: () => [barField.value, lineField.value].filter((f): f is string => !!f),
+  orderBy: () => (categoryField.value ? { field: categoryField.value, direction: 'asc' } : undefined),
+})
+const { rows } = useDatasetBinding(dataSourceRef, true, aggregateRequest)
 
 /**
  * 🔑 字段映射:双轴组合图需要 (categories, barSeries, lineSeries)
@@ -28,21 +49,16 @@ const { rows } = useDatasetBinding(dataSourceRef)
  */
 const mappedData = computed(() => {
   if (!props.comp.dataSource.datasetId || rows.value.length === 0) return null
-  const { categoryField, barField, lineField } = (props.comp.dataConfig ?? {}) as {
-    categoryField?: string
-    barField?: string
-    lineField?: string
-  }
-  if (!categoryField || !barField || !lineField) return null
+  if (!categoryField.value || !barField.value || !lineField.value) return null
   return {
-    categories: rows.value.map((r) => String(r[categoryField] ?? '')),
+    categories: rows.value.map((r) => String(r[categoryField.value] ?? '')),
     barSeries: {
-      name: barField,
-      data: rows.value.map((r) => Number(r[barField] ?? 0)),
+      name: barField.value,
+      data: rows.value.map((r) => Number(r[barField.value!] ?? 0)),
     },
     lineSeries: {
-      name: lineField,
-      data: rows.value.map((r) => Number(r[lineField] ?? 0)),
+      name: lineField.value,
+      data: rows.value.map((r) => Number(r[lineField.value!] ?? 0)),
     },
   }
 })

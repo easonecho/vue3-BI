@@ -24,6 +24,13 @@ const router = createRouter({
       component: () => import('@/views/share/index.vue'),
       meta: { title: '看板分享', public: true },
     },
+    {
+      // 🔑 嵌入模式: 由第三方系统 iframe 引用, 无登录态, 隐藏标题栏
+      path: '/embed/:token',
+      name: 'PublicEmbed',
+      component: () => import('@/views/share/index.vue'),
+      meta: { title: '看板嵌入', public: true, embed: true },
+    },
     // ========== 主布局 (看板管理 + 各项一级管理菜单) ==========
     {
       path: '/',
@@ -223,6 +230,16 @@ const router = createRouter({
             title: '系统监控',
             requiresAuth: true,
             permissions: ['system:monitor:view', 'monitor:view', 'monitor:kick'],
+          },
+        },
+        {
+          path: 'system/usage',
+          name: 'SystemUsage',
+          component: () => import('@/views/system/usage.vue'),
+          meta: {
+            title: '使用分析',
+            requiresAuth: true,
+            permissions: ['system:usage:view'],
           },
         },
       ],

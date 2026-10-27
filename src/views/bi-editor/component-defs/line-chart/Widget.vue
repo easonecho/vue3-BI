@@ -10,10 +10,13 @@ import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
 import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
 import { useDatasetBinding, useWorkerMappedData } from '../../composables/useDatasetBinding'
+import { useChartAggregation } from '../../composables/useChartAggregation'
+import { useLinkageStore } from '@/stores/linkage'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
+const linkageStore = useLinkageStore()
 let initTimer: number | undefined
 
 let debounceTimer: number | null = null
@@ -21,12 +24,30 @@ let pendingBuilder: (() => ECOption) | null = null
 
 // 🔑 数据绑定:有 datasetId 时走动态取数 + 字段映射,无则走静态兜底
 const dataSourceRef = computed(() => props.comp.dataSource)
-const { rows } = useDatasetBinding(dataSourceRef)
 
 // 🔑 Worker 数据集映射：大数据集（> 500 行）在 Worker 中计算，主线程零开销
 const categoryField = computed(() => (props.comp.dataConfig as any)?.categoryField as string | undefined)
 const valueFields = computed(() => (props.comp.dataConfig as any)?.valueFields as string[] | undefined)
-const mappedData = useWorkerMappedData(rows, categoryField, valueFields)
+/** 🔑 钻取:已下钻 N 层时切换为 drillFields[N-1] 作为类目字段 */
+const drillFields = computed<string[]>(() => {
+  const value = (props.comp.dataConfig as any)?.drillFields
+  return Array.isArray(value) ? value.filter((v: unknown): v is string => typeof v === 'string' && !!v) : []
+})
+const effectiveCategoryField = computed(() =>
+  linkageStore.getDrillField(props.comp.id, drillFields.value, categoryField.value ?? ''),
+)
+
+/** 🔑 聚合下推:按当前类目层级在服务端 GROUP BY;未启用聚合 → 原始行 */
+const aggregateRequest = useChartAggregation(props.comp, {
+  groupBy: () => effectiveCategoryField.value,
+  metrics: () => valueFields.value ?? [],
+  orderBy: () =>
+    effectiveCategoryField.value
+      ? { field: effectiveCategoryField.value, direction: 'asc' }
+      : undefined,
+})
+const { rows } = useDatasetBinding(dataSourceRef, true, aggregateRequest)
+const mappedData = useWorkerMappedData(rows, effectiveCategoryField, valueFields)
 
 function debouncedSetOption(builder: () => ECOption) {
   pendingBuilder = builder

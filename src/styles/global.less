@@ -1263,6 +1263,54 @@ body > .el-popper.el-dropdown-menu,
   box-shadow: var(--bi-shadow-md);
 }
 
+/* ========================================
+   移动端适配 (<=768px)
+   ======================================== */
+@media (max-width: 768px) {
+  /* 固定宽度弹窗在窄屏下改为视口宽度, 避免横向溢出 */
+  .el-dialog {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px);
+    margin: 6vh auto !important;
+  }
+
+  .el-dialog__header {
+    padding: 12px 14px;
+  }
+
+  .el-dialog__body {
+    padding: 14px;
+    max-height: 68vh;
+    overflow-y: auto;
+  }
+
+  .el-dialog__footer {
+    padding: 10px 14px;
+  }
+
+  .el-message-box {
+    width: calc(100vw - 32px) !important;
+    max-width: calc(100vw - 32px);
+  }
+
+  .el-drawer {
+    width: 86vw !important;
+  }
+
+  .el-notification {
+    width: calc(100vw - 24px) !important;
+  }
+
+  .el-pagination {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
+  .el-table {
+    font-size: 12px;
+  }
+}
+
 .el-dropdown-menu__item {
   color: var(--bi-text-primary);
 

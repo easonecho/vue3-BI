@@ -478,8 +478,24 @@
                       (v: string | string[] | null) => handleFieldMappingChange(field.key, v)
                     "
                   >
-                    <el-option v-for="f in datasetFields" :key="f" :label="f" :value="f" />
+                    <el-option
+                      v-for="opt in fieldOptions(field.type)"
+                      :key="opt.value"
+                      :label="opt.label"
+                      :value="opt.value"
+                    />
                   </el-select>
+                  <div v-if="semanticHint(field)" class="semantic-tip">
+                    <span>{{ semanticHint(field) }}</span>
+                    <el-button
+                      v-if="showApplyDefaultAggregate(field)"
+                      link
+                      type="primary"
+                      size="small"
+                      @click="applyDefaultAggregate(field)"
+                      >应用默认聚合</el-button
+                    >
+                  </div>
                 </div>
               </template>
 
@@ -718,8 +734,15 @@ import {
   Download as DownloadIcon,
   Upload as UploadIcon,
 } from '@element-plus/icons-vue'
-import { getDatasetList } from '@/api/dataset'
+import { getDatasetList, type DatasetField } from '@/api/dataset'
 import { useDatasetBinding } from '../composables/useDatasetBinding'
+import {
+  AGGREGATE_LABELS,
+  FORMAT_LABELS,
+  ensureDatasetSemantics,
+  getFieldSemantic,
+  registerDatasetSemantics,
+} from '../composables/useDatasetSemantics'
 import type { Dataset } from '@/api/types'
 
 const store = useBiEditorStore()
@@ -1058,6 +1081,8 @@ async function loadDatasetList() {
   try {
     const res = await getDatasetList({ page: 1, pageSize: 100 })
     datasetList.value = res.data.list ?? []
+    // 复用列表数据注册语义层元数据, 避免编辑器额外请求
+    registerDatasetSemantics(datasetList.value)
     datasetListLoaded = true
   } finally {
     datasetListLoading.value = false
@@ -1115,12 +1140,83 @@ function handleFieldMappingChange(key: string, value: string | string[] | null) 
   })
 }
 
+// ====== 语义层 (字段角色/默认聚合/显示格式) ======
+
+/** 当前组件绑定数据集的字段语义 */
+function semanticDefOf(fieldName: string): DatasetField | undefined {
+  return getFieldSemantic(store.selectedComponent?.dataSource?.datasetId, fieldName)
+}
+
+/** 字段映射下拉选项: 按槽位类型排序 (数值槽度量优先), 并附带语义标签 */
+function fieldOptions(slotType: DataBindingField['type']) {
+  const rankOf = slotType === 'value' ? { measure: 0, dimension: 1 } : { dimension: 0, measure: 1 }
+  return datasetFields.value
+    .map((name) => {
+      const def = semanticDefOf(name)
+      const tags: string[] = []
+      if (def?.role) tags.push(def.role === 'measure' ? '度量' : '维度')
+      if (def?.format?.type && FORMAT_LABELS[def.format.type]) tags.push(FORMAT_LABELS[def.format.type])
+      return {
+        value: name,
+        label: tags.length ? `${name} (${tags.join(' · ')})` : name,
+        rank: def?.role ? rankOf[def.role] : 2,
+      }
+    })
+    .sort((a, b) => a.rank - b.rank)
+}
+
+/** 已选字段的语义提示文案 */
+function semanticHint(slot: DataBindingField): string {
+  const value = getFieldMapping(slot.key)
+  if (typeof value !== 'string' || !value) return ''
+  const def = semanticDefOf(value)
+  if (!def) return ''
+  const parts: string[] = []
+  if (def.role) parts.push(def.role === 'measure' ? '度量' : '维度')
+  if (def.defaultAggregate && def.defaultAggregate !== 'none') {
+    parts.push(`默认聚合: ${AGGREGATE_LABELS[def.defaultAggregate] ?? def.defaultAggregate}`)
+  }
+  if (def.format?.type && FORMAT_LABELS[def.format.type]) {
+    parts.push(`格式: ${FORMAT_LABELS[def.format.type]}`)
+  }
+  return parts.join(' · ')
+}
+
+/** 语义层默认聚合与当前图表聚合方式不一致时, 提示可一键应用 */
+function showApplyDefaultAggregate(slot: DataBindingField): boolean {
+  if (slot.type !== 'value') return false
+  const value = getFieldMapping(slot.key)
+  if (typeof value !== 'string' || !value) return false
+  const def = semanticDefOf(value)
+  if (!def?.defaultAggregate || def.defaultAggregate === 'none') return false
+  const current = String(store.selectedComponent?.props?.aggregate ?? '')
+  return current !== def.defaultAggregate
+}
+
+/** 应用字段语义层的默认聚合方式到图表的聚合属性 */
+function applyDefaultAggregate(slot: DataBindingField) {
+  const value = getFieldMapping(slot.key)
+  const def = typeof value === 'string' ? semanticDefOf(value) : undefined
+  if (!def?.defaultAggregate || def.defaultAggregate === 'none') return
+  updateProp('aggregate', def.defaultAggregate)
+  ElMessage.success(`已应用默认聚合: ${AGGREGATE_LABELS[def.defaultAggregate] ?? def.defaultAggregate}`)
+}
+
 /** 切换组件时重置数据集列表加载标志(可选,这里不重置,复用已加载列表) */
 watch(
   () => store.selectedId,
   () => {
     // 切换组件无需清缓存,useDatasetBinding 会自动按新 datasetId 取数
   },
+)
+
+/** 选中已绑定数据集的组件时, 预加载语义层元数据 (模块级只请求一次) */
+watch(
+  () => store.selectedComponent?.dataSource?.datasetId,
+  (datasetId) => {
+    if (datasetId) void ensureDatasetSemantics()
+  },
+  { immediate: true },
 )
 </script>
 
@@ -1396,6 +1492,21 @@ watch(
   color: var(--bi-text-muted, #6b7280);
   text-align: center;
   padding: 20px;
+}
+
+/* 语义层字段提示 */
+.semantic-tip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--bi-text-muted, #9ca3af);
+  line-height: 1.5;
+}
+.semantic-tip :deep(.el-button) {
+  padding: 0;
+  font-size: 12px;
 }
 
 /* ===== 画布全局设置 ===== */

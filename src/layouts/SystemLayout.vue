@@ -1,7 +1,7 @@
 <template>
   <div class="system-layout">
     <!-- 左侧菜单 -->
-    <aside class="layout-aside">
+    <aside class="layout-aside" :class="{ 'is-mobile': isMobile, 'is-open': asideVisible }">
       <div class="logo-area">
         <div class="logo-mark">
           <svg viewBox="0 0 40 40" class="logo-svg">
@@ -19,7 +19,12 @@
 
       <div class="aside-divider" />
 
-      <el-menu :default-active="activeMenu" router class="layout-menu">
+      <el-menu
+        :default-active="activeMenu"
+        router
+        class="layout-menu"
+        @select="handleMenuSelect"
+      >
         <template v-if="menuTree.length">
           <template v-for="m in menuTree" :key="m.id">
             <el-sub-menu
@@ -106,6 +111,10 @@
             <el-icon><Timer /></el-icon>
             <span>{{ t('menu.scheduledTasks') }}</span>
           </el-menu-item>
+          <el-menu-item index="/system/usage">
+            <el-icon><TrendCharts /></el-icon>
+            <span>{{ t('menu.usage') }}</span>
+          </el-menu-item>
           <el-menu-item index="/system/monitor">
             <el-icon><Cpu /></el-icon>
             <span>{{ t('menu.monitor') }}</span>
@@ -122,10 +131,22 @@
       </el-menu>
     </aside>
 
+    <!-- 移动端抽屉遮罩 -->
+    <div v-if="isMobile && asideVisible" class="layout-mask" @click="asideVisible = false" />
+
     <!-- 右侧主区域 -->
     <div class="layout-main-wrap">
       <header class="layout-header">
         <div class="header-left">
+          <el-button
+            v-if="isMobile"
+            class="menu-toggle"
+            text
+            :aria-label="asideVisible ? '收起菜单' : '展开菜单'"
+            @click="asideVisible = !asideVisible"
+          >
+            <el-icon :size="18"><Expand /></el-icon>
+          </el-button>
           <el-breadcrumb separator="/">
             <el-breadcrumb-item
               v-for="(item, idx) in breadcrumbs"
@@ -137,7 +158,7 @@
           </el-breadcrumb>
         </div>
         <div class="header-right">
-          <div class="clock-area">
+          <div v-if="!isMobile" class="clock-area">
             <el-icon class="clock-icon"><Clock /></el-icon>
             <span class="clock-text">{{ clockText }}</span>
           </div>
@@ -182,7 +203,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
@@ -203,12 +224,14 @@ import {
   Postcard,
   Timer,
   Cpu,
+  TrendCharts,
   Tickets,
   Document,
   Edit,
   Histogram,
   Clock,
   Files,
+  Expand,
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useMenuStore } from '@/stores/menu'
@@ -225,6 +248,32 @@ const menuStore = useMenuStore()
 const menuTree = computed<MenuTreeNode[]>(() => menuStore.menuTree as MenuTreeNode[])
 const activeMenu = computed(() => route.path)
 
+// 🔑 移动端适配: 窄屏下侧边栏切换为抽屉
+const isMobile = ref(false)
+const asideVisible = ref(false)
+let mediaQuery: MediaQueryList | null = null
+
+function handleMediaChange(event: MediaQueryListEvent) {
+  isMobile.value = event.matches
+  if (!event.matches) asideVisible.value = false
+}
+
+onMounted(() => {
+  mediaQuery = window.matchMedia('(max-width: 900px)')
+  isMobile.value = mediaQuery.matches
+  mediaQuery.addEventListener('change', handleMediaChange)
+})
+
+// 路由变化后自动收起移动端菜单
+watch(activeMenu, () => {
+  asideVisible.value = false
+})
+
+// 点击菜单项立即收起 (同一路由不会触发 watch)
+function handleMenuSelect() {
+  asideVisible.value = false
+}
+
 const MENU_TITLE: Record<string, string> = {
   '/dashboard': '看板管理',
   '/dashboard-templates': '模板库',
@@ -239,6 +288,7 @@ const MENU_TITLE: Record<string, string> = {
   '/system/configs': '系统配置',
   '/system/positions': '岗位管理',
   '/system/scheduled-tasks': '定时任务',
+  '/system/usage': '使用分析',
   '/system/monitor': '系统监控',
 }
 
@@ -275,6 +325,7 @@ function iconComp(iconName?: string) {
     Edit,
     Histogram,
     Files,
+    TrendCharts,
   }
   return map[iconName] || DataBoard
 }
@@ -313,6 +364,7 @@ onMounted(() => {
 })
 onBeforeUnmount(() => {
   if (clockTimer) window.clearInterval(clockTimer)
+  mediaQuery?.removeEventListener('change', handleMediaChange)
 })
 </script>
 
@@ -502,5 +554,61 @@ onBeforeUnmount(() => {
 .page-fade-leave-to {
   opacity: 0;
   transform: translateY(-6px);
+}
+
+/* ========== 移动端适配 ========== */
+.layout-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 900px) {
+  .layout-aside {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 240px;
+    z-index: 20;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: var(--bi-shadow-md);
+  }
+
+  .layout-aside.is-open {
+    transform: translateX(0);
+  }
+
+  .layout-header {
+    padding: 0 12px;
+  }
+
+  .layout-main {
+    padding: 12px;
+  }
+
+  .header-right {
+    gap: 8px;
+  }
+
+  .header-left {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .user-info {
+    padding-right: 6px;
+
+    .user-name {
+      display: none;
+    }
+  }
+
+  .menu-toggle {
+    margin-right: 2px;
+    padding: 4px;
+  }
 }
 </style>

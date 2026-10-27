@@ -14,6 +14,11 @@ export function exportDatasetCsv(id: number, params?: ExportParams) {
   return download(`/api/export/dataset/${id}/csv`, params)
 }
 
+/** 导出数据集为 Excel */
+export function exportDatasetXlsx(id: number, params?: ExportParams) {
+  return download(`/api/export/dataset/${id}/xlsx`, params)
+}
+
 /** 导出数据集为 JSON */
 export function exportDatasetJson(id: number, params?: ExportParams) {
   return download(`/api/export/dataset/${id}/json`, params)
@@ -24,9 +29,23 @@ export function exportChartCsv(id: number, params?: ExportParams) {
   return download(`/api/export/chart/${id}/csv`, params)
 }
 
+/** 导出图表数据为 Excel */
+export function exportChartXlsx(id: number, params?: ExportParams) {
+  return download(`/api/export/chart/${id}/xlsx`, params)
+}
+
 /** 导出图表数据为 JSON */
 export function exportChartJson(id: number, params?: ExportParams) {
   return download(`/api/export/chart/${id}/json`, params)
+}
+
+export type ExportFormat = 'csv' | 'json' | 'xlsx'
+
+/** 按格式导出数据集 */
+export function exportDatasetByFormat(id: number, format: ExportFormat, params?: ExportParams) {
+  if (format === 'xlsx') return exportDatasetXlsx(id, params)
+  if (format === 'json') return exportDatasetJson(id, params)
+  return exportDatasetCsv(id, params)
 }
 
 /** 触发浏览器下载 */

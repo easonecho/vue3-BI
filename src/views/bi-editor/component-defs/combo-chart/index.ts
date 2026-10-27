@@ -4,6 +4,7 @@ import {
   chartBaseSchema,
   baseSeriesStylesWithAxesColumns,
   buildSeriesLabelSchema,
+  aggregatePropField,
 } from '../types'
 
 /** 🔑 双轴组合图默认真实数据 */
@@ -23,6 +24,7 @@ const definition: ComponentDefinition = {
   widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
     ...chartBaseSchema,
+    aggregatePropField,
     { key: 'barWidth', label: '柱宽', type: 'slider', min: 5, max: 50, default: 20, group: '样式' },
     { key: 'smooth', label: '折线平滑', type: 'switch', default: true, group: '样式' },
     { key: 'rightAxisPercent', label: '右轴百分比显示', type: 'switch', default: true, group: '样式' },
@@ -55,6 +57,7 @@ const definition: ComponentDefinition = {
     { key: 'categoryField', label: '类目字段', type: 'category' },
     { key: 'barField', label: '柱状字段', type: 'value' },
     { key: 'lineField', label: '折线字段', type: 'value' },
+    { key: 'drillFields', label: '钻取字段', type: 'category', multiple: true },
   ],
 }
 

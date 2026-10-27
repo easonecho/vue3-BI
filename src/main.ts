@@ -16,6 +16,8 @@ import i18n from './i18n'
 import { useThemeStore } from './stores/theme'
 import ErrorBoundary from './components/ErrorBoundary.vue'
 import { vPermission } from './directives/permission'
+import { installPluginSdk } from './plugins/plugin-sdk'
+import { loadExternalPlugins } from './plugins/plugin-loader'
 import './styles/global.less'
 import './styles/theme.css'
 
@@ -44,4 +46,8 @@ app.directive('permission', vPermission)
 // 初始化主题（需要在 pinia 安装之后调用，触发 watch 立即应用主题）
 useThemeStore()
 
-app.mount('#app')
+// 🔑 P2-2 插件: 先安装 SDK 并加载外部插件脚本 (组件必须在 mount 前注册)
+installPluginSdk()
+loadExternalPlugins().finally(() => {
+  app.mount('#app')
+})

@@ -59,6 +59,12 @@
           <el-option :label="t('dashboard.public')" :value="true" />
           <el-option :label="t('dashboard.private')" :value="false" />
         </el-select>
+        <!-- 排序 (P2-4) -->
+        <el-select v-model="filters.sort" style="width: 140px" @change="handleSearch">
+          <el-option :label="t('templateManage.sortUpdated')" value="updated" />
+          <el-option :label="t('templateManage.sortCreated')" value="created" />
+          <el-option :label="t('templateManage.sortName')" value="name" />
+        </el-select>
         <el-button type="primary" @click="handleSearch">
           <el-icon><Search /></el-icon>&nbsp;{{ t('common.search') }}
         </el-button>
@@ -76,7 +82,7 @@
     <!-- 模板卡片网格 -->
     <el-row :gutter="16" v-loading="loading" class="card-grid">
       <el-col
-        v-for="(item, idx) in filteredList"
+        v-for="(item, idx) in sortedList"
         :key="item.id"
         :xs="24"
         :sm="12"
@@ -95,6 +101,14 @@
               />
               <span v-else class="thumb-emoji">{{ item.thumbnail || '📊' }}</span>
               <div class="thumb-overlay">
+                <!-- 从模板新建看板 (P2-4 快速入口) -->
+                <el-button
+                  size="small"
+                  type="success"
+                  @click.stop="handleApplyTemplate(item)"
+                >
+                  <el-icon><Plus /></el-icon>&nbsp;{{ t('templateManage.apply') }}
+                </el-button>
                 <el-button
                   size="small"
                   type="primary"
@@ -239,6 +253,7 @@ const filters = reactive({
   keyword: '',
   category: undefined as string | undefined,
   isPublic: undefined as boolean | undefined,
+  sort: 'updated' as 'updated' | 'created' | 'name',
 })
 
 // 分类筛选选项 (服务端枚举统一管理, 不再从模板列表动态提取)
@@ -263,6 +278,24 @@ const filteredList = computed(() => {
     if (filters.isPublic !== undefined && x.isPublic !== filters.isPublic) return false
     return true
   })
+})
+
+/** 排序 (P2-4): 最近更新 / 最近创建 / 名称 */
+const sortedList = computed(() => {
+  const arr = [...filteredList.value]
+  const timeOf = (v?: string) => {
+    if (!v) return 0
+    const t = new Date(v).getTime()
+    return Number.isNaN(t) ? 0 : t
+  }
+  if (filters.sort === 'name') {
+    arr.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
+  } else if (filters.sort === 'created') {
+    arr.sort((a, b) => timeOf(b.createdAt) - timeOf(a.createdAt))
+  } else {
+    arr.sort((a, b) => timeOf(b.updatedAt) - timeOf(a.updatedAt))
+  }
+  return arr
 })
 
 function formatTime(t?: string): string {
@@ -305,6 +338,7 @@ function handleReset() {
   filters.keyword = ''
   filters.category = undefined
   filters.isPublic = undefined
+  filters.sort = 'updated'
 }
 
 // ========== 创建/编辑模板 ==========

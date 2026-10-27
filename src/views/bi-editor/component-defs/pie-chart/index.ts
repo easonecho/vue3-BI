@@ -1,6 +1,6 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import { chartCommonSchema, baseSeriesStylesNoAxesColumns, buildSeriesLabelSchema } from '../types' // 饼图没有 X/Y 轴，只引入通用 Schema（title/legend/tooltip/animation）
+import { chartCommonSchema, baseSeriesStylesNoAxesColumns, buildSeriesLabelSchema, aggregatePropField } from '../types' // 饼图没有 X/Y 轴，只引入通用 Schema（title/legend/tooltip/animation）
 
 /** 🔑 饼图默认真实数据（[{name, value}, ...]） */
 export const PIE_DEFAULT_DATA = [
@@ -23,6 +23,7 @@ export const pieChartDefinition: ComponentDefinition = {
   widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
     ...chartCommonSchema,
+    aggregatePropField,
     {
       key: 'radius',
       label: '外半径 (%)',
@@ -65,6 +66,7 @@ export const pieChartDefinition: ComponentDefinition = {
   dataBindingSchema: [
     { key: 'nameField', label: '名称字段', type: 'name' },
     { key: 'valueField', label: '数值字段', type: 'value' },
+    { key: 'drillFields', label: '钻取字段', type: 'category', multiple: true },
   ],
 }
 

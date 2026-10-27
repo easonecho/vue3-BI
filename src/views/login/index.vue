@@ -244,4 +244,20 @@ async function handleLogin() {
   right: 24px;
   z-index: 10;
 }
+
+/* ========== 移动端适配 ========== */
+@media (max-width: 520px) {
+  .login-card {
+    width: calc(100vw - 32px);
+  }
+
+  .login-card .card-content {
+    padding: 28px 20px;
+  }
+
+  .theme-area {
+    top: 12px;
+    right: 12px;
+  }
+}
 </style>

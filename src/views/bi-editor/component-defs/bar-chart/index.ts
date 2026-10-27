@@ -1,6 +1,6 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema } from '../types'
+import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema, aggregatePropField } from '../types'
 
 export const BAR_MIN_WIDTH = 5
 export const BAR_MAX_WIDTH = 50
@@ -26,6 +26,7 @@ export const barChartDefinition: ComponentDefinition = {
   widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
     ...chartBaseSchema,
+    aggregatePropField,
     {
       key: 'barWidth',
       label: '柱宽',
@@ -71,6 +72,7 @@ export const barChartDefinition: ComponentDefinition = {
   dataBindingSchema: [
     { key: 'categoryField', label: '类目字段', type: 'category' },
     { key: 'valueFields', label: '数值字段', type: 'value', multiple: true },
+    { key: 'drillFields', label: '钻取字段', type: 'category', multiple: true },
   ],
 }
 

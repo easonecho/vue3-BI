@@ -2,6 +2,7 @@
  * 看板分享模块 API
  */
 import { get, post, del } from '@/utils/request'
+import type { DatasetQueryParams, DatasetQueryResult } from './dataset'
 
 /** 分享配置 (已登录用户查询) */
 export interface ShareConfig {
@@ -67,4 +68,29 @@ export function getPublicDashboard(token: string) {
 /** 公开访问看板 (POST: 带密码验证) */
 export function verifyPublicDashboard(token: string, password: string) {
   return post<PublicDashboard>(`/api/public/dashboards/${token}`, { password })
+}
+
+/** 公开数据集取数 (分享页/嵌入页图表渲染, 无需登录) */
+export function executePublicDataset(
+  token: string,
+  datasetId: number,
+  body?: { password?: string; limit?: number },
+) {
+  return post<{
+    columns: string[]
+    rows: Record<string, unknown>[]
+    rowCount: number
+  }>(`/api/public/dashboards/${token}/datasets/${datasetId}/execute`, body ?? {})
+}
+
+/** 公开数据集聚合查询 (分享页/嵌入页, 无需登录) */
+export function queryPublicDataset(
+  token: string,
+  datasetId: number,
+  body: DatasetQueryParams & { password?: string },
+) {
+  return post<DatasetQueryResult>(
+    `/api/public/dashboards/${token}/datasets/${datasetId}/query`,
+    body,
+  )
 }

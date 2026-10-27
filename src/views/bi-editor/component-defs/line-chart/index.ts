@@ -1,6 +1,6 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema } from '../types'
+import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema, aggregatePropField } from '../types'
 
 /** 🔑 折线图默认真实数据 */
 export const LINE_DEFAULT_CATEGORIES = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
@@ -21,6 +21,7 @@ export const lineChartDefinition: ComponentDefinition = {
   widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
     ...chartBaseSchema,
+    aggregatePropField,
     { key: 'smooth', label: '平滑曲线', type: 'switch', default: true, group: '样式' },
     { key: 'area', label: '面积填充', type: 'switch', default: false, group: '样式' },
     {
@@ -58,6 +59,7 @@ export const lineChartDefinition: ComponentDefinition = {
   dataBindingSchema: [
     { key: 'categoryField', label: '类目字段', type: 'category' },
     { key: 'valueFields', label: '数值字段', type: 'value', multiple: true },
+    { key: 'drillFields', label: '钻取字段', type: 'category', multiple: true },
   ],
 }
 

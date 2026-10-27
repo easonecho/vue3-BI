@@ -10,10 +10,13 @@ import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
 import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
+import { useChartAggregation } from '../../composables/useChartAggregation'
+import { useLinkageStore } from '@/stores/linkage'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
+const linkageStore = useLinkageStore()
 let initTimer: number | undefined
 
 let debounceTimer: number | null = null
@@ -21,19 +24,34 @@ let pendingBuilder: (() => ECOption) | null = null
 
 // 🔑 数据绑定:有 datasetId 时走动态取数 + 字段映射,无则走静态兜底
 const dataSourceRef = computed(() => props.comp.dataSource)
-const { rows } = useDatasetBinding(dataSourceRef)
+
+/** 🔑 名称字段 (钻取时切换为 drillFields[N-1]) */
+const nameField = computed(() =>
+  linkageStore.getDrillField(
+    props.comp.id,
+    (props.comp.dataConfig as any)?.drillFields ?? [],
+    ((props.comp.dataConfig as any)?.nameField as string) ?? '',
+  ),
+)
+const valueField = computed(() => (props.comp.dataConfig as any)?.valueField as string | undefined)
+
+/** 🔑 聚合下推:按名称字段在服务端 GROUP BY;未启用聚合时为 null → 原始行 */
+const aggregateRequest = useChartAggregation(props.comp, {
+  groupBy: () => nameField.value,
+  metrics: () => (valueField.value ? [valueField.value] : []),
+  orderBy: () => (valueField.value ? { field: valueField.value, direction: 'desc' } : undefined),
+})
+const { rows } = useDatasetBinding(dataSourceRef, true, aggregateRequest)
 
 /** 字段映射:把数据集行数据映射成玫瑰图所需的 {name, value}[] */
 const mappedData = computed(() => {
   if (!props.comp.dataSource.datasetId || rows.value.length === 0) return null
-  const { nameField, valueField } = (props.comp.dataConfig ?? {}) as {
-    nameField?: string
-    valueField?: string
-  }
-  if (!nameField || !valueField) return null
+  const name = nameField.value
+  const value = valueField.value
+  if (!name || !value) return null
   return rows.value.map((r) => ({
-    name: String(r[nameField] ?? ''),
-    value: Number(r[valueField] ?? 0),
+    name: String(r[name] ?? ''),
+    value: Number(r[value] ?? 0),
   }))
 })
 

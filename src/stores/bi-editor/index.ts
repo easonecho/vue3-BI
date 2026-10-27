@@ -504,6 +504,48 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
   }
 
   /**
+   * 🔑 导出 PDF：复用 PNG 回调拿到整张画布图片，写入新窗口后用浏览器打印
+   *    （用户在打印对话框选择「另存为 PDF」，不引入服务端 PDF 重依赖）。
+   *    注意: 必须在 await 之前同步打开窗口，否则会被浏览器弹窗拦截。
+   */
+  async function exportCanvasAsPdf() {
+    if (!exportPngCallback) {
+      console.warn('[bi-editor] 导出 PDF：CanvasArea 未注册导出回调')
+      return false
+    }
+    const win = window.open('', '_blank')
+    if (!win) return false
+
+    isExportingPng.value = true
+    try {
+      const dataUrl = await exportPngCallback()
+      if (!dataUrl) {
+        win.close()
+        return false
+      }
+      const escapeHtml = (s: string) =>
+        s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
+      const title = escapeHtml(dashboardName.value || '看板')
+      win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
+        <style>
+          @page { size: auto; margin: 0; }
+          html, body { margin: 0; padding: 0; background: #fff; }
+          img { display: block; width: 100%; height: auto; }
+        </style></head>
+        <body><img src="${dataUrl}" alt="${title}"
+          onload="setTimeout(function(){ window.focus(); window.print(); }, 200)" /></body></html>`)
+      win.document.close()
+      return true
+    } catch (e) {
+      console.error('[bi-editor] export PDF failed', e)
+      win.close()
+      return false
+    } finally {
+      isExportingPng.value = false
+    }
+  }
+
+  /**
    * 🔑 截取画布缩略图：复用 CanvasArea 注册的 toPng 回调生成完整 PNG，
    *    再缩放到 320px 宽的 JPEG data URL（大幅缩小体积，适合列表展示与存储）。
    *    无画布/无回调时返回 null（不阻断保存流程）。
@@ -750,9 +792,10 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
     templateIsPublic,
     captureThumbnail,
     refreshAllData,
-    // 画布导出 PNG
+    // 画布导出 PNG / PDF
     isExportingPng,
     registerExportPng,
     exportCanvasAsPng,
+    exportCanvasAsPdf,
   }
 })

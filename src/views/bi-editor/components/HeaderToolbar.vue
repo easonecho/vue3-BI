@@ -174,6 +174,12 @@
         <el-icon><Picture /></el-icon>
         <span>导出 PNG</span>
       </el-button>
+      <el-tooltip content="导出 PDF（浏览器打印，可选另存为 PDF）" placement="bottom">
+        <el-button :loading="store.isExportingPng" @click="handleExportPdf">
+          <el-icon><Printer /></el-icon>
+          <span>导出 PDF</span>
+        </el-button>
+      </el-tooltip>
       <el-tooltip v-if="!store.isTemplateMode" content="另存为 (Ctrl+Shift+S)" placement="bottom">
         <el-button :loading="store.isSaving" @click="handleSaveAs">
           <el-icon><Collection /></el-icon>
@@ -250,6 +256,7 @@ import {
   FolderChecked,
   ScaleToOriginal,
   Picture,
+  Printer,
 } from '@element-plus/icons-vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import { useCanvasZoom } from '@/views/bi-editor/composables/useCanvas'
@@ -533,6 +540,23 @@ async function handleExportPng() {
   } catch (e) {
     console.error('[HeaderToolbar] export PNG failed', e)
     ElMessage.error('导出 PNG 失败')
+  }
+}
+async function handleExportPdf() {
+  if (store.components.length === 0) {
+    ElMessage.warning('画布上还没有组件，无法导出')
+    return
+  }
+  try {
+    const ok = await store.exportCanvasAsPdf()
+    if (ok) {
+      ElMessage.success('已打开打印窗口，请选择「另存为 PDF」')
+    } else {
+      ElMessage.error('导出 PDF 失败（若浏览器拦截弹窗，请允许后重试）')
+    }
+  } catch (e) {
+    console.error('[HeaderToolbar] export PDF failed', e)
+    ElMessage.error('导出 PDF 失败')
   }
 }
 

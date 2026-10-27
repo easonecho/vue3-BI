@@ -4,6 +4,7 @@ import {
   chartBaseSchema,
   baseSeriesStylesWithAxesColumns,
   buildSeriesLabelSchema,
+  aggregatePropField,
 } from '../types'
 
 /** 🔑 面积图默认真实数据 */
@@ -25,6 +26,7 @@ const definition: ComponentDefinition = {
   widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
     ...chartBaseSchema,
+    aggregatePropField,
     { key: 'smooth', label: '平滑曲线', type: 'switch', default: true, group: '样式' },
     { key: 'areaOpacity', label: '面积透明度', type: 'slider', min: 0, max: 1, step: 0.05, default: 0.35, group: '样式' },
     { key: 'stack', label: '堆叠', type: 'switch', default: false, group: '样式' },
@@ -52,6 +54,7 @@ const definition: ComponentDefinition = {
   dataBindingSchema: [
     { key: 'categoryField', label: '类目字段', type: 'category' },
     { key: 'valueFields', label: '数值字段', type: 'value', multiple: true },
+    { key: 'drillFields', label: '钻取字段', type: 'category', multiple: true },
   ],
 }
 

@@ -1,0 +1,8 @@
+{
+  "plugins": [
+    {
+      "name": "示例公告横幅",
+      "url": "/plugins/sample-plugin.js"
+    }
+  ]
+}
