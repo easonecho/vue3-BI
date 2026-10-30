@@ -1,0 +1,108 @@
+/**
+ * 右侧面板各子面板共用的基础样式。
+ * 🔑 这些样式原先都写在 RightPanel.vue 的 scoped style 里；
+ *    拆分后每个子组件各自 `@import` 一次，保证 scoped 作用域仍然命中自己的模板元素。
+ */
+
+/* ===== 折叠项标题 ===== */
+.collapse-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: inherit;
+}
+
+/* ===== 区块 / 标题 ===== */
+.section {
+  margin-bottom: 20px;
+}
+
+.section--plain {
+  padding: 0 4px;
+}
+
+.section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bi-text-muted, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--bi-border-color, #374151);
+}
+
+/* ===== 表单行 ===== */
+.form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.form-item--inline {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.form-item label {
+  font-size: 12px;
+  color: var(--bi-text-secondary, #9ca3af);
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-row .form-item {
+  flex: 1;
+}
+
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+:deep(.form-check .el-checkbox__label) {
+  color: var(--bi-text-primary, #f3f4f6);
+}
+
+.placeholder-text {
+  font-size: 13px;
+  color: var(--bi-text-muted, #6b7280);
+  text-align: center;
+  padding: 20px;
+}
+
+/* ===== Element Plus 输入控件暗色适配 ===== */
+:deep(.el-input__wrapper) {
+  background: var(--bi-input-bg, #374151);
+  box-shadow: none;
+}
+
+:deep(.el-input__inner) {
+  color: var(--bi-text-primary, #f3f4f6);
+}
+
+:deep(.el-input-number) {
+  width: 100%;
+}
+
+:deep(.el-input-number .el-input__wrapper) {
+  background: var(--bi-input-bg, #374151);
+}
+
+:deep(.el-slider__runway) {
+  background: var(--bi-slider-bg, #374151);
+}
+
+:deep(.el-slider__bar) {
+  background: var(--bi-accent, #409eff);
+}
+
+:deep(.el-slider__button) {
+  border-color: var(--bi-accent, #409eff);
+}
