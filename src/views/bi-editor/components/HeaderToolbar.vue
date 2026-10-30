@@ -256,6 +256,7 @@ import {
   Printer,
 } from '@element-plus/icons-vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
+import type { DashboardLayout } from '@/views/bi-editor/types'
 import { useCanvasZoom } from '@/views/bi-editor/composables/useCanvas'
 import { getTemplateCategories, type TemplateCategoryOption } from '@/api/dashboard-template'
 
@@ -485,6 +486,17 @@ function handleExportJson() {
 function triggerImportJson() {
   importJsonInputRef.value?.click()
 }
+/**
+ * 🔑 校验导入的 JSON 是否为合法 DashboardLayout。
+ *   只做结构性最小校验（components 为数组 + canvas 为对象），
+ *   目的是在进入 store.applyLayout 前把 unknown 收窄成具体类型，而不是 `as any` 硬塞。
+ */
+function isDashboardLayout(v: unknown): v is DashboardLayout {
+  if (!v || typeof v !== 'object') return false
+  const o = v as Record<string, unknown>
+  return Array.isArray(o.components) && !!o.canvas && typeof o.canvas === 'object'
+}
+
 async function onImportJsonFile(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
@@ -505,9 +517,9 @@ async function onImportJsonFile(e: Event) {
   }
   try {
     const text = await file.text()
-    const layout = JSON.parse(text)
-    if (!layout || typeof layout !== 'object') throw new Error('JSON 结构非法')
-    store.applyLayout(layout as any)
+    const layout: unknown = JSON.parse(text)
+    if (!isDashboardLayout(layout)) throw new Error('JSON 结构非法')
+    store.applyLayout(layout)
     // 🔑 导入后另存为新看板：currentDashboardId = null，下次 save 会产生新记录
     store.setDashboardId(null)
     store.setDashboardName(`${store.dashboardName || '未命名'  }（已导入）`)

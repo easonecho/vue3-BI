@@ -85,7 +85,7 @@ function getChartSpecificOption(): {
         },
       },
     ],
-  } as any
+  } as unknown as ECOption
   return { specificOption, mergedProps }
 }
 

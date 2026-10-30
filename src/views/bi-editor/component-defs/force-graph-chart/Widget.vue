@@ -9,6 +9,7 @@ import { GraphChart } from 'echarts/charts'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
+import { fontWeightOf, fontStyleOf } from '../_shared/props'
 import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
@@ -106,8 +107,8 @@ function getChartSpecificOption(): {
   // 🔑 系列标签样式：独立 5 项配置
   const seriesLabelFontFamily = String(mergedProps.seriesLabelFontFamily)
   const seriesLabelFontSize = Number(mergedProps.seriesLabelFontSize || 12)
-  const seriesLabelFontWeight = mergedProps.seriesLabelFontWeight as any
-  const seriesLabelFontStyle = mergedProps.seriesLabelFontStyle as any
+  const seriesLabelFontWeight = fontWeightOf(mergedProps.seriesLabelFontWeight)
+  const seriesLabelFontStyle = fontStyleOf(mergedProps.seriesLabelFontStyle)
   const seriesLabelColor = String(mergedProps.seriesLabelColor || '#6b7280')
 
   // 🔑 按 categories 给每个分组分配 ECharts 标准调色板颜色
@@ -169,7 +170,7 @@ function getChartSpecificOption(): {
         },
       },
     ],
-  } as any
+  } as unknown as ECOption
   return { specificOption, mergedProps }
 }
 

@@ -1,5 +1,10 @@
 /// <reference lib="webworker" />
 
+// 🔑 本文件以 Worker 脚本身份运行（由 `?worker` 引入），self 实为 DedicatedWorkerGlobalScope。
+//   同时被主工程 DOM lib 编译时，`self` 被声明为 Window & typeof globalThis，
+//   因此在入口处收窄一次，避免每个 postMessage 都写 `(self as any)`。
+const workerScope = self as unknown as { postMessage: (message: unknown) => void }
+
 /**
  * 🔑 数据集映射 Worker：把大数据集的 categories + series 映射计算移到后台线程。
  *
@@ -20,7 +25,7 @@ self.onmessage = (e: MessageEvent) => {
   }
 
   if (!categoryField || !valueFields?.length || !rows.length) {
-    ;(self as any).postMessage({ id, result: null })
+    workerScope.postMessage({ id, result: null })
     return
   }
 
@@ -31,5 +36,5 @@ self.onmessage = (e: MessageEvent) => {
     data: rows.map((r) => Number(r[f] ?? 0)),
   }))
 
-  ;(self as any).postMessage({ id, result: { categories, series } })
+  workerScope.postMessage({ id, result: { categories, series } })
 }

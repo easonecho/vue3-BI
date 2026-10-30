@@ -6,7 +6,8 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
-import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
+import { getBaseOption, applyUserChartConfig, getXAxisData } from '../_shared/echarts-options'
+import { str, strArray, fontWeightOf, fontStyleOf, labelPositionOf } from '../_shared/props'
 import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
 import { BAR_MAX_WIDTH } from './index'
@@ -31,14 +32,11 @@ const dataSourceRef = computed(() => props.comp.dataSource)
 const categoryField = computed(() =>
   linkageStore.getDrillField(
     props.comp.id,
-    (props.comp.dataConfig as any)?.drillFields ?? [],
-    ((props.comp.dataConfig as any)?.categoryField as string) ?? '',
+    strArray(props.comp.dataConfig.drillFields),
+    str(props.comp.dataConfig.categoryField),
   ),
 )
-const valueFields = computed<string[]>(() => {
-  const value = (props.comp.dataConfig as any)?.valueFields
-  return Array.isArray(value) ? value : []
-})
+const valueFields = computed<string[]>(() => strArray(props.comp.dataConfig.valueFields))
 
 /** 🔑 聚合下推:按类目在服务端 GROUP BY;未启用聚合时为 null → 原始行 */
 const aggregateRequest = useChartAggregation(props.comp, {
@@ -123,8 +121,8 @@ function getChartSpecificOption(): {
       // 🔑 系列标签样式：独立 5 项配置（不再跟随全局）
       const seriesLabelFontFamily = String(mergedProps.seriesLabelFontFamily)
       const seriesLabelFontSize = Number(mergedProps.seriesLabelFontSize || 12)
-      const seriesLabelFontWeight = mergedProps.seriesLabelFontWeight as any
-      const seriesLabelFontStyle = mergedProps.seriesLabelFontStyle as any
+      const seriesLabelFontWeight = fontWeightOf(mergedProps.seriesLabelFontWeight)
+      const seriesLabelFontStyle = fontStyleOf(mergedProps.seriesLabelFontStyle)
       const seriesLabelColor = String(mergedProps.seriesLabelColor || '#6b7280')
       const seriesLabelPosition = String(mergedProps.seriesLabelPosition || 'top')
 
@@ -139,7 +137,7 @@ function getChartSpecificOption(): {
         itemStyle,
         label: {
           show: showLabel,
-          position: seriesLabelPosition as any,
+          position: labelPositionOf(seriesLabelPosition),
           fontFamily: seriesLabelFontFamily,
           fontSize: seriesLabelFontSize,
           fontWeight: seriesLabelFontWeight,
@@ -161,7 +159,7 @@ function applyChartOption() {
     const { specificOption, mergedProps } = getChartSpecificOption()
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: true,
-      xAxisData: specificOption.xAxis ? (specificOption.xAxis as any).data : undefined,
+      xAxisData: getXAxisData(specificOption),
       fallbackTitle: '柱状图',
     })
   })

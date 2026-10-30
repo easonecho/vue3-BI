@@ -10,6 +10,7 @@ import { SingleAxisComponent } from 'echarts/components'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
+import { fontWeightOf, fontStyleOf, labelPositionOf } from '../_shared/props'
 import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
@@ -106,8 +107,8 @@ function getChartSpecificOption(): {
   // 🔑 系列标签样式
   const seriesLabelFontFamily = String(mergedProps.seriesLabelFontFamily)
   const seriesLabelFontSize = Number(mergedProps.seriesLabelFontSize || 12)
-  const seriesLabelFontWeight = mergedProps.seriesLabelFontWeight as any
-  const seriesLabelFontStyle = mergedProps.seriesLabelFontStyle as any
+  const seriesLabelFontWeight = fontWeightOf(mergedProps.seriesLabelFontWeight)
+  const seriesLabelFontStyle = fontStyleOf(mergedProps.seriesLabelFontStyle)
   const seriesLabelColor = String(mergedProps.seriesLabelColor || '#6b7280')
   const seriesLabelPosition = String(mergedProps.seriesLabelPosition || 'top')
 
@@ -126,8 +127,8 @@ function getChartSpecificOption(): {
         fontFamily: String(mergedProps.xAxisLabelFontFamily),
         color: String(mergedProps.xAxisLabelColor),
         fontSize: Number(mergedProps.xAxisLabelFontSize),
-        fontWeight: mergedProps.xAxisLabelFontWeight as any,
-        fontStyle: mergedProps.xAxisLabelFontStyle as any,
+        fontWeight: fontWeightOf(mergedProps.xAxisLabelFontWeight),
+        fontStyle: fontStyleOf(mergedProps.xAxisLabelFontStyle),
       },
     },
     series: [
@@ -136,7 +137,7 @@ function getChartSpecificOption(): {
         data: coloredData,
         label: {
           show: true,
-          position: seriesLabelPosition as any,
+          position: labelPositionOf(seriesLabelPosition),
           fontFamily: seriesLabelFontFamily,
           fontSize: seriesLabelFontSize,
           fontWeight: seriesLabelFontWeight,
@@ -146,9 +147,9 @@ function getChartSpecificOption(): {
         emphasis: {
           itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.2)' },
         },
-      } as any,
+      },
     ],
-  } as any
+  } as unknown as ECOption
   return { specificOption, mergedProps }
 }
 

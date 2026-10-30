@@ -16,6 +16,26 @@ export interface ResizeHandle {
     | 'w-cursor'
 }
 
+/**
+ * 🔑 wrapper-mousedown 事件上的「内部交互区」标记。
+ *   CanvasComponentItem 在 capture 阶段根据 e.target 是否落在 el-table 等内部交互区里打上该标记，
+ *   handleWrapperMouseDown 据此决定拖拽启动阈值（12px vs 2px）。
+ *   这里集中声明一次，双方都用下面的读写辅助函数，避免各自写 `(e as any).xxx`。
+ */
+interface InternalInteractiveMouseEvent extends MouseEvent {
+  __biInternalInteractive?: boolean
+}
+
+/** 标记 mousedown 是否发生在内部交互区 */
+export function markInternalInteractive(e: MouseEvent, value: boolean): void {
+  ;(e as InternalInteractiveMouseEvent).__biInternalInteractive = value
+}
+
+/** 读取内部交互区标记（未标记时为 false） */
+export function isInternalInteractiveEvent(e: MouseEvent): boolean {
+  return Boolean((e as InternalInteractiveMouseEvent).__biInternalInteractive)
+}
+
 interface UseCanvasInteractionDeps {
   localScale: { value: number }
   isSpacePressed: { value: boolean }
@@ -171,7 +191,7 @@ export function useCanvasInteraction(deps: UseCanvasInteractionDeps) {
       lastY: comp.y,
       moved: false,
       // 🔑 读取 CanvasComponentItem 在事件对象上打的标记，决定是否使用高阈值
-      highThreshold: Boolean((e as any).__biInternalInteractive),
+      highThreshold: isInternalInteractiveEvent(e),
       viewportRect,
     }
 

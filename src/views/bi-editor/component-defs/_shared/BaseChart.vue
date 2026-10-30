@@ -211,7 +211,7 @@ onMounted(() => {
               tryInit()
             }
             if ('requestIdleCallback' in window) {
-              ;(window as any).requestIdleCallback(run, { timeout: 300 })
+              window.requestIdleCallback(run, { timeout: 300 })
             } else {
               setTimeout(run, 16)
             }
@@ -301,7 +301,7 @@ defineExpose({
       inst.setOption(option, {
         lazyUpdate: true,
         replaceMerge: REPLACE_MERGE_KEYS,
-      } as any)
+      })
     }
     // 容器尺寸为 0 时强制 resize：处理初始化时容器未布局完的情况
     const dom = chartRef.value

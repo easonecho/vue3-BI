@@ -41,8 +41,9 @@ function ensureChinaMap(): Promise<void> {
     try {
       const res = await fetch(CHINA_GEO_URL)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const geoJson = await res.json()
-      registerMap('china', geoJson as any)
+      const geoJson: unknown = await res.json()
+      // 🔑 远端 GeoJSON 无法在编译期校验结构，这里断言成 registerMap 的入参类型
+      registerMap('china', geoJson as Parameters<typeof registerMap>[1])
       _mapRegistered = true
     } catch (e) {
       console.error('[china-map] 加载中国地图 GeoJSON 失败:', e)

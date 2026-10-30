@@ -6,9 +6,10 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
-import type { ECOption } from '../_shared/echarts-config'
+import type { ChartSeriesOption, ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
-import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
+import { getBaseOption, applyUserChartConfig, getXAxisData } from '../_shared/echarts-options'
+import { fontWeightOf, fontStyleOf, labelPositionOf } from '../_shared/props'
 import { deriveDefaultPropsCached } from '../types'
 import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
@@ -110,8 +111,8 @@ function getChartSpecificOption(): {
   // 🔑 系列标签样式：独立 5 项配置
   const seriesLabelFontFamily = String(mergedProps.seriesLabelFontFamily)
   const seriesLabelFontSize = Number(mergedProps.seriesLabelFontSize || 12)
-  const seriesLabelFontWeight = mergedProps.seriesLabelFontWeight as any
-  const seriesLabelFontStyle = mergedProps.seriesLabelFontStyle as any
+  const seriesLabelFontWeight = fontWeightOf(mergedProps.seriesLabelFontWeight)
+  const seriesLabelFontStyle = fontStyleOf(mergedProps.seriesLabelFontStyle)
   const seriesLabelColor = String(mergedProps.seriesLabelColor || '#6b7280')
   const seriesLabelPosition = String(mergedProps.seriesLabelPosition || 'top')
 
@@ -130,7 +131,7 @@ function getChartSpecificOption(): {
 
   const makeLabel = (show: boolean) => ({
     show,
-    position: seriesLabelPosition as any,
+    position: labelPositionOf(seriesLabelPosition),
     fontFamily: seriesLabelFontFamily,
     fontSize: seriesLabelFontSize,
     fontWeight: seriesLabelFontWeight,
@@ -138,7 +139,7 @@ function getChartSpecificOption(): {
     color: seriesLabelColor,
   })
 
-  const seriesList: any[] = []
+  const seriesList: ChartSeriesOption[] = []
 
   // 🔑 区间带：用上界 - stack + areaStyle 形成填充,下界反向 + stack 闭合
   //   实现思路:下界作为基准 stack('band'),上界用 stack('band') + (上界-下界) 的差值,areaStyle 填充
@@ -223,7 +224,7 @@ function getChartSpecificOption(): {
 
   const specificOption: ECOption = {
     xAxis: { data: categories },
-    series: seriesList as any,
+    series: seriesList,
   }
   return { specificOption, mergedProps }
 }
@@ -234,7 +235,7 @@ function applyChartOption() {
     const { specificOption, mergedProps } = getChartSpecificOption()
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: true,
-      xAxisData: specificOption.xAxis ? (specificOption.xAxis as any).data : undefined,
+      xAxisData: getXAxisData(specificOption),
       fallbackTitle: '置信区间图',
     })
   })

@@ -796,7 +796,7 @@ export function useComponentOperations(
     let changed = false
     for (let i = 0; i < targets.length; i++) {
       if (targets[i][axis] !== newVals[i]) {
-        ;(targets[i] as any)[axis] = newVals[i]
+        targets[i][axis] = newVals[i]
         changed = true
       }
     }

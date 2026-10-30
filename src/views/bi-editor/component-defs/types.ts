@@ -67,10 +67,10 @@ export const FONT_FAMILY_OPTIONS: readonly SelectOption[] = [
 export const FONT_WEIGHT_OPTIONS: readonly SelectOption[] = [
   { label: '极细 (100)', value: 100 },
   { label: '细 (300)', value: 300 },
-  { label: '常规 (400 / normal)', value: 'normal' as any },
+  { label: '常规 (400 / normal)', value: 'normal' },
   { label: '中等 (500)', value: 500 },
   { label: '半粗 (600)', value: 600 },
-  { label: '粗体 (700 / bold)', value: 'bold' as any },
+  { label: '粗体 (700 / bold)', value: 'bold' },
   { label: '特粗 (900)', value: 900 },
 ] as const
 

@@ -7,6 +7,7 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
+import { str, strArray, optionalStr, fontWeightOf, fontStyleOf } from '../_shared/props'
 import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
@@ -29,11 +30,11 @@ const dataSourceRef = computed(() => props.comp.dataSource)
 const nameField = computed(() =>
   linkageStore.getDrillField(
     props.comp.id,
-    (props.comp.dataConfig as any)?.drillFields ?? [],
-    ((props.comp.dataConfig as any)?.nameField as string) ?? '',
+    strArray(props.comp.dataConfig.drillFields),
+    str(props.comp.dataConfig.nameField),
   ),
 )
-const valueField = computed(() => (props.comp.dataConfig as any)?.valueField as string | undefined)
+const valueField = computed(() => optionalStr(props.comp.dataConfig.valueField))
 
 /** 🔑 聚合下推:按名称字段在服务端 GROUP BY;未启用聚合时为 null → 原始行 */
 const aggregateRequest = useChartAggregation(props.comp, {
@@ -105,8 +106,8 @@ function getChartSpecificOption(): {
   // 🔑 系列标签样式：独立 5 项配置
   const seriesLabelFontFamily = String(mergedProps.seriesLabelFontFamily)
   const seriesLabelFontSize = Number(mergedProps.seriesLabelFontSize || 12)
-  const seriesLabelFontWeight = mergedProps.seriesLabelFontWeight as any
-  const seriesLabelFontStyle = mergedProps.seriesLabelFontStyle as any
+  const seriesLabelFontWeight = fontWeightOf(mergedProps.seriesLabelFontWeight)
+  const seriesLabelFontStyle = fontStyleOf(mergedProps.seriesLabelFontStyle)
   const seriesLabelColor = String(mergedProps.seriesLabelColor || '#6b7280')
   // 饼图 label.position 仅支持 outside / inside / insideLeft / insideRight / center，将通用 top/bottom/left/right 转换
   const mapPiePosition = (rawPos: string): 'outside' | 'inside' | 'center' => {
@@ -128,7 +129,7 @@ function getChartSpecificOption(): {
       {
         name: '饼图',
         type: 'pie',
-        radius: radiusArr as any,
+        radius: radiusArr,
         roseType,
         center: ['50%', '55%'],
         avoidLabelOverlap: true,

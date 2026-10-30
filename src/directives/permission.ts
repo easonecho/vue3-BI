@@ -9,6 +9,9 @@ function matchPerm(value: string | string[], anyMode: boolean): boolean {
   return store.hasPerm(value)
 }
 
+/** 🔑 可禁用元素（button/input 等原生控件带 disabled，普通 div 没有） */
+type DisableableElement = HTMLElement & { disabled?: boolean }
+
 export const vPermission: Directive<HTMLElement> = {
   mounted(el, binding: DirectiveBinding) {
     const anyMode = !!(binding.modifiers && binding.modifiers.any)
@@ -16,7 +19,7 @@ export const vPermission: Directive<HTMLElement> = {
     const ok = matchPerm(binding.value, anyMode)
     if (!ok) {
       if (disableMode) {
-        ;(el as any).disabled = true
+        ;(el as DisableableElement).disabled = true
         el.classList.add('is-disabled')
       } else {
         el.parentNode?.removeChild(el)

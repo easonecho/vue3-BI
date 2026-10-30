@@ -261,7 +261,7 @@ function openCreateDialog() {
 function openEditDialog(row: DataSource) {
   mode.value = 'edit'
   Object.assign(form, {
-    id: row.id, name: row.name, type: (row.type as any) ?? 'mysql',
+    id: row.id, name: row.name, type: 'mysql',
     host: row.host, port: row.port, username: row.username,
     password: '', database: row.database,
     description: row.description ?? '',

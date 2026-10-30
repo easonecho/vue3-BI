@@ -9,7 +9,7 @@
             <el-collapse v-model="activeCollapseGroups">
               <el-collapse-item
                 v-for="(catLabel, catKey) in CATEGORY_LABELS"
-                v-show="filteredComponents(catKey as any).length > 0"
+                v-show="filteredComponents(catKey).length > 0"
                 :key="catKey"
                 :name="catKey"
               >
@@ -18,7 +18,7 @@
                 </template>
                 <div class="component-grid">
                   <div
-                    v-for="compMeta in filteredComponents(catKey as any)"
+                    v-for="compMeta in filteredComponents(catKey)"
                     :key="compMeta.type"
                     class="component-item"
                     draggable="true"
@@ -176,6 +176,7 @@ import type { ContextMenuGroups } from './ContextMenu.vue'
 import {
   CATEGORY_GROUPS,
   CATEGORY_LABELS,
+  CATEGORY_KEYS,
   getDefaultProps,
 } from '@/views/bi-editor/component-defs'
 import ComponentRenderer from './ComponentRenderer.vue'
@@ -377,13 +378,13 @@ function toggleCollapsed() {
 }
 
 /** 组件库折叠面板：默认所有分类都展开 */
-const activeCollapseGroups = ref<ComponentCategory[]>(Object.keys(CATEGORY_LABELS) as any)
+const activeCollapseGroups = ref<ComponentCategory[]>([...CATEGORY_KEYS])
 /** 切换 collapsed 时：收起后就把所有折叠面板关闭，展开时恢复 */
 watch(collapsed, (v) => {
   if (v) {
     activeCollapseGroups.value = []
   } else {
-    activeCollapseGroups.value = Object.keys(CATEGORY_LABELS) as any
+    activeCollapseGroups.value = [...CATEGORY_KEYS]
   }
 })
 
@@ -433,7 +434,7 @@ function previewScaleStyle(
 }
 
 /** 按分类筛选组件：直接复用 component-defs 的 CATEGORY_GROUPS */
-function filteredComponents(category: ComponentCategory): ComponentMeta[] {
+function filteredComponents(category: string): ComponentMeta[] {
   const defs = CATEGORY_GROUPS[category] ?? []
   return defs.map((d) => ({
     type: d.type,

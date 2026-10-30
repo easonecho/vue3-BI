@@ -1,5 +1,22 @@
 import type { ECOption } from './echarts-config'
-import { chartCommonSchema, chartAxesSchema, deriveDefaultProps } from '../types'
+import type {
+  TitleComponentOption,
+  LegendComponentOption,
+  TooltipComponentOption,
+  GridComponentOption,
+  DataZoomComponentOption,
+} from 'echarts/components'
+import { chartCommonSchema, chartAxesSchema, deriveDefaultProps, type PropField } from '../types'
+import {
+  animationEasingOf,
+  axisTypeOf,
+  dataZoomOrientOf,
+  dataZoomTypeOf,
+  fontStyleOf,
+  fontWeightOf,
+  tooltipTriggerOf,
+  type PropBag,
+} from './props'
 
 // ================= 公共默认配置 =================
 
@@ -15,7 +32,7 @@ export function getBaseOption(): ECOption {
 
 // ================= 工具函数：真正的深度合并（数组整体替换，对象递归） =================
 
-function isPlainObject(v: any): boolean {
+function isPlainObject(v: unknown): v is PropBag {
   return Object.prototype.toString.call(v) === '[object Object]'
 }
 
@@ -25,22 +42,19 @@ function isPlainObject(v: any): boolean {
  *   - 数组：specific 直接替换 base
  *   - 其他类型（string/number/boolean）：specific 覆盖 base
  */
-export function deepMerge<T extends Record<string, any>>(base: T, specific: Partial<T>): T {
+export function deepMerge<T extends object>(base: T, specific: Partial<T> | undefined): T {
   if (!specific) return base
   if (!base) return specific as T
-  const out: any = Array.isArray(base) ? [...(base as any)] : { ...base }
-  for (const key of Object.keys(specific)) {
-    const bv = (out as any)[key]
-    const sv = (specific as any)[key]
+  const out: PropBag = { ...(base as PropBag) }
+  const src = specific as PropBag
+  for (const key of Object.keys(src)) {
+    const bv = out[key]
+    const sv = src[key]
     if (sv === undefined) continue
-    if (sv === null) {
-      ;(out as any)[key] = null
-    } else if (Array.isArray(sv)) {
-      ;(out as any)[key] = sv
-    } else if (isPlainObject(sv) && isPlainObject(bv)) {
-      ;(out as any)[key] = deepMerge(bv, sv)
+    if (sv === null || Array.isArray(sv) || !isPlainObject(sv) || !isPlainObject(bv)) {
+      out[key] = sv
     } else {
-      ;(out as any)[key] = sv
+      out[key] = deepMerge(bv, sv)
     }
   }
   return out as T
@@ -51,23 +65,35 @@ export function mergeOptions(base: ECOption, specific: ECOption): ECOption {
   return deepMerge(base, specific)
 }
 
+/**
+ * 从图表 option 里取出 xAxis.data（xAxis 可能是单个对象也可能是数组）。
+ * 供各坐标轴类图表把类目传给 applyUserChartConfig，避免 `(specificOption.xAxis as any).data`。
+ */
+export function getXAxisData(option: ECOption): (string | number)[] | undefined {
+  const xAxis = option.xAxis
+  const axis = Array.isArray(xAxis) ? xAxis[0] : xAxis
+  const data = axis && 'data' in axis ? axis.data : undefined
+  if (!Array.isArray(data)) return undefined
+  return data.filter((v): v is string | number => typeof v === 'string' || typeof v === 'number')
+}
+
 // ================= 默认值真源：直接从 types.ts 的 Schema 派生（唯一来源） =================
 
 /** 🔑 所有图表通用字段的默认值（title / legend / tooltip / color / animation）
  *  —— 直接从 chartCommonSchema.default 派生，禁止在此文件里再写一份。 */
-const commonSchemaDefaults: Record<string, any> = deriveDefaultProps(chartCommonSchema)
+const commonSchemaDefaults: PropBag = deriveDefaultProps(chartCommonSchema as PropField[])
 /** 🔑 坐标轴类图表字段默认值（xAxis / yAxis / dataZoom）
  *  —— 直接从 chartAxesSchema.default 派生，禁止在此文件里再写一份。 */
-const axesSchemaDefaults: Record<string, any> = deriveDefaultProps(chartAxesSchema)
+const axesSchemaDefaults: PropBag = deriveDefaultProps(chartAxesSchema as PropField[])
 /** 🔑 全量 Schema 默认值（通用 + 坐标轴）—— 合并一次，供补全旧数据用。 */
-const fullSchemaDefaults: Record<string, any> = { ...commonSchemaDefaults, ...axesSchemaDefaults }
+const fullSchemaDefaults: PropBag = { ...commonSchemaDefaults, ...axesSchemaDefaults }
 
 /**
  * 🔑 把 Schema 默认值"打进"实际 props，保证缺失字段（旧数据、新增字段）也有默认值。
  *   合并顺序：schemaDefaults → actualProps（用户实际设置优先级更高）。
  *   ⚠️ 这是保证「面板开关状态」与「图表实际渲染」100% 同步的关键一步。
  */
-function fillDefaults(actualProps: Record<string, any> | undefined, hasAxes: boolean) {
+function fillDefaults(actualProps: PropBag | undefined, hasAxes: boolean): PropBag {
   const schemaDefaults = hasAxes ? fullSchemaDefaults : commonSchemaDefaults
   return { ...schemaDefaults, ...actualProps }
 }
@@ -78,7 +104,7 @@ export interface ChartConfigContext {
   /** 是否是带 X/Y 坐标轴的图表（柱状/折线/散点）。饼图、仪表盘等为 false。 */
   hasAxes?: boolean
   /** X 轴 data（categories 数组），hasAxes=true 时传入 */
-  xAxisData?: any[]
+  xAxisData?: (string | number)[]
   /** 图表回退标题（组件名），当用户没填 titleText 时使用 */
   fallbackTitle?: string
 }
@@ -127,7 +153,7 @@ function titleTopStyle(top: string): string | number {
   if (top === 'top') return 4
   if (top === 'middle') return 'middle'
   if (top === 'bottom') return 'bottom'
-  return top as any
+  return top
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -158,7 +184,7 @@ function hexToRgba(hex: string, alpha: number): string {
  */
 export function applyUserChartConfig(
   baseOption: ECOption,
-  props: Record<string, any> | undefined,
+  props: PropBag | undefined,
   widgetOption: ECOption,
   ctx: ChartConfigContext = {},
 ): ECOption {
@@ -167,16 +193,16 @@ export function applyUserChartConfig(
   const p = fillDefaults(props, hasAxes)
 
   // ============ 1. Title —— 每个文本字段独立 5 项配置（无全局跟随，用户可单独控制每处） ============
-  const titleOption: any = {
+  const titleOption: TitleComponentOption = {
     show: Boolean(p.titleShow),
     text: String(p.titleText),
-    left: p.titleLeft,
+    left: p.titleLeft as TitleComponentOption['left'],
     top: titleTopStyle(String(p.titleTop)),
     textStyle: {
       fontFamily: String(p.titleFontFamily),
       fontSize: Number(p.titleFontSize),
-      fontWeight: p.titleFontWeight as any,
-      fontStyle: p.titleFontStyle as any,
+      fontWeight: fontWeightOf(p.titleFontWeight),
+      fontStyle: fontStyleOf(p.titleFontStyle),
       color: String(p.titleColor),
     },
   }
@@ -187,14 +213,14 @@ export function applyUserChartConfig(
 
   // ============ 2. Legend ============
   const legendPos = legendPositionStyle(String(p.legendPosition))
-  const legendOption: any = {
+  const legendOption: LegendComponentOption = {
     show: Boolean(p.legendShow),
     ...legendPos,
     textStyle: {
       fontFamily: String(p.legendFontFamily),
       fontSize: Number(p.legendFontSize),
-      fontWeight: p.legendFontWeight as any,
-      fontStyle: p.legendFontStyle as any,
+      fontWeight: fontWeightOf(p.legendFontWeight),
+      fontStyle: fontStyleOf(p.legendFontStyle),
       color: String(p.legendColor),
     },
     itemGap: Number(p.legendItemGap),
@@ -203,9 +229,9 @@ export function applyUserChartConfig(
   }
 
   // ============ 3. Tooltip ============
-  const tooltipOption: any = {
+  const tooltipOption: TooltipComponentOption = {
     show: Boolean(p.tooltipShow),
-    trigger: p.tooltipTrigger as any,
+    trigger: tooltipTriggerOf(p.tooltipTrigger),
     backgroundColor: hexToRgba(String(p.tooltipBgColor), 0.95),
     borderColor: String(p.tooltipBorderColor),
     borderWidth: 1,
@@ -213,8 +239,8 @@ export function applyUserChartConfig(
       fontFamily: String(p.tooltipTextFontFamily),
       color: String(p.tooltipTextColor),
       fontSize: Number(p.tooltipTextFontSize),
-      fontWeight: p.tooltipTextFontWeight as any,
-      fontStyle: p.tooltipTextFontStyle as any,
+      fontWeight: fontWeightOf(p.tooltipTextFontWeight),
+      fontStyle: fontStyleOf(p.tooltipTextFontStyle),
     },
     extraCssText: 'box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 4px;',
   }
@@ -223,11 +249,11 @@ export function applyUserChartConfig(
   const animationOption: ECOption = {
     animation: Boolean(p.animationShow),
     animationDuration: p.animationShow ? Number(p.animationDuration) : 0,
-    animationEasing: p.animationEasing as any,
+    animationEasing: animationEasingOf(p.animationEasing),
   }
 
   // ============ 6. Grid 画布内边距（从 Schema 读取，唯一真源）============
-  const gridOption: any = {
+  const gridOption: GridComponentOption = {
     left: Number(p.gridLeft),
     right: Number(p.gridRight),
     top: Number(p.gridTop),
@@ -240,7 +266,7 @@ export function applyUserChartConfig(
   if (hasAxes) {
     axesOption.xAxis = {
       show: Boolean(p.xAxisShow),
-      type: p.xAxisType as any,
+      type: axisTypeOf(p.xAxisType),
       data: xAxisData,
       inverse: Boolean(p.xAxisInverse),
       axisLabel: {
@@ -248,8 +274,8 @@ export function applyUserChartConfig(
         fontFamily: String(p.xAxisLabelFontFamily),
         color: String(p.xAxisLabelColor),
         fontSize: Number(p.xAxisLabelFontSize),
-        fontWeight: p.xAxisLabelFontWeight as any,
-        fontStyle: p.xAxisLabelFontStyle as any,
+        fontWeight: fontWeightOf(p.xAxisLabelFontWeight),
+        fontStyle: fontStyleOf(p.xAxisLabelFontStyle),
       },
       axisLine: {
         show: Boolean(p.xAxisAxisLineShow),
@@ -263,15 +289,15 @@ export function applyUserChartConfig(
     }
     axesOption.yAxis = {
       show: Boolean(p.yAxisShow),
-      type: p.yAxisType as any,
+      type: axisTypeOf(p.yAxisType, 'value'),
       inverse: Boolean(p.yAxisInverse),
       axisLabel: {
         show: Boolean(p.yAxisLabelShow),
         fontFamily: String(p.yAxisLabelFontFamily),
         color: String(p.yAxisLabelColor),
         fontSize: Number(p.yAxisLabelFontSize),
-        fontWeight: p.yAxisLabelFontWeight as any,
-        fontStyle: p.yAxisLabelFontStyle as any,
+        fontWeight: fontWeightOf(p.yAxisLabelFontWeight),
+        fontStyle: fontStyleOf(p.yAxisLabelFontStyle),
       },
       axisLine: {
         show: Boolean(p.yAxisAxisLineShow),
@@ -293,12 +319,13 @@ export function applyUserChartConfig(
   // 🔑 slider 型必须对齐 grid.left/right/top/bottom：否则滑块条横跨整个容器，
   //   会比轴线（在 grid 内部）长一大截，出现"超出轴线长度"的视觉问题。
   if (hasAxes && Boolean(p.dataZoomShow)) {
-    const orient = String(p.dataZoomOrient)
+    const orient = dataZoomOrientOf(p.dataZoomOrient)
     const isHorizontal = orient === 'horizontal'
-    const type = String(p.dataZoomType)
-    const baseDz: Record<string, any> = {
-      type: type as any,
-      orient: orient as any,
+    const type = dataZoomTypeOf(p.dataZoomType)
+    // 🔑 inside / slider 的字段集不同, 组装时用宽松对象, 最终一次性断言成 DataZoomComponentOption
+    const baseDz: PropBag = {
+      type,
+      orient,
       xAxisIndex: isHorizontal ? [0] : undefined,
       yAxisIndex: isHorizontal ? undefined : [0],
       start: Number(p.dataZoomStart),
@@ -338,7 +365,7 @@ export function applyUserChartConfig(
         baseDz.right = 14
       }
     }
-    axesOption.dataZoom = [baseDz]
+    axesOption.dataZoom = [baseDz as DataZoomComponentOption]
   } else if (hasAxes) {
     // 🔑 坐标轴类图表但关闭 dataZoom 时：显式空数组覆盖旧配置
     axesOption.dataZoom = []
@@ -371,12 +398,12 @@ function applyProgressive(option: ECOption) {
   if (!option.series) return
   const seriesList = Array.isArray(option.series) ? option.series : [option.series]
   for (const s of seriesList) {
-    if (s && typeof s === 'object' && 'type' in s) {
-      const t = (s as any).type
-      if (t === 'bar' || t === 'line' || t === 'scatter') {
-        ;(s as any).progressive = 1000
-        ;(s as any).progressiveThreshold = 3000
-      }
+    if (!s || typeof s !== 'object' || !('type' in s)) continue
+    const series = s as { type?: unknown; progressive?: number; progressiveThreshold?: number }
+    const t = series.type
+    if (t === 'bar' || t === 'line' || t === 'scatter') {
+      series.progressive = 1000
+      series.progressiveThreshold = 3000
     }
   }
 }

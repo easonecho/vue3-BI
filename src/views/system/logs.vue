@@ -147,13 +147,16 @@ function formatJson(v: unknown) {
   try { return JSON.stringify(v, null, 2); } catch { return String(v); }
 }
 
-function moduleTag(m: string) {
-  const map: Record<string, string> = { auth: 'warning', user: '', role: 'success', datasource: 'info', dataset: 'info', dashboard: '', chart: '', export: 'warning', menu: 'success' };
-  return (map[m] || '') as any;
+/** 🔑 el-tag 的 type 合法取值（Element Plus 的联合类型），避免把 string 用 as any 传进 :type */
+type TagType = 'primary' | 'success' | 'info' | 'warning' | 'danger'
+
+function moduleTag(m: string): TagType | undefined {
+  const map: Record<string, TagType> = { auth: 'warning', user: 'primary', role: 'success', datasource: 'info', dataset: 'info', dashboard: 'primary', chart: 'primary', export: 'warning', menu: 'success' };
+  return map[m];
 }
-function methodTag(m: string) {
-  const map: Record<string, string> = { GET: 'info', POST: 'success', PUT: 'warning', DELETE: 'danger' };
-  return (map[m] || 'info') as any;
+function methodTag(m: string): TagType {
+  const map: Record<string, TagType> = { GET: 'info', POST: 'success', PUT: 'warning', DELETE: 'danger' };
+  return map[m] ?? 'info';
 }
 
 onMounted(() => { loadModules(); loadList(); });

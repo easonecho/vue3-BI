@@ -2,10 +2,11 @@ import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema } from '../types'
 
-/** 🔑 置信区间图默认数据：12 个月,实际值/预测值/上下界各 1 组 */
+/** 🔑 置信区间图默认数据：12 个月,实际值/预测值/上下界各 1 组
+ *  data 允许 null：折线在缺口处（实际值与预测值衔接处）用 null 断开 */
 function buildConfidenceBandDefaults(): {
   categories: string[]
-  series: { name: string; data: number[] }[]
+  series: { name: string; data: (number | null)[] }[]
 } {
   const categories = [
     '1月',
@@ -27,14 +28,14 @@ function buildConfidenceBandDefaults(): {
   // 🔑 上界/下界（与预测值配套,实际值区间收窄为 0）
   const upper = [120, 132, 101, 134, 90, 230, 210, 182, 200, 215, 260, 250]
   const lower = [120, 132, 101, 134, 90, 230, 210, 182, 165, 167, 190, 195]
-  // 🔑 把 actual + forecast 合并成一条线（forecast 从 actual 末尾衔接）
-  const actualFull = [...actual, null, null, null, null]
-  const forecastFull = [null, null, null, null, null, null, null, null, ...forecast]
+  // 🔑 把 actual + forecast 合并成一条线（forecast 从 actual 末尾衔接，缺口用 null 断开）
+  const actualFull: (number | null)[] = [...actual, null, null, null, null]
+  const forecastFull: (number | null)[] = [null, null, null, null, null, null, null, null, ...forecast]
   return {
     categories,
     series: [
-      { name: '实际值', data: actualFull as any },
-      { name: '预测值', data: forecastFull as any },
+      { name: '实际值', data: actualFull },
+      { name: '预测值', data: forecastFull },
       { name: '上界', data: upper },
       { name: '下界', data: lower },
     ],

@@ -9,6 +9,7 @@ import { TreeChart } from 'echarts/charts'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
+import { fontWeightOf, fontStyleOf } from '../_shared/props'
 import { deriveDefaultPropsCached } from '../types'
 import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
@@ -115,8 +116,8 @@ function getChartSpecificOption(): {
   // 🔑 系列标签样式：独立 5 项配置
   const seriesLabelFontFamily = String(mergedProps.seriesLabelFontFamily)
   const seriesLabelFontSize = Number(mergedProps.seriesLabelFontSize || 12)
-  const seriesLabelFontWeight = mergedProps.seriesLabelFontWeight as any
-  const seriesLabelFontStyle = mergedProps.seriesLabelFontStyle as any
+  const seriesLabelFontWeight = fontWeightOf(mergedProps.seriesLabelFontWeight)
+  const seriesLabelFontStyle = fontStyleOf(mergedProps.seriesLabelFontStyle)
   const seriesLabelColor = String(mergedProps.seriesLabelColor || '#6b7280')
 
   const specificOption: ECOption = {
@@ -155,7 +156,7 @@ function getChartSpecificOption(): {
         animationDurationUpdate: 750,
       },
     ],
-  } as any
+  } as unknown as ECOption
   return { specificOption, mergedProps }
 }
 

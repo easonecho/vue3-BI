@@ -7,6 +7,7 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
+import { fontWeightOf, fontStyleOf, labelPositionOf } from '../_shared/props'
 import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
@@ -122,8 +123,8 @@ function getChartSpecificOption(): {
       // 🔑 系列标签样式：独立 5 项配置
       const seriesLabelFontFamily = String(mergedProps.seriesLabelFontFamily)
       const seriesLabelFontSize = Number(mergedProps.seriesLabelFontSize || 12)
-      const seriesLabelFontWeight = mergedProps.seriesLabelFontWeight as any
-      const seriesLabelFontStyle = mergedProps.seriesLabelFontStyle as any
+      const seriesLabelFontWeight = fontWeightOf(mergedProps.seriesLabelFontWeight)
+      const seriesLabelFontStyle = fontStyleOf(mergedProps.seriesLabelFontStyle)
       const seriesLabelColor = String(mergedProps.seriesLabelColor || '#6b7280')
       const seriesLabelPosition = String(mergedProps.seriesLabelPosition || 'top')
 
@@ -135,7 +136,7 @@ function getChartSpecificOption(): {
         itemStyle: { color: itemColor },
         label: {
           show: labelOn,
-          position: seriesLabelPosition as any,
+          position: labelPositionOf(seriesLabelPosition),
           formatter: (params: any) => `(${params.value[0]}, ${params.value[1]})`,
           fontFamily: seriesLabelFontFamily,
           fontSize: seriesLabelFontSize,

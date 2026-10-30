@@ -11,6 +11,23 @@ import {
   GUIDE_LINE_COLOR,
 } from '@/views/bi-editor/constants/canvas-constants'
 
+/**
+ * 🔑 @scena/guides 0.29.2 运行时确实存在、但 d.ts 未声明的 API 集合：
+ *    loadGuides / setGuides / setState({guides}) / on('dragStart'|'dragEnd') / __teardown。
+ *    统一在这里描述一次并断言一次，避免散落各处的 `as any`。
+ */
+interface GuidesApi {
+  loadGuides?: (guides: number[]) => void
+  setGuides?: (guides: number[]) => void
+  setState?: (state: Record<string, unknown>) => void
+  on?: (event: 'dragStart' | 'dragEnd', handler: () => void) => void
+  __teardown?: () => void
+}
+
+function asGuidesApi(guides: Guides | null | undefined): GuidesApi | null {
+  return guides ? (guides as unknown as GuidesApi) : null
+}
+
 export interface UseRulerGuidesDeps {
   localScale: Ref<number>
   localOffset: Ref<{ x: number; y: number }>
@@ -198,26 +215,26 @@ export function useRulerGuides(deps: UseRulerGuidesDeps) {
       if (hPositions.length === 0) removeNonScaleDom(hGuidesRef.value, scaleWhitelistH)
       if (vPositions.length === 0) removeNonScaleDom(vGuidesRef.value, scaleWhitelistV)
 
-      const hAny = h as any
-      const vAny = v as any
+      const hApi = asGuidesApi(h)
+      const vApi = asGuidesApi(v)
       // 🔑 @scena/guides 0.29.2 没有 setGuides 方法，正确 API 是 loadGuides：
       //    loadGuides 调用「内部 Guides 组件」的 setState({guides})，renderGuides 读 state.guides
       //    重新渲染 DOM → 真正更新画布辅助线。
       //    而 publicGuides.setState({guides}) 只更新 InnerGuides 的 props，内部 Guides 只读
       //    defaultGuides 不读 guides → 无效（这是之前撤销后辅助线消失的根因之一）。
-      if (typeof hAny.loadGuides === 'function') {
-        hAny.loadGuides([...hPositions])
-      } else if (typeof hAny.setGuides === 'function') {
-        hAny.setGuides([...hPositions])
+      if (hApi?.loadGuides) {
+        hApi.loadGuides([...hPositions])
+      } else if (hApi?.setGuides) {
+        hApi.setGuides([...hPositions])
       } else {
-        hAny.setState({ guides: hPositions })
+        hApi?.setState?.({ guides: hPositions })
       }
-      if (typeof vAny.loadGuides === 'function') {
-        vAny.loadGuides([...vPositions])
-      } else if (typeof vAny.setGuides === 'function') {
-        vAny.setGuides([...vPositions])
+      if (vApi?.loadGuides) {
+        vApi.loadGuides([...vPositions])
+      } else if (vApi?.setGuides) {
+        vApi.setGuides([...vPositions])
       } else {
-        vAny.setState({ guides: vPositions })
+        vApi?.setState?.({ guides: vPositions })
       }
     } catch {
       /* ignore */
@@ -293,17 +310,17 @@ export function useRulerGuides(deps: UseRulerGuidesDeps) {
     //    重新渲染 DOM → 真正画出辅助线。
     //    注意：setGuides 方法在本版本不存在；setState({guides}) 只更新 InnerGuides 的
     //    props，内部 Guides 只读 defaultGuides 不读 guides → 无效。
-    ;(h as any).loadGuides([...hPositions])
-    ;(v as any).loadGuides([...vPositions])
+    ;asGuidesApi(h)?.loadGuides?.([...hPositions])
+    ;asGuidesApi(v)?.loadGuides?.([...vPositions])
 
     // 🔑 用 @scena 的 dragStart/dragEnd EventEmitter 事件替代 mousedown/mouseup：
     //    @scena 内部用 pointer 事件处理拖拽并 stopPropagation，
     //    DOM 元素上的 mousedown 监听器永远不会触发（运行时日志已证实）。
     //    dragStart/dragEnd 是 @scena EventEmitter 事件，可靠触发。
-    ;(h as any).on('dragStart', () => {
+    ;asGuidesApi(h)?.on?.('dragStart', () => {
       isGuidesDragging = true
     })
-    ;(v as any).on('dragStart', () => {
+    ;asGuidesApi(v)?.on?.('dragStart', () => {
       isGuidesDragging = true
     })
     // 🔑 dragEnd 同步触发在 changeGuides（React setState 异步 callback）之前。
@@ -316,9 +333,10 @@ export function useRulerGuides(deps: UseRulerGuidesDeps) {
         }
       })
     }
-    ;(h as any).on('dragEnd', onDragEnd)
-    ;(v as any).on('dragEnd', onDragEnd)
-    ;(h as any).__teardown = () => {}
+    ;asGuidesApi(h)?.on?.('dragEnd', onDragEnd)
+    ;asGuidesApi(v)?.on?.('dragEnd', onDragEnd)
+    const hApi = asGuidesApi(h)
+    if (hApi) hApi.__teardown = () => {}
 
     let lastH = hPositions.join(',')
     let lastV = vPositions.join(',')
@@ -360,7 +378,7 @@ export function useRulerGuides(deps: UseRulerGuidesDeps) {
 
   function destroyGuides() {
     try {
-      ;(hGuides.value as any)?.__teardown?.()
+      asGuidesApi(hGuides.value)?.__teardown?.()
     } catch {
       /* ignore */
     }

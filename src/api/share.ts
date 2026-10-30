@@ -41,7 +41,9 @@ export type PublicDashboardResult = PublicDashboard | { passwordRequired: boolea
 
 /** 判断是否需要密码 */
 export function isPasswordRequired(data: PublicDashboardResult): data is { passwordRequired: boolean } {
-  return (data as any)?.passwordRequired === true
+  // 🔑 响应来自网络，按 unknown 读取后再收窄，不直接断言整体形状
+  if (typeof data !== 'object' || data === null || !('passwordRequired' in data)) return false
+  return (data as { passwordRequired?: unknown }).passwordRequired === true
 }
 
 // ========== 已登录: 分享配置管理 ==========

@@ -6,7 +6,8 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
-import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
+import { getBaseOption, applyUserChartConfig, getXAxisData } from '../_shared/echarts-options'
+import { strArray, optionalStr, optionalStrArray, fontWeightOf, fontStyleOf, labelPositionOf } from '../_shared/props'
 import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
 import { useDatasetBinding, useWorkerMappedData } from '../../composables/useDatasetBinding'
@@ -26,13 +27,10 @@ let pendingBuilder: (() => ECOption) | null = null
 const dataSourceRef = computed(() => props.comp.dataSource)
 
 // 🔑 Worker 数据集映射：大数据集（> 500 行）在 Worker 中计算，主线程零开销
-const categoryField = computed(() => (props.comp.dataConfig as any)?.categoryField as string | undefined)
-const valueFields = computed(() => (props.comp.dataConfig as any)?.valueFields as string[] | undefined)
+const categoryField = computed(() => optionalStr(props.comp.dataConfig.categoryField))
+const valueFields = computed(() => optionalStrArray(props.comp.dataConfig.valueFields))
 /** 🔑 钻取:已下钻 N 层时切换为 drillFields[N-1] 作为类目字段 */
-const drillFields = computed<string[]>(() => {
-  const value = (props.comp.dataConfig as any)?.drillFields
-  return Array.isArray(value) ? value.filter((v: unknown): v is string => typeof v === 'string' && !!v) : []
-})
+const drillFields = computed<string[]>(() => strArray(props.comp.dataConfig.drillFields))
 const effectiveCategoryField = computed(() =>
   linkageStore.getDrillField(props.comp.id, drillFields.value, categoryField.value ?? ''),
 )
@@ -113,8 +111,8 @@ function getChartSpecificOption(): {
       // 🔑 系列标签样式：独立 5 项配置
       const seriesLabelFontFamily = String(mergedProps.seriesLabelFontFamily)
       const seriesLabelFontSize = Number(mergedProps.seriesLabelFontSize || 12)
-      const seriesLabelFontWeight = mergedProps.seriesLabelFontWeight as any
-      const seriesLabelFontStyle = mergedProps.seriesLabelFontStyle as any
+      const seriesLabelFontWeight = fontWeightOf(mergedProps.seriesLabelFontWeight)
+      const seriesLabelFontStyle = fontStyleOf(mergedProps.seriesLabelFontStyle)
       const seriesLabelColor = String(mergedProps.seriesLabelColor || '#6b7280')
       const seriesLabelPosition = String(mergedProps.seriesLabelPosition || 'top')
 
@@ -135,7 +133,7 @@ function getChartSpecificOption(): {
           fontWeight: seriesLabelFontWeight,
           fontStyle: seriesLabelFontStyle,
           color: seriesLabelColor,
-          position: seriesLabelPosition as any,
+          position: labelPositionOf(seriesLabelPosition),
         },
         emphasis: { focus: 'series' },
       }
@@ -150,7 +148,7 @@ function applyChartOption() {
     const { specificOption, mergedProps } = getChartSpecificOption()
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: true,
-      xAxisData: specificOption.xAxis ? (specificOption.xAxis as any).data : undefined,
+      xAxisData: getXAxisData(specificOption),
       fallbackTitle: '折线图',
     })
   })

@@ -1,3 +1,4 @@
+import type { Component } from 'vue'
 import type { ComponentDefinition } from './types'
 
 /**
@@ -57,8 +58,8 @@ export function preloadComponent(type: string): void {
   const def = componentDefinitions[type]
   if (!def?.widget) return
 
-  const w = def.widget as any
-  // Vue 3 defineAsyncComponent 内部暴露的加载器
+  // 🔑 defineAsyncComponent 内部暴露的加载器（未在 Vue 公开类型中声明）
+  const w = def.widget as Component & { __asyncLoader?: () => void }
   if (typeof w.__asyncLoader === 'function') {
     w.__asyncLoader()
   }

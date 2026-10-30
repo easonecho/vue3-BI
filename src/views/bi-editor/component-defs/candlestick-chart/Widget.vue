@@ -8,7 +8,8 @@ import { use } from 'echarts/core'
 import { CandlestickChart } from 'echarts/charts'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
-import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
+import { getBaseOption, applyUserChartConfig, getXAxisData } from '../_shared/echarts-options'
+import { fontWeightOf, fontStyleOf, labelPositionOf } from '../_shared/props'
 import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
@@ -92,8 +93,8 @@ function getChartSpecificOption(): {
   // 🔑 系列标签样式：独立 5 项配置
   const seriesLabelFontFamily = String(mergedProps.seriesLabelFontFamily)
   const seriesLabelFontSize = Number(mergedProps.seriesLabelFontSize || 12)
-  const seriesLabelFontWeight = mergedProps.seriesLabelFontWeight as any
-  const seriesLabelFontStyle = mergedProps.seriesLabelFontStyle as any
+  const seriesLabelFontWeight = fontWeightOf(mergedProps.seriesLabelFontWeight)
+  const seriesLabelFontStyle = fontStyleOf(mergedProps.seriesLabelFontStyle)
   const seriesLabelColor = String(mergedProps.seriesLabelColor || '#6b7280')
   const seriesLabelPosition = String(mergedProps.seriesLabelPosition || 'top')
 
@@ -127,7 +128,7 @@ function getChartSpecificOption(): {
         color: seriesColor,
         label: {
           show: showLabel,
-          position: seriesLabelPosition as any,
+          position: labelPositionOf(seriesLabelPosition),
           fontFamily: seriesLabelFontFamily,
           fontSize: seriesLabelFontSize,
           fontWeight: seriesLabelFontWeight,
@@ -139,7 +140,7 @@ function getChartSpecificOption(): {
         },
       }
     }),
-  } as any
+  } as unknown as ECOption
   return { specificOption, mergedProps }
 }
 
@@ -149,7 +150,7 @@ function applyChartOption() {
     const { specificOption, mergedProps } = getChartSpecificOption()
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: true,
-      xAxisData: specificOption.xAxis ? (specificOption.xAxis as any).data : undefined,
+      xAxisData: getXAxisData(specificOption),
       fallbackTitle: 'K线图',
     })
   })

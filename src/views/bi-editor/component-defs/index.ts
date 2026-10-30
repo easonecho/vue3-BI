@@ -1,4 +1,5 @@
 import type { ComponentDefinition } from './types'
+import type { ComponentCategory } from '@/views/bi-editor/types'
 import { deriveDefaultProps, buildInitialSeriesStyles } from './types'
 import { rawDefinitions, componentDefinitions, registerComponentDefinition } from './registry'
 
@@ -74,6 +75,14 @@ export const CATEGORY_LABELS: Record<string, string> = {
   data: '数据组件',
   info: '信息组件',
 }
+
+/**
+ * 🔑 分类 key 的强类型列表（数据源是 CATEGORY_LABELS，键为 string）。
+ *   在唯一一处把 string[] 收窄为 ComponentCategory[]，外部使用方（LeftPanel 等）直接复用。
+ */
+export const CATEGORY_KEYS: ComponentCategory[] = Object.keys(
+  CATEGORY_LABELS,
+) as ComponentCategory[]
 
 /** 按类型查找 definition */
 export function getDefinition(type: string): ComponentDefinition | undefined {

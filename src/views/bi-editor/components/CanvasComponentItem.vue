@@ -40,6 +40,7 @@
 import { computed } from 'vue'
 import ComponentRenderer from './ComponentRenderer.vue'
 import type { ResizeHandle } from '@/views/bi-editor/composables/useCanvasInteraction'
+import { markInternalInteractive } from '@/views/bi-editor/composables/useCanvasInteraction'
 import { useBiEditorStore } from '@/stores/bi-editor'
 
 interface BiComponent {
@@ -245,7 +246,7 @@ const onWrapperMouseDownCapture = (e: MouseEvent) => {
   //    .base-chart 内拖拽正常移动组件。
   if (isInsideEChartsCanvas(e.target) && hasInternalDragInteraction(props.comp)) return
   // 4) 打标记：el-table 内部交互区，走 useCanvasInteraction 的高阈值启动（12px vs 2px）
-  ;(e as any).__biInternalInteractive = isInsideInteractiveContainer(e.target)
+  markInternalInteractive(e, isInsideInteractiveContainer(e.target))
   emit('wrapper-mousedown', e, props.comp.id)
 }
 

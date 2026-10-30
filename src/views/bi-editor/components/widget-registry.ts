@@ -28,7 +28,8 @@ export function preloadWidgetComponent(type: ComponentType): void {
   const widget = componentDefinitions[type]?.widget
   if (!widget) return
 
-  const w = widget as any
+  // 🔑 defineAsyncComponent 内部暴露的加载器（未在 Vue 公开类型中声明）
+  const w = widget as Component & { __asyncLoader?: () => void }
   if (typeof w.__asyncLoader === 'function') {
     w.__asyncLoader()
   }

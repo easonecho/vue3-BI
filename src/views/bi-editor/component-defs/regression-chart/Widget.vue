@@ -6,9 +6,10 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { use } from 'echarts/core'
 import { ScatterChart, LineChart } from 'echarts/charts'
-import type { ECOption } from '../_shared/echarts-config'
+import type { ChartSeriesOption, ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
+import { fontWeightOf, fontStyleOf, labelPositionOf } from '../_shared/props'
 import { deriveDefaultPropsCached } from '../types'
 import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
@@ -122,8 +123,8 @@ function getChartSpecificOption(): {
   // 🔑 系列标签样式：独立 5 项配置
   const seriesLabelFontFamily = String(mergedProps.seriesLabelFontFamily)
   const seriesLabelFontSize = Number(mergedProps.seriesLabelFontSize || 12)
-  const seriesLabelFontWeight = mergedProps.seriesLabelFontWeight as any
-  const seriesLabelFontStyle = mergedProps.seriesLabelFontStyle as any
+  const seriesLabelFontWeight = fontWeightOf(mergedProps.seriesLabelFontWeight)
+  const seriesLabelFontStyle = fontStyleOf(mergedProps.seriesLabelFontStyle)
   const seriesLabelColor = String(mergedProps.seriesLabelColor || '#6b7280')
   const seriesLabelPosition = String(mergedProps.seriesLabelPosition || 'top')
 
@@ -139,7 +140,7 @@ function getChartSpecificOption(): {
     maxX = 10
   }
 
-  const seriesList: any[] = []
+  const seriesList: ChartSeriesOption[] = []
 
   // 🔑 置信区间带（先画,叠在底层）
   if (showConfidence && scatterData.length >= 3) {
@@ -195,7 +196,7 @@ function getChartSpecificOption(): {
       z: 5,
       label: {
         show: false,
-        position: seriesLabelPosition as any,
+        position: labelPositionOf(seriesLabelPosition),
         fontFamily: seriesLabelFontFamily,
         fontSize: seriesLabelFontSize,
         fontWeight: seriesLabelFontWeight,
@@ -216,7 +217,7 @@ function getChartSpecificOption(): {
     z: 10,
     label: {
       show: false,
-      position: seriesLabelPosition as any,
+      position: labelPositionOf(seriesLabelPosition),
       formatter: (params: any) => `(${params.value[0]}, ${params.value[1]})`,
       fontFamily: seriesLabelFontFamily,
       fontSize: seriesLabelFontSize,
@@ -233,7 +234,7 @@ function getChartSpecificOption(): {
   const specificOption: ECOption = {
     xAxis: { scale: true, type: 'value' },
     yAxis: { scale: true, type: 'value' },
-    series: seriesList as any,
+    series: seriesList,
   }
   return { specificOption, mergedProps }
 }

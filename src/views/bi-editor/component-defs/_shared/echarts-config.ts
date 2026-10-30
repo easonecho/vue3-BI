@@ -121,3 +121,11 @@ export type ECOption = ComposeOption<
 
 export { init }
 export type { ECharts }
+
+/**
+ * 单个系列配置的联合类型（从 `ECOption['series']` 中抽出元素类型）。
+ * 🔑 动态拼装 series 数组时用它声明数组，例如：
+ *      const seriesList: ChartSeriesOption[] = []
+ *   这样 `series: seriesList` 可直接通过类型检查，不必再写 `series: seriesList as any`。
+ */
+export type ChartSeriesOption = Exclude<NonNullable<ECOption['series']>, readonly unknown[]>
