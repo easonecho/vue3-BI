@@ -381,8 +381,8 @@
             </el-button>
             <el-button
               size="small"
-              @click="autoDetectFields"
               :disabled="!previewData.columns.length"
+              @click="autoDetectFields"
             >
               从预览结果自动检测
             </el-button>
@@ -647,7 +647,6 @@ import { Search, Refresh, Plus, Upload, ArrowDown, Connection } from '@element-p
 import DataLineage from './components/DataLineage.vue'
 import {
   type CreateDatasetParams,
-  type DatasetParam,
   type DatasetField,
   getDatasetList,
   createDataset,

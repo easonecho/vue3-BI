@@ -168,7 +168,7 @@
                     取消组合 (Ungroup)
                   </el-button>
                 </div>
-                <div class="group-hint" v-if="store.selectedComponent?.groupId">
+                <div v-if="store.selectedComponent?.groupId" class="group-hint">
                   主选组件已归属到分组
                 </div>
               </el-collapse-item>
@@ -181,25 +181,25 @@
                 <div class="align-section">
                   <div class="align-label">水平对齐</div>
                   <div class="align-row">
-                    <el-button size="small" @click="store.alignLeft()" :disabled="!canAlign"
+                    <el-button size="small" :disabled="!canAlign" @click="store.alignLeft()"
                       >左对齐</el-button
                     >
-                    <el-button size="small" @click="store.alignHCenter()" :disabled="!canAlign"
+                    <el-button size="small" :disabled="!canAlign" @click="store.alignHCenter()"
                       >水平居中</el-button
                     >
-                    <el-button size="small" @click="store.alignRight()" :disabled="!canAlign"
+                    <el-button size="small" :disabled="!canAlign" @click="store.alignRight()"
                       >右对齐</el-button
                     >
                   </div>
                   <div class="align-label">垂直对齐</div>
                   <div class="align-row">
-                    <el-button size="small" @click="store.alignTop()" :disabled="!canAlign"
+                    <el-button size="small" :disabled="!canAlign" @click="store.alignTop()"
                       >顶对齐</el-button
                     >
-                    <el-button size="small" @click="store.alignVCenter()" :disabled="!canAlignMulti"
+                    <el-button size="small" :disabled="!canAlignMulti" @click="store.alignVCenter()"
                       >垂直居中</el-button
                     >
-                    <el-button size="small" @click="store.alignBottom()" :disabled="!canAlignMulti"
+                    <el-button size="small" :disabled="!canAlignMulti" @click="store.alignBottom()"
                       >底对齐</el-button
                     >
                   </div>
@@ -207,14 +207,14 @@
                   <div class="align-row">
                     <el-button
                       size="small"
-                      @click="store.distributeHorizontal()"
                       :disabled="!canDistribute"
+                      @click="store.distributeHorizontal()"
                       >水平分布</el-button
                     >
                     <el-button
                       size="small"
-                      @click="store.distributeVertical()"
                       :disabled="!canDistribute"
+                      @click="store.distributeVertical()"
                       >垂直分布</el-button
                     >
                   </div>
@@ -330,25 +330,25 @@
                 <div class="align-section">
                   <div class="align-label">水平对齐</div>
                   <div class="align-row">
-                    <el-button size="small" @click="store.alignLeft()" :disabled="!canAlign"
+                    <el-button size="small" :disabled="!canAlign" @click="store.alignLeft()"
                       >左对齐</el-button
                     >
-                    <el-button size="small" @click="store.alignHCenter()" :disabled="!canAlign"
+                    <el-button size="small" :disabled="!canAlign" @click="store.alignHCenter()"
                       >水平居中</el-button
                     >
-                    <el-button size="small" @click="store.alignRight()" :disabled="!canAlign"
+                    <el-button size="small" :disabled="!canAlign" @click="store.alignRight()"
                       >右对齐</el-button
                     >
                   </div>
                   <div class="align-label">垂直对齐</div>
                   <div class="align-row">
-                    <el-button size="small" @click="store.alignTop()" :disabled="!canAlign"
+                    <el-button size="small" :disabled="!canAlign" @click="store.alignTop()"
                       >顶对齐</el-button
                     >
-                    <el-button size="small" @click="store.alignVCenter()" :disabled="!canAlignMulti"
+                    <el-button size="small" :disabled="!canAlignMulti" @click="store.alignVCenter()"
                       >垂直居中</el-button
                     >
-                    <el-button size="small" @click="store.alignBottom()" :disabled="!canAlignMulti"
+                    <el-button size="small" :disabled="!canAlignMulti" @click="store.alignBottom()"
                       >底对齐</el-button
                     >
                   </div>
@@ -356,14 +356,14 @@
                   <div class="align-row">
                     <el-button
                       size="small"
-                      @click="store.distributeHorizontal()"
                       :disabled="!canDistribute"
+                      @click="store.distributeHorizontal()"
                       >水平分布</el-button
                     >
                     <el-button
                       size="small"
-                      @click="store.distributeVertical()"
                       :disabled="!canDistribute"
+                      @click="store.distributeVertical()"
                       >垂直分布</el-button
                     >
                   </div>
@@ -1063,7 +1063,7 @@ async function importCode(file: UploadFile) {
     store.updateComponent(store.selectedId!, updates)
     ElMessage.success('配置已导入并应用')
   } catch (e) {
-    ElMessage.error('导入失败：' + (e as Error).message)
+    ElMessage.error(`导入失败：${  (e as Error).message}`)
   }
 }
 

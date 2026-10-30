@@ -32,7 +32,7 @@
     <!-- 大屏内容 -->
     <template v-else>
       <section class="screen-kpi">
-        <div class="kpi-card" v-for="k in kpis" :key="k.label">
+        <div v-for="k in kpis" :key="k.label" class="kpi-card">
           <div class="kpi-card__label">{{ k.label }}</div>
           <div class="kpi-card__num" :style="{ color: k.color }">
             {{ k.value }}<span class="kpi-unit">{{ k.unit }}</span>
@@ -58,7 +58,7 @@
           <div class="panel"><div class="panel__title">流量趋势 (近30日)</div><div ref="lineRef" class="chart" /></div>
           <div class="panel"><div class="panel__title">实时榜单 TOP 8</div>
             <div class="ranking">
-              <div class="ranking__row" v-for="(row, i) in ranking" :key="row.name">
+              <div v-for="(row, i) in ranking" :key="row.name" class="ranking__row">
                 <div class="ranking__rank" :class="'rank-' + (i + 1)">{{ i + 1 }}</div>
                 <div class="ranking__name">{{ row.name }}</div>
                 <div class="ranking__bar"><div class="ranking__bar-inner" :style="{ width: row.percent + '%' }" /></div>
@@ -102,7 +102,7 @@ function back() { router.push('/dashboard') }
 const nowText = ref('')
 let clockTimer: number | undefined
 let statsTimer: number | undefined
-function pad(n: number) { return n < 10 ? '0' + n : '' + n }
+function pad(n: number) { return n < 10 ? `0${  n}` : `${  n}` }
 function tickClock() {
   const d = new Date()
   nowText.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
@@ -152,7 +152,7 @@ const ranking = ref([
 ])
 
 function formatK(n: number) {
-  return n >= 10000 ? (n / 10000).toFixed(1) + '万' : n.toLocaleString()
+  return n >= 10000 ? `${(n / 10000).toFixed(1)  }万` : n.toLocaleString()
 }
 
 const pieRef = ref<HTMLDivElement | null>(null)

@@ -290,7 +290,6 @@ let marqueePendingY = 0
  *   彻底绕开 Vue 响应式 → 零 computed 重算 / 零 v-memo 比较 / 零组件 re-patch。
  *   mouseup 时才把最终命中集合一次性写回 store。
  */
-let inMarqueeMode = false
 /** 框选开始时的基线选中集合（Shift/Ctrl 累加模式下非空） */
 let marqueeBaselineIds: Set<string> = new Set()
 /** 当前帧命中集合（相对基线合并后的结果） */
@@ -302,7 +301,7 @@ let marqueeMasterId: string | null = null
 /** 上一帧主选中 id（用于 diff，只改 2 个元素的 primary class） */
 let marqueePrevMasterId: string | null = null
 /** 🔑 组件 id → DOM 元素缓存：框选开始时一次性建立，避免每帧 querySelectorAll O(N²) */
-let marqueeCompDomCache: Map<string, HTMLElement> = new Map()
+const marqueeCompDomCache: Map<string, HTMLElement> = new Map()
 
 const MULTI_DOM_CLASS = 'marquee-dom-multi'
 const PRIMARY_DOM_CLASS = 'marquee-dom-primary'
@@ -622,7 +621,6 @@ function handleSheetMouseDown(e: MouseEvent) {
   //   1) 记基线选中集合
   //   2) 建 DOM 元素缓存（每帧 O(1) 取元素）
   //   3) 初始化帧内集合
-  inMarqueeMode = true
   marqueeBaselineIds = new Set(additive ? store.selectedIds : [])
   buildMarqueeDomCache()
   marqueeHitSet = new Set(marqueeBaselineIds)
@@ -669,7 +667,6 @@ function onMarqueeUp() {
 
   // 🔑 清所有 DOM 临时 class（Vue 接管后会重新画正确的选中边框）
   clearMarqueeDomClasses()
-  inMarqueeMode = false
 
   // 🔑 写回 store：仅在选中集合与基线不同时才赋值 → 避免无谓响应式
   const baselineArr = [...marqueeBaselineIds]
@@ -1111,9 +1108,9 @@ onMounted(async () => {
           store.selectComponent(priorSelectedId)
         }
         if (container && priorInfoBar) priorInfoBar.style.display = ''
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
         const _keep1 = priorTransform
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
         const _keep2 = priorOffset
       }
     })

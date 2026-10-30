@@ -8,7 +8,7 @@
       </div>
     </div>
     <div class="sql-editor__body">
-      <div class="sql-editor__lines" ref="linesRef">
+      <div ref="linesRef" class="sql-editor__lines">
         <div v-for="n in lineCount" :key="n" class="sql-editor__line-num">{{ n }}</div>
       </div>
       <textarea
@@ -21,7 +21,7 @@
         @scroll="syncScroll"
         @keydown="onKeyDown"
       />
-      <div class="sql-editor__highlight" v-html="highlightedHtml" ref="hlRef" />
+      <div ref="hlRef" class="sql-editor__highlight" v-html="highlightedHtml" />
     </div>
   </div>
 </template>
@@ -71,7 +71,7 @@ function onKeyDown(e: KeyboardEvent) {
     const start = ta.selectionStart;
     const end = ta.selectionEnd;
     const val = props.modelValue;
-    const newVal = val.substring(0, start) + '  ' + val.substring(end);
+    const newVal = `${val.substring(0, start)  }  ${  val.substring(end)}`;
     emit('update:modelValue', newVal);
     nextTick(() => {
       ta.selectionStart = ta.selectionEnd = start + 2;
@@ -106,7 +106,7 @@ const highlightedHtml = computed(() => {
   html = html.replace(/--([^\n]*)/g, '<span class="tk-cmt">--$1</span>');
   html = html.replace(/\/\*([\s\S]*?)\*\//g, '<span class="tk-cmt">/*$1*/</span>');
   html = html.replace(/\b(\d+\.?\d*)\b/g, '<span class="tk-num">$1</span>');
-  const kwPattern = new RegExp('\\b(' + SQL_KEYWORDS.join('|') + ')\\b', 'gi');
+  const kwPattern = new RegExp(`\\b(${  SQL_KEYWORDS.join('|')  })\\b`, 'gi');
   html = html.replace(kwPattern, '<span class="tk-kw">$1</span>');
   html = html.replace(/\b([a-zA-Z_]\w*)\s*\(/g, '<span class="tk-fn">$1</span>(');
   if (!html.endsWith('\n')) html += '\n';
@@ -122,8 +122,8 @@ function formatSql() {
   if (!sql) return;
   const kws = ['SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN', 'OUTER JOIN', 'FULL JOIN', 'JOIN', 'ON', 'GROUP BY', 'ORDER BY', 'HAVING', 'LIMIT', 'UNION ALL', 'UNION'];
   for (const kw of kws) {
-    const re = new RegExp('\\s' + kw.replace(' ', '\\s+') + '\\s', 'gi');
-    sql = sql.replace(re, '\n' + kw + ' ');
+    const re = new RegExp(`\\s${  kw.replace(' ', '\\s+')  }\\s`, 'gi');
+    sql = sql.replace(re, `\n${  kw  } `);
   }
   sql = sql.replace(/^SELECT\s/i, 'SELECT\n  ');
   emit('update:modelValue', sql);
@@ -134,7 +134,7 @@ function insertSnippet() {
   if (!props.modelValue) {
     emit('update:modelValue', snippet);
   } else {
-    emit('update:modelValue', props.modelValue + '\n\n' + snippet);
+    emit('update:modelValue', `${props.modelValue  }\n\n${  snippet}`);
   }
 }
 </script>

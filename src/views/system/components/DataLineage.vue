@@ -19,7 +19,7 @@
         @clear="reload"
       />
       <el-button :loading="loading" @click="reload">查询</el-button>
-      <div class="lineage-stats" v-if="stats">
+      <div v-if="stats" class="lineage-stats">
         <el-tag size="small" effect="plain" type="info">数据源 {{ stats.datasourceCount }}</el-tag>
         <el-tag size="small" effect="plain" type="primary">数据集 {{ stats.datasetCount }}</el-tag>
         <el-tag size="small" effect="plain" type="success">看板 {{ stats.dashboardCount }}</el-tag>

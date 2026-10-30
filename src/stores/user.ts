@@ -127,4 +127,3 @@ if (typeof window !== 'undefined') {
     .then(bindGlobalAuthEvents)
     .catch((e) => console.warn('[user] bindGlobalAuthEvents failed', e))
 }
-

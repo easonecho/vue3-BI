@@ -313,7 +313,7 @@ const router = createRouter({
  * 1. 未登录跳登录页
  * 2. 已登录但权限不足跳 403
  */
-router.beforeEach(async (to, from) => {
+router.beforeEach(async (to, _from) => {
   NProgress.start()
   const userStore = useUserStore()
   const isLoggedIn = userStore.isLoggedIn

@@ -90,7 +90,7 @@
     </div>
 
     <!-- 看板卡片网格 -->
-    <el-row :gutter="16" v-loading="loading" class="card-grid">
+    <el-row v-loading="loading" :gutter="16" class="card-grid">
       <el-col v-for="(item, idx) in list" :key="item.id" :xs="24" :sm="12" :md="8" :lg="6">
         <div class="dashboard-card" :style="{ animationDelay: `${idx * 0.04}s` }">
           <div class="card-thumb" @click="handlePreview(item.id)">
@@ -413,7 +413,7 @@
           <el-icon><Plus /></el-icon>&nbsp;新增分组
         </el-button>
       </div>
-      <el-table :data="groups" size="small" border v-loading="groupsLoading">
+      <el-table v-loading="groupsLoading" :data="groups" size="small" border>
         <el-table-column prop="name" label="分组名称" min-width="140" />
         <el-table-column prop="description" label="描述" min-width="180" show-overflow-tooltip />
         <el-table-column label="看板数" width="80" align="center">
@@ -562,14 +562,12 @@ import {
   Promotion,
   Share,
   PieChart,
-  User,
   Clock,
   Lock,
   Star,
   StarFilled,
   FolderOpened,
   Files,
-  Folder,
   Rank,
   ZoomIn,
   CircleCheckFilled,
@@ -763,7 +761,6 @@ async function loadUserTemplatesForCreate() {
     userTemplatesLoading.value = false
   }
 }
-
 
 function selectUserTemplate(id: number) {
   selectedKind.value = 'user'

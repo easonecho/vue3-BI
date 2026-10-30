@@ -40,8 +40,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
+      - name: Lint (oxlint)
         run: pnpm exec oxlint src/
+
+      # 只跑 error 级规则：项目中仍有 284 处 no-explicit-any 等 warning，暂不作为门禁
+      - name: Lint (eslint)
+        run: pnpm exec eslint src/ --quiet
 
       - name: Type check
         run: pnpm exec vue-tsc --noEmit
