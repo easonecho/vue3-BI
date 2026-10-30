@@ -19,8 +19,6 @@
           @change="handleSearch"
         >
           <el-option label="MySQL" value="mysql" />
-          <el-option label="PostgreSQL" value="postgresql" />
-          <el-option label="MongoDB" value="mongodb" />
         </el-select>
         <el-button type="primary" @click="handleSearch">
           <el-icon><Search /></el-icon>&nbsp;查询
@@ -89,8 +87,6 @@
         <el-form-item label="数据源类型" prop="type">
           <el-select v-model="form.type" style="width: 100%" placeholder="请选择数据库类型" :disabled="mode === 'edit'">
             <el-option label="MySQL" value="mysql" />
-            <el-option label="PostgreSQL" value="postgresql" />
-            <el-option label="MongoDB" value="mongodb" />
           </el-select>
           <div v-if="mode === 'edit'" style="color: #9ca3af; font-size: 12px; margin-top: 4px">数据源类型创建后不可修改</div>
         </el-form-item>
