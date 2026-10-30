@@ -72,13 +72,16 @@
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="170" align="center" />
-        <el-table-column label="操作" width="230" fixed="right" align="center">
+        <el-table-column label="操作" width="300" fixed="right" align="center">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEditDialog(row)">
               编辑
             </el-button>
             <el-button link type="primary" size="small" @click="openRoleDialog(row)">
               改角色
+            </el-button>
+            <el-button link type="warning" size="small" @click="openResetPwdDialog(row)">
+              重置密码
             </el-button>
             <el-popconfirm
               title="确定删除该用户吗?"
@@ -176,6 +179,45 @@
         <el-button type="primary" :loading="submitting" @click="submitRoleChange">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 重置密码 对话框：管理员无需知道原密码 -->
+    <el-dialog v-model="pwdDialogVisible" title="重置密码" width="420px" destroy-on-close>
+      <el-form
+        ref="pwdFormRef"
+        :model="pwdForm"
+        :rules="pwdRules"
+        label-width="86px"
+        label-position="right"
+      >
+        <el-form-item label="用户">
+          <span>{{ pwdTarget?.username }} ({{ pwdTarget?.nickname || '无昵称' }})</span>
+        </el-form-item>
+        <el-form-item label="新密码" prop="password">
+          <el-input
+            v-model="pwdForm.password"
+            type="password"
+            show-password
+            maxlength="50"
+            placeholder="6-50 位"
+          />
+        </el-form-item>
+        <el-form-item label="确认密码" prop="confirmPassword">
+          <el-input
+            v-model="pwdForm.confirmPassword"
+            type="password"
+            show-password
+            maxlength="50"
+            placeholder="再次输入新密码"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="pwdDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submitting" @click="submitResetPassword">
+          确定重置
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -185,7 +227,7 @@ import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import {
   getUserList, createUser, updateUser, deleteUser, changeUserRole,
-  getRoles, type CreateUserPayload,
+  resetUserPassword, getRoles, type CreateUserPayload,
 } from '@/api/user.service'
 import type { User, Role } from '@/api/types'
 
@@ -357,6 +399,50 @@ async function submitRoleChange() {
     ElMessage.success('角色已更新')
     roleDialogVisible.value = false
     loadList()
+  } finally {
+    submitting.value = false
+  }
+}
+
+// ---------- 重置密码 ----------
+const pwdDialogVisible = ref(false)
+const pwdTarget = ref<User | null>(null)
+const pwdFormRef = ref<FormInstance>()
+const pwdForm = reactive({ password: '', confirmPassword: '' })
+const pwdRules: FormRules = {
+  password: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, max: 50, message: '长度 6-50', trigger: 'blur' },
+  ],
+  confirmPassword: [
+    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    {
+      trigger: 'blur',
+      validator: (_rule: unknown, value: string, cb: (err?: Error) => void) => {
+        if (value !== pwdForm.password) cb(new Error('两次输入的新密码不一致'))
+        else cb()
+      },
+    },
+  ],
+}
+
+function openResetPwdDialog(row: User) {
+  pwdTarget.value = row
+  pwdForm.password = ''
+  pwdForm.confirmPassword = ''
+  pwdDialogVisible.value = true
+}
+
+async function submitResetPassword() {
+  if (!pwdFormRef.value || !pwdTarget.value) return
+  const ok = await pwdFormRef.value.validate().catch(() => false)
+  if (!ok) return
+
+  submitting.value = true
+  try {
+    await resetUserPassword(pwdTarget.value.id, pwdForm.password)
+    ElMessage.success('密码已重置')
+    pwdDialogVisible.value = false
   } finally {
     submitting.value = false
   }

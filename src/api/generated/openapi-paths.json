@@ -174,5 +174,6 @@
   "PUT /api/scheduled-tasks/{id}",
   "PUT /api/scheduled-tasks/{id}/toggle-status",
   "PUT /api/system-configs/{id}",
-  "PUT /api/users/{id}"
+  "PUT /api/users/{id}",
+  "PUT /api/users/{id}/password"
 ]

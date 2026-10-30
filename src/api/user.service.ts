@@ -47,5 +47,10 @@ export function changeUserRole(id: number, roleId: number) {
   return patch<User>(`/api/users/${id}/role`, { roleId })
 }
 
+/** 管理员重置密码（无需原密码，仅管理员可用） */
+export function resetUserPassword(id: number, password: string) {
+  return put<null>(`/api/users/${id}/password`, { password })
+}
+
 /** 获取所有角色 (走 role 模块新接口) */
 export { getAllRoles as getRoles } from './role'

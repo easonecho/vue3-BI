@@ -5666,6 +5666,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/{id}/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 管理员重置密码
+         * @description 不校验原密码，仅管理员可用，操作会写入操作日志
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description 新密码 */
+                        password: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description 密码已重置 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/{id}/role": {
         parameters: {
             query?: never;
