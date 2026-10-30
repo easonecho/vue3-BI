@@ -1,7 +1,7 @@
 <template>
   <div class="widget-table" :style="containerStyle">
     <div class="widget-table__body">
-      <vxe-table
+      <VxeTable
         :data="displayRows"
         :height="tableHeight"
         :border="border"
@@ -18,7 +18,7 @@
         auto-resize
         @sort-change="handleSortChange"
       >
-        <vxe-column
+        <VxeColumn
           v-for="col in columns"
           :key="col.key"
           :field="col.key"
@@ -33,7 +33,7 @@
         <template #empty>
           <span class="widget-table__empty">暂无数据</span>
         </template>
-      </vxe-table>
+      </VxeTable>
     </div>
     <div v-if="showPager" class="widget-table__pager">
       <el-pagination
@@ -49,7 +49,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch, type Component } from 'vue'
+// 🔑 VXE Table 按需引入：只有本组件使用，直接在组件内注册可避免全局注册把整包打进首屏。
+//    vxe-table 的类型声明只导出默认整包对象，未导出 VxeTable / VxeColumn 具名类型，
+//    但运行时默认导出即组件集合，这里从中取出两个组件使用。
+import VxeUITable from 'vxe-table'
+import 'vxe-table/lib/style.css'
+
+const { VxeTable, VxeColumn } = VxeUITable as unknown as {
+  VxeTable: Component
+  VxeColumn: Component
+}
 import type { ComponentInstance } from '@/views/bi-editor/types'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import {

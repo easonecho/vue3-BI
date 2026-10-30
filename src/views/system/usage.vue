@@ -136,15 +136,21 @@ import {
   TrendCharts,
   UserFilled,
 } from '@element-plus/icons-vue'
-import * as echarts from 'echarts'
+import { init as echartsInit, graphic, use, type ECharts } from 'echarts/core'
+import { LineChart } from 'echarts/charts'
+import { GridComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
 import { getUsageOverview, type UsageOverview } from '@/api/usage'
+
+// 🔑 ECharts 按需注册（模块级执行一次）：折线图 + 直角坐标系/提示框 + Canvas 渲染器
+use([LineChart, GridComponent, TooltipComponent, CanvasRenderer])
 
 const days = ref(30)
 const loading = ref(false)
 const data = ref<UsageOverview | null>(null)
 
 const trendRef = ref<HTMLDivElement | null>(null)
-let chart: echarts.ECharts | null = null
+let chart: ECharts | null = null
 
 const statCards = computed(() => {
   const s = data.value?.summary
@@ -182,7 +188,7 @@ function shortDate(date: string): string {
 
 function renderTrend() {
   if (!trendRef.value) return
-  if (!chart) chart = echarts.init(trendRef.value)
+  if (!chart) chart = echartsInit(trendRef.value)
   const trend = data.value?.trend ?? []
   chart.setOption(
     {
@@ -219,7 +225,7 @@ function renderTrend() {
           itemStyle: { color: '#409eff' },
           lineStyle: { width: 2.5 },
           areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            color: new graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: 'rgba(64, 158, 255, 0.28)' },
               { offset: 1, color: 'rgba(64, 158, 255, 0.02)' },
             ]),

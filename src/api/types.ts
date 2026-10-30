@@ -151,6 +151,8 @@ export interface Dashboard {
   thumbnail?: string | null
   status: number
   isPublic: boolean
+  /** 乐观锁版本号：保存时回传，后端 version 不匹配则返回 409 冲突 */
+  version?: number
   groupId?: number | null                  // P2-3: 所属分组
   group?: { id: number; name: string } | null  // P2-3: 分组信息
   creatorId?: number

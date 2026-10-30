@@ -1,12 +1,65 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
-import ElementPlus from 'element-plus'
+// 🔑 Element Plus 组件按需注册：只引入项目模板实际用到的组件，
+//   避免 app.use(ElementPlus) 把整个组件库打进首屏。主题样式仍全量引入，
+//   保证 ElMessage / ElMessageBox 等程序化调用与暗色主题样式完整。
+import {
+  ElAlert,
+  ElAvatar,
+  ElBadge,
+  ElBreadcrumb,
+  ElBreadcrumbItem,
+  ElButton,
+  ElButtonGroup,
+  ElCard,
+  ElCheckbox,
+  ElCol,
+  ElCollapse,
+  ElCollapseItem,
+  ElColorPicker,
+  ElDatePicker,
+  ElDescriptions,
+  ElDescriptionsItem,
+  ElDialog,
+  ElDivider,
+  ElDropdown,
+  ElDropdownItem,
+  ElDropdownMenu,
+  ElEmpty,
+  ElForm,
+  ElFormItem,
+  ElIcon,
+  ElInput,
+  ElInputNumber,
+  ElLoading,
+  ElMenu,
+  ElMenuItem,
+  ElOption,
+  ElPagination,
+  ElPopconfirm,
+  ElProgress,
+  ElRadio,
+  ElRadioButton,
+  ElRadioGroup,
+  ElResult,
+  ElRow,
+  ElSelect,
+  ElSlider,
+  ElSubMenu,
+  ElSwitch,
+  ElTable,
+  ElTableColumn,
+  ElTabPane,
+  ElTabs,
+  ElTag,
+  ElTooltip,
+  ElTree,
+  ElTreeSelect,
+  ElUpload,
+} from 'element-plus'
 import 'element-plus/dist/index.css'
 import 'element-plus/theme-chalk/dark/css-vars.css'
-// vxe-table：全局注册一次，TableWidget 等组件直接使用 <vxe-table> / <vxe-column>
-import VxeUITable from 'vxe-table'
-import 'vxe-table/lib/style.css'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 
@@ -30,9 +83,23 @@ pinia.use(piniaPluginPersistedstate)
 
 app.use(pinia)
 app.use(router)
-app.use(ElementPlus)
-app.use(VxeUITable)
+// v-loading 指令（Element Plus 组件已改为按需引入，指令需显式安装）
+app.use(ElLoading)
 app.use(i18n)
+
+// 🔑 按需注册 Element Plus 组件（与模板中实际使用的 el-* 组件一一对应）
+const elementPlusComponents = [
+  ElAlert, ElAvatar, ElBadge, ElBreadcrumb, ElBreadcrumbItem, ElButton, ElButtonGroup,
+  ElCard, ElCheckbox, ElCol, ElCollapse, ElCollapseItem, ElColorPicker, ElDatePicker,
+  ElDescriptions, ElDescriptionsItem, ElDialog, ElDivider, ElDropdown, ElDropdownItem,
+  ElDropdownMenu, ElEmpty, ElForm, ElFormItem, ElIcon, ElInput, ElInputNumber, ElMenu,
+  ElMenuItem, ElOption, ElPagination, ElPopconfirm, ElProgress, ElRadio, ElRadioButton,
+  ElRadioGroup, ElResult, ElRow, ElSelect, ElSlider, ElSubMenu, ElSwitch, ElTable,
+  ElTableColumn, ElTabPane, ElTabs, ElTag, ElTooltip, ElTree, ElTreeSelect, ElUpload,
+]
+elementPlusComponents.forEach((comp) => {
+  if (comp.name) app.component(comp.name, comp)
+})
 
 // 全局错误处理
 app.config.errorHandler = (err, _instance, info) => {

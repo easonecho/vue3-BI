@@ -71,8 +71,20 @@ export function ensureDatasetSemantics(): Promise<void> {
   if (loading) return loading
   loading = (async () => {
     try {
-      const res = await getDatasetList({ page: 1, pageSize: 500 })
-      registerDatasetSemantics(res.data.list ?? [])
+      // 🔑 后端分页校验限制 pageSize ≤ 100, 因此按页拉取直到取全, 避免一次 500 被拒
+      const PAGE_SIZE = 100
+      const all: Dataset[] = []
+      let page = 1
+      let total = 0
+      do {
+        const res = await getDatasetList({ page, pageSize: PAGE_SIZE })
+        const list = res.data.list ?? []
+        all.push(...list)
+        total = res.data.total ?? all.length
+        if (list.length < PAGE_SIZE) break
+        page += 1
+      } while (all.length < total)
+      registerDatasetSemantics(all)
     } catch {
       // 无语义元数据时按原始字段展示
     } finally {

@@ -24,7 +24,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['echarts'],
+    include: ['echarts/core', 'echarts/charts', 'echarts/components', 'echarts/renderers'],
   },
   server: {
     port: 5173,
@@ -71,15 +71,21 @@ export default defineConfig({
             return 'vue-vendor'
           }
 
-          // 3. 将 UI 框架单独打包（如果有）
+          // 3. VXE Table 独立分包：仅编辑器表格组件使用，避免被打进首屏 vendor
           if (
-            id.includes('node_modules/element-plus') ||
-            id.includes('node_modules/ant-design-vue')
+            id.includes('node_modules/vxe-table') ||
+            id.includes('node_modules/vxe-pc-ui') ||
+            id.includes('node_modules/xe-utils')
           ) {
+            return 'vxe'
+          }
+
+          // 4. 将 UI 框架单独打包
+          if (id.includes('node_modules/element-plus')) {
             return 'ui-vendor'
           }
 
-          // 4. 其他第三方库打包到 vendor
+          // 5. 其他第三方库打包到 vendor
           if (id.includes('node_modules')) {
             return 'vendor'
           }

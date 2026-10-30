@@ -1,10 +1,11 @@
+import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import Widget from './Widget.vue'
 
 export const tableDefinition: ComponentDefinition = {
   type: 'table',
   meta: { name: '表格', category: 'data', icon: 'Grid', defaultWidth: 500, defaultHeight: 240 },
-  widget: Widget,
+  // 🔑 异步加载：表格依赖 vxe-table（体积较大），改为懒加载，避免进入首屏入口包
+  widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
     { key: 'border', label: '显示边框', type: 'switch', default: true, group: '外观' },
     { key: 'stripe', label: '斑马纹', type: 'switch', default: true, group: '外观' },

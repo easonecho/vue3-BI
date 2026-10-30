@@ -7,6 +7,21 @@ import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse 
 import { ElMessage } from 'element-plus'
 import NProgress from 'nprogress'
 
+/**
+ * 🔑 拦截器内部使用的重试标记（挂在 axios config 上，跨拦截器传递）。
+ *   - __skipAuthRefresh: 该请求本身就是刷新请求，失败时不要再次触发刷新
+ *   - __retried: 已经因 401 重放过，避免无限循环
+ */
+interface RetryMeta {
+  __skipAuthRefresh?: boolean
+  __retried?: boolean
+}
+
+/** 读写 config 上的内部标记：config 来自 axios（可能为 undefined），统一在此收窄一次 */
+function retryMeta(config: unknown): RetryMeta {
+  return (config ?? {}) as RetryMeta
+}
+
 /** 服务端统一响应结构 */
 export interface ApiResult<T = unknown> {
   code: number
@@ -23,28 +38,44 @@ export interface PaginateData<T = unknown> {
   totalPages: number
 }
 
-const TOKEN_KEY = 'bi_token'
-const REFRESH_KEY = 'bi_refresh_token'
+// ============================================================================
+// Token 存储策略 (防 XSS):
+// - access token 仅保存在内存, 不写 localStorage, 页面刷新后通过静默刷新恢复
+// - refresh token 由服务端写入 HttpOnly Cookie, 前端 JS 完全不可读
+// - CSRF 采用双提交: 可读的 bi_csrf Cookie + 请求头 X-CSRF-Token
+// ============================================================================
+let accessToken = ''
 
 export function getToken(): string {
-  return localStorage.getItem(TOKEN_KEY) || ''
-}
-export function getRefreshToken(): string {
-  return localStorage.getItem(REFRESH_KEY) || ''
+  return accessToken
 }
 export function setToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token)
-}
-export function setRefreshToken(token: string): void {
-  localStorage.setItem(REFRESH_KEY, token)
-}
-export function setTokenPair(access: string, refresh: string): void {
-  localStorage.setItem(TOKEN_KEY, access)
-  localStorage.setItem(REFRESH_KEY, refresh)
+  accessToken = token
 }
 export function removeToken(): void {
-  localStorage.removeItem(TOKEN_KEY)
-  localStorage.removeItem(REFRESH_KEY)
+  accessToken = ''
+}
+
+/** 读取指定 Cookie (仅能读取非 HttpOnly 的 Cookie) */
+function readCookie(name: string): string {
+  if (typeof document === 'undefined') return ''
+  const prefix = `${name}=`
+  const hit = document.cookie
+    .split(';')
+    .map((s) => s.trim())
+    .find((s) => s.startsWith(prefix))
+  return hit ? decodeURIComponent(hit.slice(prefix.length)) : ''
+}
+
+/** 会话标记: bi_csrf 存在即表示服务端可能下发了 refresh Cookie */
+export function hasSessionCookie(): boolean {
+  return !!readCookie('bi_csrf')
+}
+
+// 一次性清理旧版本遗留在 localStorage 的 token (安全加固后凭据不再落盘)
+if (typeof localStorage !== 'undefined') {
+  localStorage.removeItem('bi_token')
+  localStorage.removeItem('bi_refresh_token')
 }
 
 // ========== NProgress 配置 ==========
@@ -101,16 +132,20 @@ let isRefreshing = false
 let refreshQueue: Array<() => void> = []
 
 async function handleTokenRefresh(): Promise<boolean> {
-  const refresh = getRefreshToken()
-  if (!refresh) {
+  // 没有 CSRF Cookie 说明未登录或 Cookie 会话已失效, 无需发起刷新
+  if (!hasSessionCookie()) {
     return false
   }
   try {
     // 动态 import 避免循环依赖 (request.ts -> auth.ts -> request.ts)
     const { refreshToken: refreshApi } = await import('@/api/auth')
-    const res = await refreshApi({ refreshToken: refresh })
+    const res = await refreshApi()
     if (res.code === 0 && res.data) {
-      setTokenPair(res.data.accessToken, res.data.refreshToken)
+      setToken(res.data.accessToken)
+      // 通知 store 同步内存中的 access token, 避免路由守卫误判为未登录
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('bi-auth:refreshed'))
+      }
       refreshQueue.forEach((fn) => fn())
       refreshQueue = []
       return true
@@ -126,6 +161,8 @@ async function handleTokenRefresh(): Promise<boolean> {
 const request: AxiosInstance = axios.create({
   baseURL: '/',
   timeout: 15000,
+  // 携带 Cookie (refresh 走 HttpOnly Cookie, 需跨请求自动带上)
+  withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -141,6 +178,18 @@ request.interceptors.request.use(
     const token = getToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+
+    // CSRF 双提交: 非幂等请求注入 X-CSRF-Token (登录前无 Cookie 时为空, 后端会跳过)
+    const method = (config.method || 'get').toUpperCase()
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+      const csrf = readCookie('bi_csrf')
+      if (csrf) config.headers['X-CSRF-Token'] = csrf
+    }
+
+    // 刷新请求自身失败时不再触发二次刷新, 避免死循环
+    if (config.url?.includes('/api/auth/refresh')) {
+      retryMeta(config).__skipAuthRefresh = true
     }
 
     // 重复请求取消
@@ -181,19 +230,24 @@ request.interceptors.response.use(
     }
     NProgress.done()
 
+    // 刷新请求自身的 401: 交给 handleTokenRefresh 处理, 避免重复弹出登出提示
+    if (retryMeta(error.config).__skipAuthRefresh) {
+      return Promise.reject(error)
+    }
+
     const { response } = error
     if (response) {
       switch (response.status) {
         case 401: {
           const originalConfig = error.config
-          // 防重复刷新死循环: 已重试过一次则放弃
-          const alreadyRetried = (originalConfig as any).__retried
-          const hasRefresh = !!getRefreshToken()
+          // 防重复刷新死循环: 已重试过 / 刷新请求自身 / 无会话 Cookie 时不刷新
+          const alreadyRetried = retryMeta(originalConfig).__retried
+          const hasRefresh = hasSessionCookie() && !retryMeta(originalConfig).__skipAuthRefresh
 
           if (hasRefresh && !alreadyRetried) {
             if (!isRefreshing) {
               isRefreshing = true
-              ;(originalConfig as any).__retried = true
+              retryMeta(originalConfig).__retried = true
               const ok = await handleTokenRefresh()
               if (ok) {
                 // 用新 access token 重放原请求
@@ -202,13 +256,13 @@ request.interceptors.response.use(
               }
             } else {
               // 已有刷新在进行: 排队等它完成后再重放
-              ;(originalConfig as any).__retried = true
-              return new Promise<void>((resolve) => {
+              retryMeta(originalConfig).__retried = true
+              return new Promise<AxiosResponse<ApiResult>>((resolve) => {
                 refreshQueue.push(() => {
                   originalConfig.headers.Authorization = `Bearer ${getToken()}`
-                  resolve(request(originalConfig) as any)
+                  resolve(request(originalConfig))
                 })
-              }) as any
+              })
             }
           }
           // refresh 失败或无 refresh token: 走登出流程
@@ -241,28 +295,50 @@ request.interceptors.response.use(
   },
 )
 
-export function get<T = unknown>(url: string, params?: Record<string, unknown>, config?: AxiosRequestConfig): Promise<ApiResult<T>> {
+export function get<T = unknown>(
+  url: string,
+  params?: Record<string, unknown>,
+  config?: AxiosRequestConfig,
+): Promise<ApiResult<T>> {
   return request.get(url, { params, ...config }) as unknown as Promise<ApiResult<T>>
 }
 
-export function post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResult<T>> {
+export function post<T = unknown>(
+  url: string,
+  data?: unknown,
+  config?: AxiosRequestConfig,
+): Promise<ApiResult<T>> {
   return request.post(url, data, config) as unknown as Promise<ApiResult<T>>
 }
 
-export function put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResult<T>> {
+export function put<T = unknown>(
+  url: string,
+  data?: unknown,
+  config?: AxiosRequestConfig,
+): Promise<ApiResult<T>> {
   return request.put(url, data, config) as unknown as Promise<ApiResult<T>>
 }
 
-export function patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResult<T>> {
+export function patch<T = unknown>(
+  url: string,
+  data?: unknown,
+  config?: AxiosRequestConfig,
+): Promise<ApiResult<T>> {
   return request.patch(url, data, config) as unknown as Promise<ApiResult<T>>
 }
 
-export function del<T = unknown>(url: string, params?: Record<string, unknown>, config?: AxiosRequestConfig): Promise<ApiResult<T>> {
+export function del<T = unknown>(
+  url: string,
+  params?: Record<string, unknown>,
+  config?: AxiosRequestConfig,
+): Promise<ApiResult<T>> {
   return request.delete(url, { params, ...config }) as unknown as Promise<ApiResult<T>>
 }
 
 export function download(url: string, data?: unknown): Promise<Blob> {
-  return request.post(url, data, { responseType: 'blob' }).then((res) => (res as unknown as AxiosResponse).data as Blob)
+  return request
+    .post(url, data, { responseType: 'blob' })
+    .then((res) => (res as unknown as AxiosResponse).data as Blob)
 }
 
 export default request

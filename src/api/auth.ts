@@ -33,12 +33,12 @@ export function getProfile() {
   return get<User>('/api/auth/profile')
 }
 
-/** 刷新 token */
-export function refreshToken(data: { refreshToken: string }) {
-  return post<RefreshResult>('/api/auth/refresh', data)
+/** 刷新 token (refresh token 存于 HttpOnly Cookie, 自动随请求携带, 无需传参) */
+export function refreshToken() {
+  return post<RefreshResult>('/api/auth/refresh', {})
 }
 
-/** 登出 */
-export function logout(data?: { refreshToken?: string }) {
-  return post<void>('/api/auth/logout', data || {})
+/** 登出 (服务端从 Cookie 读取 refresh token 并拉黑, 同时清除认证 Cookie) */
+export function logout() {
+  return post<void>('/api/auth/logout', {})
 }

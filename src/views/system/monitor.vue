@@ -97,6 +97,74 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <el-row :gutter="16" style="margin-top: 16px">
+      <!-- HTTP 请求指标 -->
+      <el-col :xs="24" :lg="12">
+        <el-card shadow="never">
+          <template #header>
+            <div class="card-header">
+              <span><el-icon><TrendCharts /></el-icon>&nbsp;HTTP 请求指标</span>
+              <div class="header-actions">
+                <el-tag type="info" size="small" effect="plain">进程重启后清零</el-tag>
+                <el-button link type="primary" :loading="loadingMetrics" @click="loadMetrics">
+                  <el-icon><Refresh /></el-icon>&nbsp;刷新
+                </el-button>
+              </div>
+            </div>
+          </template>
+          <div v-loading="loadingMetrics" class="metric-summary">
+            <div class="metric-block">
+              <div class="metric-value">{{ metrics?.http.total ?? 0 }}</div>
+              <div class="metric-label">请求总数</div>
+            </div>
+            <div class="metric-block">
+              <div
+                class="metric-value"
+                :class="{ 'metric-danger': (metrics?.http.serverErrors ?? 0) > 0 }"
+              >
+                {{ metrics?.http.serverErrors ?? 0 }}
+              </div>
+              <div class="metric-label">5xx 错误</div>
+            </div>
+            <div class="metric-block">
+              <div class="metric-value">{{ avgDurationText }}</div>
+              <div class="metric-label">平均耗时</div>
+            </div>
+          </div>
+          <el-table :data="metrics?.http.topRoutes ?? []" size="small" border max-height="260">
+            <el-table-column prop="route" label="路由" min-width="200" show-overflow-tooltip />
+            <el-table-column prop="count" label="请求数" width="100" align="center" />
+            <el-table-column label="平均耗时" width="110" align="center">
+              <template #default="{ row }">{{ row.avgDurationMs }} ms</template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </el-col>
+
+      <!-- 异常指标 -->
+      <el-col :xs="24" :lg="12">
+        <el-card shadow="never">
+          <template #header>
+            <div class="card-header">
+              <span><el-icon><Warning /></el-icon>&nbsp;异常指标</span>
+              <el-tag :type="failureTotal > 0 ? 'danger' : 'success'" size="small" effect="plain">
+                累计 {{ failureTotal }} 次
+              </el-tag>
+            </div>
+          </template>
+          <el-table :data="failureRows" size="small" border max-height="360" empty-text="暂无异常记录">
+            <el-table-column prop="type" label="类型" width="120" />
+            <el-table-column prop="dimension" label="维度" min-width="180" />
+            <el-table-column prop="count" label="次数" width="90" align="center">
+              <template #default="{ row }">
+                <el-tag size="small" type="danger">{{ row.count }}</el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
@@ -105,23 +173,27 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import {
   UserFilled, Refresh, Cpu, User, Avatar, DataBoard, Grid, Link,
-  PieChart, Document, Setting, Timer,
+  PieChart, Document, Setting, Timer, TrendCharts, Warning,
 } from '@element-plus/icons-vue';
 import {
   getSystemStats,
   getOnlineUsers,
   getProcessMemory,
+  getRuntimeMetrics,
   forceLogout,
   type SystemStats,
   type OnlineUser,
   type ProcessMemory,
+  type MetricsSnapshot,
 } from '@/api/monitor';
 
 const stats = ref<SystemStats | null>(null);
 const onlineUsers = ref<OnlineUser[]>([]);
 const mem = ref<ProcessMemory | null>(null);
+const metrics = ref<MetricsSnapshot | null>(null);
 const loadingOnline = ref(false);
 const loadingMem = ref(false);
+const loadingMetrics = ref(false);
 
 async function loadStats() {
   try {
@@ -155,6 +227,54 @@ async function loadMem() {
     loadingMem.value = false;
   }
 }
+
+async function loadMetrics() {
+  loadingMetrics.value = true;
+  try {
+    const res = await getRuntimeMetrics();
+    metrics.value = res.data;
+  } catch {
+    /* noop */
+  } finally {
+    loadingMetrics.value = false;
+  }
+}
+
+const avgDurationText = computed(() => `${metrics.value?.http.avgDurationMs ?? 0} ms`);
+
+/** 异常指标合并为统一表格: 登录失败 / 导出失败 / 调度失败 */
+const failureRows = computed(() => {
+  const m = metrics.value;
+  if (!m) return [];
+  const rows: Array<{ key: string; type: string; dimension: string; count: number }> = [];
+  m.loginFailures.forEach((item) =>
+    rows.push({
+      key: `login-${item.code}`,
+      type: '登录失败',
+      dimension: `错误码 ${item.code}`,
+      count: item.count,
+    }),
+  );
+  m.exportFailures.forEach((item) =>
+    rows.push({
+      key: `export-${item.type}-${item.format}`,
+      type: '导出失败',
+      dimension: `${item.type} / ${item.format}`,
+      count: item.count,
+    }),
+  );
+  m.schedulerFailures.forEach((item) =>
+    rows.push({
+      key: `scheduler-${item.job}`,
+      type: '调度失败',
+      dimension: item.job,
+      count: item.count,
+    }),
+  );
+  return rows.sort((a, b) => b.count - a.count);
+});
+
+const failureTotal = computed(() => failureRows.value.reduce((sum, row) => sum + row.count, 0));
 
 const statCards = computed(() => {
   const s = stats.value;
@@ -229,10 +349,12 @@ onMounted(() => {
   loadStats();
   loadOnline();
   loadMem();
-  // 每 30 秒自动刷新在线用户和统计
+  loadMetrics();
+  // 每 30 秒自动刷新在线用户、统计与运行指标
   timer = window.setInterval(() => {
     loadOnline();
     loadStats();
+    loadMetrics();
   }, 30000);
 });
 onUnmounted(() => {
@@ -278,5 +400,15 @@ onUnmounted(() => {
   display: flex; justify-content: space-between; align-items: center;
   .uptime-label { font-size: 13px; color: #6b7280; }
   .uptime-value { font-size: 14px; font-weight: 600; color: #111827; font-family: 'Consolas', monospace; }
+}
+
+.metric-summary {
+  display: flex; gap: 12px; margin-bottom: 16px;
+  .metric-block {
+    flex: 1; padding: 12px; border-radius: 8px; background: #f9fafb; text-align: center;
+  }
+  .metric-value { font-size: 22px; font-weight: 700; color: #111827; line-height: 1.2; }
+  .metric-value.metric-danger { color: #ef4444; }
+  .metric-label { font-size: 12px; color: #6b7280; margin-top: 4px; }
 }
 </style>

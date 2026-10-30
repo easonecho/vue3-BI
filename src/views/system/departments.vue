@@ -311,7 +311,11 @@ async function submitForm() {
       ElMessage.success('保存成功')
     }
     dialogVisible.value = false
-    viewMode.value === 'flat' ? loadFlatList() : loadTreeList()
+    if (viewMode.value === 'flat') {
+      loadFlatList()
+    } else {
+      loadTreeList()
+    }
     loadDeptTreeForSelect()
   } finally {
     submitting.value = false

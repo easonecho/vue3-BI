@@ -47,8 +47,14 @@
 <script setup lang="ts">
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { Search } from '@element-plus/icons-vue'
-import * as echarts from 'echarts'
+import { init as echartsInit, use, type ECharts } from 'echarts/core'
+import { GraphChart } from 'echarts/charts'
+import { LegendComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
 import { getLineage, type LineageEdge, type LineageNode, type LineageStats } from '@/api/lineage'
+
+// 🔑 ECharts 按需注册（模块级执行一次）：关系图 + 图例/提示框 + Canvas 渲染器
+use([GraphChart, LegendComponent, TooltipComponent, CanvasRenderer])
 
 const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [boolean] }>()
@@ -65,7 +71,7 @@ const edges = ref<LineageEdge[]>([])
 const stats = ref<LineageStats | null>(null)
 
 const chartEl = ref<HTMLDivElement>()
-let chart: echarts.ECharts | null = null
+let chart: ECharts | null = null
 
 const KIND_INDEX: Record<LineageNode['kind'], number> = {
   datasource: 0,
@@ -79,9 +85,9 @@ const CATEGORY_STYLE = [
   { name: '看板', itemStyle: { color: '#3ba272' } },
 ]
 
-function ensureChart(): echarts.ECharts | null {
+function ensureChart(): ECharts | null {
   if (!chartEl.value) return null
-  if (!chart) chart = echarts.init(chartEl.value)
+  if (!chart) chart = echartsInit(chartEl.value)
   return chart
 }
 

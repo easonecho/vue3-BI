@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import NProgress from 'nprogress'
 import { useUserStore } from '@/stores/user'
 import { useMenuStore } from '@/stores/menu'
@@ -147,7 +148,12 @@ const router = createRouter({
           meta: {
             title: '菜单管理',
             requiresAuth: true,
-            permissions: ['system:menu:view', 'system:menu:add', 'system:menu:edit', 'system:menu:remove'],
+            permissions: [
+              'system:menu:view',
+              'system:menu:add',
+              'system:menu:edit',
+              'system:menu:remove',
+            ],
           },
         },
         {
@@ -309,13 +315,40 @@ const router = createRouter({
 })
 
 /**
+ * 🔑 路由错误恢复：发版后旧页面的 chunk 文件已被新构建产物替换，
+ * 触发懒加载路由时会报 "Failed to fetch dynamically imported module" / "Loading chunk failed" 等错误，
+ * 表现为点击菜单白屏。此处捕获该错误，自动刷新一次以加载最新资源。
+ * 使用 sessionStorage 记录刷新时间做 60 秒限频，避免资源持续 404 时无限刷新。
+ */
+const CHUNK_RELOAD_KEY = 'bi_chunk_reload_at'
+router.onError((error) => {
+  const message = error instanceof Error ? error.message : String(error)
+  const isChunkError =
+    /Failed to fetch dynamically imported module|Loading chunk|Importing a module script failed|Unable to preload CSS|error loading dynamically imported module/i.test(
+      message,
+    )
+  if (isChunkError) {
+    const lastReloadAt = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) || 0)
+    if (Date.now() - lastReloadAt > 60_000) {
+      sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()))
+      ElMessage.warning('检测到页面版本更新，正在刷新加载最新资源…')
+      window.location.reload()
+      return
+    }
+  }
+  console.error('[Router Error]', error)
+})
+
+/**
  * 🔑 全局前置守卫：路由拦截
  * 1. 未登录跳登录页
  * 2. 已登录但权限不足跳 403
  */
-router.beforeEach(async (to, _from) => {
+router.beforeEach(async (to) => {
   NProgress.start()
   const userStore = useUserStore()
+  // 🔑 access token 仅存内存: 页面刷新后先用 HttpOnly refresh Cookie 静默恢复会话
+  await userStore.ensureSession()
   const isLoggedIn = userStore.isLoggedIn
 
   if (to.path === '/login' && isLoggedIn) {

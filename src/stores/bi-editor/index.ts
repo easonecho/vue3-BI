@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { nextTick, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { ComponentInstance, CanvasState, GuideLine, DashboardLayout } from '@/views/bi-editor/types'
 import { getMeta, CATEGORY_GROUPS, CATEGORY_LABELS } from './metadata'
 import { useHistory } from './history'
@@ -201,6 +201,8 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
 
   // ========== 看板会话状态 ==========
   const currentDashboardId = ref<number | null>(null) // null = 新建未保存
+  /** 🔑 乐观锁版本号：加载/保存成功后更新，保存时回传后端做并发冲突检测 */
+  const dashboardVersion = ref<number | null>(null)
   const dashboardName = ref('未命名报表')
   const isDirty = ref(false) // 是否有未保存的改动
   const isSaving = ref(false)
@@ -382,6 +384,7 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
     try {
       const res = await getDashboardDetail(id)
       currentDashboardId.value = id
+      dashboardVersion.value = res.data.version ?? 1
       isTemplateMode.value = false
       currentTemplateId.value = null
       dashboardName.value = res.data.name
@@ -399,10 +402,21 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
     }
   }
 
-  /** 保存看板:新建调 create,已有调 update */
+  /** 🔑 判断是否为乐观锁冲突（后端返回 HTTP 409 + 业务码 50007） */
+  function isVersionConflict(e: unknown) {
+    const err = e as { response?: { status?: number; data?: { code?: number } } }
+    return err?.response?.status === 409 && err?.response?.data?.code === 50007
+  }
+
+  /**
+   * 保存看板：新建调 create，已有调 update（带乐观锁）。
+   * 版本冲突时询问用户是否覆盖；覆盖保存不携带 version，直接以当前内容为准。
+   */
   async function saveDashboard() {
     if (isSaving.value) return
     isSaving.value = true
+    // 🔑 新建保存成功后 currentDashboardId 会变，草稿 key 也会变，先记下原 key
+    const draftKey = draftStorageKey()
     try {
       // 🔑 保存前截取画布快照作为缩略图（失败不阻断保存）
       let thumbnail: string | undefined
@@ -411,28 +425,127 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
       } catch (e) {
         console.warn('[bi-editor] captureThumbnail failed, save without thumbnail', e)
       }
-      const payload = {
-        name: dashboardName.value,
-        layout: serializeLayout() as unknown as Record<string, unknown>,
-        thumbnail,
+      const buildPayload = (withVersion: boolean) => {
+        const layout = serializeLayout() as unknown as Record<string, unknown>
+        return {
+          name: dashboardName.value,
+          layout,
+          thumbnail,
+          ...(withVersion && dashboardVersion.value !== null
+            ? { version: dashboardVersion.value }
+            : {}),
+        }
       }
-      if (currentDashboardId.value === null) {
-        const res = await createDashboard(payload)
-        currentDashboardId.value = res.data.id
-      } else {
-        await updateDashboard(currentDashboardId.value, payload)
+      const submit = async (withVersion: boolean) => {
+        if (currentDashboardId.value === null) {
+          const res = await createDashboard(buildPayload(false))
+          currentDashboardId.value = res.data.id
+          dashboardVersion.value = res.data.version ?? 1
+        } else {
+          const res = await updateDashboard(currentDashboardId.value, buildPayload(withVersion))
+          if (typeof res.data.version === 'number') dashboardVersion.value = res.data.version
+        }
+      }
+
+      try {
+        await submit(true)
+      } catch (e) {
+        if (!isVersionConflict(e) || currentDashboardId.value === null) throw e
+        const overwrite = await ElMessageBox.confirm(
+          '该看板刚刚被其他人修改过，覆盖保存会丢失对方的改动。是否覆盖？',
+          '保存冲突',
+          {
+            type: 'warning',
+            confirmButtonText: '覆盖保存',
+            cancelButtonText: '取消',
+          },
+        )
+          .then(() => true)
+          .catch(() => false)
+        if (!overwrite) return
+        await submit(false)
       }
       isDirty.value = false
+      clearDraft(draftKey)
       ElMessage.success('保存成功')
     } finally {
       isSaving.value = false
     }
   }
 
+  // ========== 本地草稿（自动保存 / 恢复） ==========
+  // 🔑 草稿只存 localStorage，不写后端：仅用于「意外关闭/崩溃」后找回未保存内容。
+  interface EditorDraft {
+    savedAt: number
+    name: string
+    layout: DashboardLayout
+    version: number | null
+  }
+  const DRAFT_PREFIX = 'bi_editor_draft_'
+
+  /** 草稿 key 按「看板/模板 + id（新建为 new）」区分，避免不同看板互相覆盖 */
+  function draftStorageKey(): string {
+    const mode = isTemplateMode.value ? 'tpl' : 'dash'
+    const id = isTemplateMode.value ? currentTemplateId.value : currentDashboardId.value
+    return `${DRAFT_PREFIX}${mode}_${id ?? 'new'}`
+  }
+
+  /** 保存草稿：无改动或正在加载时跳过 */
+  function saveDraft(): boolean {
+    if (!isDirty.value || isLoading.value) return false
+    try {
+      const draft: EditorDraft = {
+        savedAt: Date.now(),
+        name: dashboardName.value,
+        layout: serializeLayout(),
+        version: dashboardVersion.value,
+      }
+      localStorage.setItem(draftStorageKey(), JSON.stringify(draft))
+      return true
+    } catch (e) {
+      console.warn('[bi-editor] saveDraft failed', e)
+      return false
+    }
+  }
+
+  /** 读取当前会话对应的草稿，不存在或格式非法返回 null */
+  function loadDraft(): EditorDraft | null {
+    try {
+      const raw = localStorage.getItem(draftStorageKey())
+      if (!raw) return null
+      const draft = JSON.parse(raw) as EditorDraft
+      if (!draft || typeof draft.savedAt !== 'number' || !draft.layout) return null
+      return draft
+    } catch {
+      return null
+    }
+  }
+
+  /** 清除草稿；默认清除当前会话草稿，也可指定保存前的 key（新建成功后 id 会变） */
+  function clearDraft(key: string = draftStorageKey()): void {
+    try {
+      localStorage.removeItem(key)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /** 恢复草稿内容到编辑器，并标记为未保存改动 */
+  function restoreDraft(draft: EditorDraft) {
+    dashboardName.value = draft.name || dashboardName.value
+    if (typeof draft.version === 'number') dashboardVersion.value = draft.version
+    applyLayout(draft.layout)
+    // applyLayout 会在 nextTick 里把 isDirty 复位，这里再标记一次
+    nextTick(() => {
+      isDirty.value = true
+    })
+  }
+
   /** 新建空白看板 */
   function newDashboard() {
     isLoading.value = true
     currentDashboardId.value = null
+    dashboardVersion.value = null
     isTemplateMode.value = false
     currentTemplateId.value = null
     dashboardName.value = '未命名报表'
@@ -587,6 +700,7 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
     isTemplateMode.value = true
     currentTemplateId.value = null
     currentDashboardId.value = null
+    dashboardVersion.value = null
     dashboardName.value = '未命名模板'
     templateDescription.value = ''
     templateCategory.value = undefined
@@ -607,6 +721,7 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
     isTemplateMode.value = true
     currentTemplateId.value = id
     currentDashboardId.value = null
+    dashboardVersion.value = null
     try {
       const res = await getDashboardTemplateDetail(id)
       dashboardName.value = res.data.name
@@ -634,6 +749,8 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
   }) {
     if (isSaving.value) return null
     isSaving.value = true
+    // 🔑 新建成功后会写入 currentTemplateId，草稿 key 随之变化，先记下原 key
+    const draftKey = draftStorageKey()
     try {
       templateDescription.value = input.description ?? ''
       templateCategory.value = input.category
@@ -658,6 +775,7 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
         })
         currentTemplateId.value = res.data.id
         isDirty.value = false
+        clearDraft(draftKey)
         ElMessage.success('模板保存成功')
         return res.data
       } else {
@@ -670,6 +788,7 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
           isPublic: input.isPublic,
         })
         isDirty.value = false
+        clearDraft(draftKey)
         ElMessage.success('模板保存成功')
         return res.data
       }
@@ -769,6 +888,7 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
     pasteFromClipboard,
     // 看板会话状态
     currentDashboardId,
+    dashboardVersion,
     setDashboardId,
     dashboardName,
     setDashboardName,
@@ -776,6 +896,11 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
     markDirty,
     isSaving,
     isLoading,
+    // 本地草稿
+    saveDraft,
+    loadDraft,
+    clearDraft,
+    restoreDraft,
     // 看板持久化方法
     serializeLayout,
     applyLayout,

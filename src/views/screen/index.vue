@@ -76,11 +76,17 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import * as echarts from 'echarts'
+import { init as echartsInit, graphic, use, type ECharts } from 'echarts/core'
+import { BarChart, LineChart, PieChart } from 'echarts/charts'
+import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
 import { Loading, WarningFilled } from '@element-plus/icons-vue'
 import { getSystemStats, type SystemStats } from '@/api/monitor'
 import { getDashboardDetail } from '@/api/dashboard'
 import { executeDataset } from '@/api/dataset'
+
+// 🔑 ECharts 按需注册（模块级执行一次）：饼/折线/柱状 + 直角坐标系/图例/提示框 + Canvas 渲染器
+use([BarChart, LineChart, PieChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer])
 
 const route = useRoute()
 const router = useRouter()
@@ -158,7 +164,7 @@ function formatK(n: number) {
 const pieRef = ref<HTMLDivElement | null>(null)
 const lineRef = ref<HTMLDivElement | null>(null)
 const barRef = ref<HTMLDivElement | null>(null)
-let charts: echarts.ECharts[] = []
+let charts: ECharts[] = []
 
 /**
  * 渲染饼图: 业务构成
@@ -166,7 +172,7 @@ let charts: echarts.ECharts[] = []
  */
 function renderPie(data?: { value: number; name: string }[]) {
   if (!pieRef.value) return
-  const c = echarts.init(pieRef.value); charts.push(c)
+  const c = echartsInit(pieRef.value); charts.push(c)
   const pieData = data && data.length > 0 ? data : [
     { value: 1048, name: '线上商城' },
     { value: 735, name: '直营门店' },
@@ -189,7 +195,7 @@ function renderPie(data?: { value: number; name: string }[]) {
 
 function renderLine() {
   if (!lineRef.value) return
-  const c = echarts.init(lineRef.value); charts.push(c)
+  const c = echartsInit(lineRef.value); charts.push(c)
   const dates = Array.from({ length: 30 }, (_, i) => `${i + 1}日`)
   c.setOption({
     grid: { left: 40, right: 20, top: 28, bottom: 28 },
@@ -211,7 +217,7 @@ function renderLine() {
         name: '访问量', type: 'line', smooth: true, symbol: 'none',
         data: dates.map(() => Math.round(3000 + Math.random() * 3500)),
         areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          color: new graphic.LinearGradient(0, 0, 0, 1, [
             { offset: 0, color: 'rgba(0,234,255,.45)' },
             { offset: 1, color: 'rgba(0,234,255,0)' },
           ]),
@@ -221,7 +227,7 @@ function renderLine() {
         name: '转化量', type: 'line', smooth: true, symbol: 'none',
         data: dates.map(() => Math.round(1500 + Math.random() * 1800)),
         areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          color: new graphic.LinearGradient(0, 0, 0, 1, [
             { offset: 0, color: 'rgba(74,222,128,.4)' },
             { offset: 1, color: 'rgba(74,222,128,0)' },
           ]),
@@ -233,7 +239,7 @@ function renderLine() {
 
 function renderBar() {
   if (!barRef.value) return
-  const c = echarts.init(barRef.value); charts.push(c)
+  const c = echartsInit(barRef.value); charts.push(c)
   const regions = ['北京', '上海', '广东', '江苏', '浙江', '四川', '山东', '湖北', '河南', '福建']
   c.setOption({
     grid: { left: 44, right: 24, top: 32, bottom: 36 },
@@ -255,7 +261,7 @@ function renderBar() {
         barWidth: 14,
         itemStyle: {
           borderRadius: [4, 4, 0, 0],
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          color: new graphic.LinearGradient(0, 0, 0, 1, [
             { offset: 0, color: '#00eaff' },
             { offset: 1, color: 'rgba(0,234,255,.2)' },
           ]),
@@ -300,17 +306,25 @@ async function loadDashboard() {
     }
     // 若 dashboard.layout 包含数据集绑定信息, 可扩展执行数据集取真实数据
     // 此处仅作示例: 若 layout 中有 datasetId, 执行数据集获取饼图数据
-    const layout = dashboard?.layout as any
-    if (layout?.datasetId) {
+    // 🔑 layout 是后端返回的自由结构，按 unknown 读取后再收窄出 datasetId
+    const layout: unknown = dashboard?.layout
+    const datasetId =
+      typeof layout === 'object' && layout !== null && 'datasetId' in layout
+        ? (layout as { datasetId?: unknown }).datasetId
+        : undefined
+    if (datasetId) {
       try {
-        const dsRes = await executeDataset(Number(layout.datasetId), { limit: 100 })
+        const dsRes = await executeDataset(Number(datasetId), { limit: 100 })
         const rows = dsRes.data.rows || []
         if (rows.length > 0) {
           // 假设数据集有 name 和 value 列, 用于饼图
-          const pieData = rows.slice(0, 8).map((r: any) => ({
-            name: String(r.name || r.label || r.region || '未知'),
-            value: Number(r.value || r.count || r.amount || 0),
-          })).filter((d: any) => d.value > 0)
+          const pieData = rows
+            .slice(0, 8)
+            .map((r) => ({
+              name: String(r.name || r.label || r.region || '未知'),
+              value: Number(r.value || r.count || r.amount || 0),
+            }))
+            .filter((d) => d.value > 0)
           if (pieData.length > 0) {
             await nextTick()
             renderPie(pieData)

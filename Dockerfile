@@ -6,16 +6,20 @@
 # ============================================================================
 
 # ---------- 构建阶段 ----------
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 
+# 使用 pnpm 作为包管理器（corepack 读取 package.json 的 packageManager 字段）
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
+
 # 先拷贝依赖清单,利用 Docker 缓存
-COPY package*.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 # 拷贝源码并构建
 COPY . .
-RUN npm run build
+RUN pnpm build
 
 # ---------- 运行阶段 ----------
 FROM nginx:alpine
