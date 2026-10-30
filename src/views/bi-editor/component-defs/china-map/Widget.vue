@@ -141,7 +141,7 @@ onMounted(async () => {
     mapError.value = ''
     await ensureChinaMap()
     initTimer = window.setTimeout(applyChartOption, 50)
-  } catch (e) {
+  } catch {
     mapError.value = '地图数据加载失败，请检查网络连接'
   }
 })

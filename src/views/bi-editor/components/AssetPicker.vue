@@ -123,7 +123,7 @@ async function loadMaterials() {
     })
     materials.value = res.data.list
     total.value = res.data.total
-  } catch (e) {
+  } catch {
     ElMessage.error('加载素材列表失败')
   } finally {
     loading.value = false

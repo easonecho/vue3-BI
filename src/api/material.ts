@@ -2,10 +2,9 @@
  * 素材管理模块 API
  * 视频/图片/装饰边框等大屏素材的上传、列表、删除、下载
  */
-import { get, del } from '@/utils/request'
+import { get, del, getToken } from '@/utils/request'
 import axios from 'axios'
 import type { PaginateData } from '@/utils/request'
-import { getToken } from '@/utils/request'
 
 /** 素材分类 */
 export type MaterialType = 'video' | 'image' | 'decor'

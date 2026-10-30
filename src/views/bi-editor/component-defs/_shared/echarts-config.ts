@@ -1,18 +1,33 @@
 import { init, use, type ComposeOption, type ECharts } from 'echarts/core'
-import { BarChart, type BarSeriesOption } from 'echarts/charts'
-import { LineChart, type LineSeriesOption } from 'echarts/charts'
-import { PieChart, type PieSeriesOption } from 'echarts/charts'
-import { ScatterChart, type ScatterSeriesOption } from 'echarts/charts'
-import { GaugeChart, type GaugeSeriesOption } from 'echarts/charts'
-import { FunnelChart, type FunnelSeriesOption } from 'echarts/charts'
-import { RadarChart, type RadarSeriesOption } from 'echarts/charts'
-import { HeatmapChart, type HeatmapSeriesOption } from 'echarts/charts'
-import { TreemapChart, type TreemapSeriesOption } from 'echarts/charts'
-import { SankeyChart, type SankeySeriesOption } from 'echarts/charts'
-import { SunburstChart, type SunburstSeriesOption } from 'echarts/charts'
-import { GraphChart, type GraphSeriesOption } from 'echarts/charts'
-import { MapChart, type MapSeriesOption } from 'echarts/charts'
-import { ParallelChart } from 'echarts/charts'
+import {
+  BarChart,
+  LineChart,
+  PieChart,
+  ScatterChart,
+  GaugeChart,
+  FunnelChart,
+  RadarChart,
+  HeatmapChart,
+  TreemapChart,
+  SankeyChart,
+  SunburstChart,
+  GraphChart,
+  MapChart,
+  ParallelChart,
+  type BarSeriesOption,
+  type LineSeriesOption,
+  type PieSeriesOption,
+  type ScatterSeriesOption,
+  type GaugeSeriesOption,
+  type FunnelSeriesOption,
+  type RadarSeriesOption,
+  type HeatmapSeriesOption,
+  type TreemapSeriesOption,
+  type SankeySeriesOption,
+  type SunburstSeriesOption,
+  type GraphSeriesOption,
+  type MapSeriesOption,
+} from 'echarts/charts'
 // 🔑 3D 图表（WebGL 渲染）：echarts-gl 扩展
 //   类型不加入 ECOption 联合，避免 echarts-gl 2.x 与 echarts 6 类型不兼容引发的 TS 错误。
 //   3D 图表组件的 specificOption 用 as ECOption 断言。

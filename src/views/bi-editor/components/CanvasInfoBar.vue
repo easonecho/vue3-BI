@@ -1,9 +1,9 @@
 <template>
   <div class="canvas-info-bar">
     <span>画布: {{ store.canvas.width }} × {{ store.canvas.height }}</span>
-    <el-divider direction="vertical" />
+    <ElDivider direction="vertical" />
     <span>缩放: {{ Math.round(localScale * 100) }}%</span>
-    <el-divider direction="vertical" />
+    <ElDivider direction="vertical" />
     <span>
       选中:
       <template v-if="store.selectedIds.length > 1">
@@ -19,7 +19,7 @@
       </template>
       <template v-else>未选择</template>
     </span>
-    <el-divider direction="vertical" />
+    <ElDivider direction="vertical" />
     <span>组件数: {{ store.components.length }}</span>
   </div>
 </template>

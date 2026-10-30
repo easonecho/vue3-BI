@@ -31,7 +31,9 @@ function hashString(str: string): number {
 // 基于 content 生成 21x21 伪随机黑白矩阵，并叠加三个定位图案
 function generateMatrix(text: string): number[][] {
   const N = 21
-  const matrix: number[][] = Array.from({ length: N }, () => new Array(N).fill(0))
+  const matrix: number[][] = Array.from({ length: N }, () =>
+    Array.from({ length: N }, () => 0),
+  )
   let seed = hashString(text || 'qrcode')
 
   // xorshift 伪随机数

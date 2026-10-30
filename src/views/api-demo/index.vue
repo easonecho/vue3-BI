@@ -7,7 +7,7 @@
           <el-button type="primary" :loading="loading" @click="loadCharts">刷新</el-button>
         </div>
       </template>
-      <el-table :data="charts" v-loading="loading" border style="width: 100%">
+      <el-table v-loading="loading" :data="charts" border style="width: 100%">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="名称" />
         <el-table-column prop="type" label="类型" width="120">

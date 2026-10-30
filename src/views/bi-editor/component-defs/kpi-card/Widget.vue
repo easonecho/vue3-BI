@@ -76,7 +76,7 @@ function extractNumber(str: string): number {
   if (typeof str === 'number') return Number(str) || 0
   if (!str) return 0
   // 移除所有非数字非小数点非减号字符
-  const cleaned = String(str).replace(/[^0-9.\-]/g, '')
+  const cleaned = String(str).replace(/[^0-9.-]/g, '')
   const n = parseFloat(cleaned)
   return Number.isFinite(n) ? n : 0
 }

@@ -9,7 +9,7 @@
     <label>{{ field.label }}</label>
 
     <!-- 文本输入 -->
-    <el-input
+    <ElInput
       v-if="field.type === 'input'"
       :model-value="modelValue"
       :placeholder="field.placeholder"
@@ -17,7 +17,7 @@
     />
 
     <!-- 多行文本 -->
-    <el-input
+    <ElInput
       v-else-if="field.type === 'textarea'"
       type="textarea"
       :model-value="modelValue"
@@ -27,7 +27,7 @@
     />
 
     <!-- 数字输入 -->
-    <el-input-number
+    <ElInputNumber
       v-else-if="field.type === 'number'"
       :model-value="modelValue"
       :min="field.min"
@@ -48,28 +48,28 @@
     />
 
     <!-- 颜色选择 -->
-    <el-color-picker
+    <ElColorPicker
       v-else-if="field.type === 'colorpicker'"
       :model-value="modelValue || '#ffffff'"
       @update:model-value="(v: string | null) => emit('update:modelValue', v ?? '')"
     />
 
     <!-- 下拉选择 -->
-    <el-select
+    <ElSelect
       v-else-if="field.type === 'select'"
       :model-value="modelValue"
       @update:model-value="(v: any) => emit('update:modelValue', v)"
     >
-      <el-option
+      <ElOption
         v-for="opt in field.options || []"
         :key="String(opt.value)"
         :label="opt.label"
         :value="opt.value"
       />
-    </el-select>
+    </ElSelect>
 
     <!-- 开关 -->
-    <el-switch
+    <ElSwitch
       v-else-if="field.type === 'switch'"
       :model-value="modelValue"
       @update:model-value="(v: string | number | boolean) => emit('update:modelValue', v)"
@@ -96,7 +96,7 @@
                 :row="tableValue[$index]"
                 :col="col"
                 :index="$index"
-                @change="emitTable"
+                @change="(v: any) => handleCellChange($index, col.key, v)"
               />
             </template>
           </el-table-column>
@@ -221,6 +221,14 @@ function emitTable() {
   emit('update:modelValue', [...tableValue.value])
 }
 
+/** 单元格编辑：替换整行对象而不是就地修改，避免直接改动父组件传入的 props 数据 */
+function handleCellChange(index: number, key: string, value: any) {
+  const row = tableValue.value[index]
+  if (!row) return
+  tableValue.value[index] = { ...row, [key]: value }
+  emitTable()
+}
+
 // ============ asset 素材选择器 ============
 /** 素材选择弹窗显隐 */
 const showAssetPicker = ref(false)
@@ -241,6 +249,9 @@ function onAssetConfirm(urls: string | string[]) {
 
 <!-- 🔑 表格单元格编辑器：按列类型渲染不同控件（内联子组件避免 template 复杂） -->
 <script lang="ts">
+// SFC 中 <script> 与 <script setup> 是两个独立模块，各自需要向 vue 引入所需符号，
+// 因此这里重复出现 'vue' 导入是必要写法
+// eslint-disable-next-line no-duplicate-imports
 import { defineComponent, h } from 'vue'
 import { ElInput, ElInputNumber, ElColorPicker, ElSelect, ElOption, ElSwitch } from 'element-plus'
 
@@ -254,8 +265,8 @@ export const TableCellEditor = defineComponent({
   emits: ['change'],
   setup(props, { emit }) {
     const updateVal = (v: any) => {
-      props.row[props.col.key] = v
-      emit('change')
+      /** 只上报新值，由父组件负责写回，避免子组件直接修改 props */
+      emit('change', v)
     }
     return () => {
       const c = props.col

@@ -114,7 +114,6 @@ function getChartSpecificOption(): {
   const seriesLabelFontWeight = mergedProps.seriesLabelFontWeight as any
   const seriesLabelFontStyle = mergedProps.seriesLabelFontStyle as any
   const seriesLabelColor = String(mergedProps.seriesLabelColor || '#6b7280')
-  const seriesLabelPosition = String(mergedProps.seriesLabelPosition || 'top')
 
   const specificOption: ECOption = {
     radar: {

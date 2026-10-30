@@ -16,7 +16,7 @@
         </el-select>
         <el-button type="primary" @click="loadList"><el-icon><Search /></el-icon>&nbsp;查询</el-button>
         <div class="spacer" />
-        <el-button type="success" v-permission="'system:position:add'" @click="openCreate">
+        <el-button v-permission="'system:position:add'" type="success" @click="openCreate">
           <el-icon><Plus /></el-icon>&nbsp;新增岗位
         </el-button>
       </div>
@@ -32,10 +32,10 @@
           <template #default="{ row }">
             <el-switch
               :model-value="row.status === 1"
-              @change="handleToggle(row)"
               active-text="启用"
               inactive-text="禁用"
               inline-prompt
+              @change="handleToggle(row)"
             />
           </template>
         </el-table-column>

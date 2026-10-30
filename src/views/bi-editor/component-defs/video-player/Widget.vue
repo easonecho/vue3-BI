@@ -3,6 +3,7 @@
     <video
       ref="videoRef"
       class="widget-video-player__video"
+      :style="videoStyle"
       :src="videoSrc || undefined"
       :poster="poster || undefined"
       :autoplay="effectiveAutoplay"

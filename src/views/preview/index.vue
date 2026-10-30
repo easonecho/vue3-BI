@@ -1,9 +1,9 @@
 <template>
   <div
     ref="previewRootRef"
+    v-loading="loading"
     class="preview-page"
     :class="{ 'pure-mode': pureMode, 'fullscreen-mode': isFullscreen }"
-    v-loading="loading"
     @mousemove="handleMouseMove"
     @mouseleave="hideToolbar"
   >

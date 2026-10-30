@@ -16,7 +16,7 @@
         </el-select>
         <el-button type="primary" @click="loadList"><el-icon><Search /></el-icon>&nbsp;查询</el-button>
         <div class="spacer" />
-        <el-button type="success" v-permission="'system:task:add'" @click="openCreate">
+        <el-button v-permission="'system:task:add'" type="success" @click="openCreate">
           <el-icon><Plus /></el-icon>&nbsp;新增任务
         </el-button>
       </div>
@@ -32,10 +32,10 @@
           <template #default="{ row }">
             <el-switch
               :model-value="row.status === 1"
-              @change="handleToggle(row)"
               active-text="运行"
               inactive-text="暂停"
               inline-prompt
+              @change="handleToggle(row)"
             />
           </template>
         </el-table-column>
@@ -197,7 +197,7 @@ watch(paramsText, (val) => {
   try {
     form.params = JSON.parse(val);
     paramsError.value = '';
-  } catch (e) {
+  } catch {
     paramsError.value = 'JSON 格式错误';
   }
 });

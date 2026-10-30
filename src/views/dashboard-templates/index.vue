@@ -80,7 +80,7 @@
     </div>
 
     <!-- 模板卡片网格 -->
-    <el-row :gutter="16" v-loading="loading" class="card-grid">
+    <el-row v-loading="loading" :gutter="16" class="card-grid">
       <el-col
         v-for="(item, idx) in sortedList"
         :key="item.id"
@@ -233,7 +233,7 @@ import {
   getDashboardTemplateList, createDashboardTemplate, updateDashboardTemplate,
   deleteDashboardTemplate, applyTemplate, getTemplateCategories,
 } from '@/api/dashboard-template'
-import type { DashboardTemplate, CreateDashboardTemplateParams, DashboardTemplateListQuery, TemplateCategoryOption } from '@/api/dashboard-template'
+import type { DashboardTemplate, DashboardTemplateListQuery, TemplateCategoryOption } from '@/api/dashboard-template'
 // preset-templates 已移除：模板统一走后端 + 编辑器可视化创建
 
 const router = useRouter()
@@ -298,14 +298,6 @@ const sortedList = computed(() => {
   return arr
 })
 
-function formatTime(t?: string): string {
-  if (!t) return '-'
-  const d = new Date(t)
-  if (Number.isNaN(d.getTime())) return '-'
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
 async function loadList() {
   loading.value = true
   try {
@@ -341,30 +333,7 @@ function handleReset() {
   filters.sort = 'updated'
 }
 
-// ========== 创建/编辑模板 ==========
-const formVisible = ref(false)
-const formMode = ref<'create' | 'edit'>('create')
-const saving = ref(false)
-const editTarget = ref<DashboardTemplate | null>(null)
-const form = reactive({
-  name: '',
-  description: '',
-  category: '',
-  thumbnail: '',
-  isPublic: true,
-  layoutText: '',
-})
-
-function resetForm() {
-  form.name = ''
-  form.description = ''
-  form.category = ''
-  form.thumbnail = '📊'
-  form.isPublic = true
-  form.layoutText = ''
-  editTarget.value = null
-}
-
+// ========== 创建/编辑模板（统一跳转编辑器，此处仅保留入口函数） ==========
 function openCreateDialog() {
   // 🔑 走编辑器可视化创建模板（替代表单对话框）
   router.push('/bi-editor-template')
@@ -373,48 +342,6 @@ function openCreateDialog() {
 function openEditDialog(item: DashboardTemplate) {
   // 🔑 走编辑器可视化编辑模板（替代表单对话框）
   router.push(`/bi-editor-template/${item.id}`)
-}
-
-async function handleSave() {
-  const name = form.name.trim()
-  if (!name) {
-    ElMessage.warning(t('dashboard.templateNameRequired'))
-    return
-  }
-  // 解析 layout JSON
-  let layout: Record<string, unknown> | undefined
-  if (form.layoutText.trim()) {
-    try {
-      layout = JSON.parse(form.layoutText)
-    } catch {
-      ElMessage.error(t('templateManage.layoutInvalid'))
-      return
-    }
-  }
-  saving.value = true
-  try {
-    const data: CreateDashboardTemplateParams = {
-      name,
-      description: form.description.trim() || undefined,
-      category: form.category.trim() || undefined,
-      thumbnail: form.thumbnail.trim() || undefined,
-      isPublic: form.isPublic,
-      layout,
-    }
-    if (formMode.value === 'edit' && editTarget.value) {
-      await updateDashboardTemplate(editTarget.value.id, data)
-      ElMessage.success(t('templateManage.updateSuccess'))
-    } else {
-      await createDashboardTemplate(data)
-      ElMessage.success(t('templateManage.createSuccess'))
-    }
-    formVisible.value = false
-    loadList()
-  } catch {
-    // 错误提示由 request 拦截器统一处理
-  } finally {
-    saving.value = false
-  }
 }
 
 async function handleCopy(item: DashboardTemplate) {

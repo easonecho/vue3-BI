@@ -56,7 +56,7 @@
         <el-table-column prop="nickname" label="昵称" min-width="110" />
         <el-table-column label="角色" min-width="120">
           <template #default="{ row }">
-            <el-tag size="small" v-if="row.role" :type="roleTagType(row.role.code)">
+            <el-tag v-if="row.role" size="small" :type="roleTagType(row.role.code)">
               {{ row.role.name }}
             </el-tag>
             <span v-else style="color: #9ca3af">-</span>

@@ -59,7 +59,7 @@ function buildTreeFromRows(
     nodeMap.set(name, { name, children: [], raw: row })
   }
   // 第二遍:挂载 parent → children
-  for (const [name, node] of nodeMap.entries()) {
+  for (const node of nodeMap.values()) {
     const parentName = String(node.raw[parentField] ?? '').trim()
     if (parentName && nodeMap.has(parentName)) {
       nodeMap.get(parentName)!.children.push(node)

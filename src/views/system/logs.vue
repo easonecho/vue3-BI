@@ -55,7 +55,7 @@
 
     <!-- 详情弹窗 -->
     <el-dialog v-model="detailVisible" title="操作日志详情" width="700px" destroy-on-close>
-      <el-descriptions :column="2" border v-if="currentLog">
+      <el-descriptions v-if="currentLog" :column="2" border>
         <el-descriptions-item label="ID">{{ currentLog.id }}</el-descriptions-item>
         <el-descriptions-item label="操作用户">{{ currentLog.username || '-' }}</el-descriptions-item>
         <el-descriptions-item label="模块">{{ currentLog.module }}</el-descriptions-item>
@@ -82,7 +82,7 @@
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Search, Refresh, Delete } from '@element-plus/icons-vue';
-import { getLogList, getLogModules, deleteLog, cleanAllLogs, type OperationLogItem } from '@/api/operation-log';
+import { getLogList, getLogModules, cleanAllLogs, type OperationLogItem } from '@/api/operation-log';
 
 const loading = ref(false);
 const list = ref<OperationLogItem[]>([]);

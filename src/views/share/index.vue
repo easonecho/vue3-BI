@@ -1,5 +1,5 @@
 <template>
-  <div class="share-page" v-loading="loading">
+  <div v-loading="loading" class="share-page">
     <!-- 密码输入对话框 -->
     <div v-if="needPassword && !loading" class="password-panel">
       <el-card class="password-card" shadow="always">
@@ -21,8 +21,8 @@
         <el-button
           type="primary"
           :loading="verifying"
-          @click="submitPassword"
           style="width: 100%; margin-top: 12px"
+          @click="submitPassword"
         >
           验证并查看
         </el-button>

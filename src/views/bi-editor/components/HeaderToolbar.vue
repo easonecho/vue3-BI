@@ -243,9 +243,6 @@ import {
   ArrowUp,
   ArrowDown,
   View,
-  Hide,
-  Lock,
-  Unlock,
   Rank,
   Grid,
   Magnet,
@@ -277,10 +274,7 @@ const categoryOptions = ref<TemplateCategoryOption[]>([])
 const { zoomOptions, zoomIn, zoomOut } = useCanvasZoom()
 const importJsonInputRef = ref<HTMLInputElement | null>(null)
 
-// ========== Convenience computed for selected component's visible / locked state ==========
-const currentVisible = computed(() => store.selectedComponent?.visible ?? true)
-const currentLocked = computed(() => store.selectedComponent?.locked ?? false)
-
+// ========== 选中组件 id 列表 ==========
 /** 🔑 当前选中 id 列表（多选 > 单选）供 disabled 与批量操作共用 */
 const selectedIds = computed(() =>
   store.selectedIds.length > 0
@@ -443,7 +437,7 @@ async function handleSaveAs() {
   try {
     store.setDashboardId(null)
     store.setDashboardName(
-      (store.dashboardName || '未命名看板') + ' 的副本',
+      `${store.dashboardName || '未命名看板'  } 的副本`,
     )
     await store.saveDashboard()
     if (store.currentDashboardId != null) {
@@ -516,7 +510,7 @@ async function onImportJsonFile(e: Event) {
     store.applyLayout(layout as any)
     // 🔑 导入后另存为新看板：currentDashboardId = null，下次 save 会产生新记录
     store.setDashboardId(null)
-    store.setDashboardName((store.dashboardName || '未命名') + '（已导入）')
+    store.setDashboardName(`${store.dashboardName || '未命名'  }（已导入）`)
     ElMessage.success(`已从 ${file.name} 导入布局 ✨`)
   } catch (err) {
     console.error('[HeaderToolbar] import JSON failed', err)

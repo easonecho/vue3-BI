@@ -52,7 +52,8 @@ export default defineConfigWithVueTs(
       'prefer-template': 'error',
       'prefer-arrow-callback': 'error',
       'no-useless-constructor': 'error',
-      'no-duplicate-imports': 'error',
+      // allowSeparateTypeImports: 允许 import type 与值导入分开写 (TS 推荐做法, 利于 tree-shaking)
+      'no-duplicate-imports': ['error', { allowSeparateTypeImports: true }],
       'no-return-await': 'error',
       'require-await': 'warn',
       'no-constant-condition': ['error', { checkLoops: false }],
@@ -66,9 +67,10 @@ export default defineConfigWithVueTs(
       'vue/require-default-prop': 'off',
       'vue/attribute-hyphenation': ['error', 'always'],
       // 该规则只接受一个 casing 值 + 一个选项对象, 多传参数会被新版插件判为非法配置
+      // 项目模板中组件统一使用 PascalCase (含 Element Plus 图标组件), 因此按 PascalCase 约束
       'vue/component-name-in-template-casing': [
         'error',
-        'kebab-case',
+        'PascalCase',
         {
           registeredComponentsOnly: true,
         },

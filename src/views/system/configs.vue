@@ -12,7 +12,7 @@
         />
         <el-button type="primary" @click="loadList"><el-icon><Search /></el-icon>&nbsp;查询</el-button>
         <div class="spacer" />
-        <el-button type="success" v-permission="'system:config:add'" @click="openCreate">
+        <el-button v-permission="'system:config:add'" type="success" @click="openCreate">
           <el-icon><Plus /></el-icon>&nbsp;新增配置
         </el-button>
       </div>

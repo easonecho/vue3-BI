@@ -104,12 +104,6 @@ const headerStyle = computed(() => ({
   borderBottom: '1px solid #334155',
 }))
 
-const bodyStyle = computed(() => ({
-  flex: '1 1 auto',
-  overflow: 'hidden',
-  position: 'relative' as const,
-}))
-
 function cellStyle(col: TableColumn) {
   return {
     width: col.width ? `${col.width}px` : 'auto',

@@ -131,7 +131,7 @@
             :on-exceed="onFileExceed"
             :accept="acceptString"
           >
-            <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+            <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
             <div class="el-upload__text">
               将文件拖拽到此处，或<em>点击选择</em>
             </div>

@@ -297,7 +297,7 @@ function resolvePath(parentPath?: string | null, ...childPaths: (string | null |
     const p = childPaths[0]
     if (!p) return parentPath || '/'
     if (p.startsWith('/')) return p.replace(/\/+/g, '/')
-    return '/' + p.replace(/^\/+/, '')
+    return `/${  p.replace(/^\/+/, '')}`
   }
   const parts: string[] = []
   if (parentPath) parts.push(parentPath.replace(/^\/+|\/+$/g, ''))
@@ -305,8 +305,8 @@ function resolvePath(parentPath?: string | null, ...childPaths: (string | null |
     if (!p) continue
     parts.push(p.replace(/^\/+|\/+$/g, ''))
   }
-  let r = parts.join('/')
-  return r.startsWith('/') ? r : '/' + r
+  const r = parts.join('/')
+  return r.startsWith('/') ? r : `/${  r}`
 }
 
 function iconComp(iconName?: string) {

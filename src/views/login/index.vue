@@ -23,8 +23,8 @@
           :model="form"
           :rules="rules"
           label-position="top"
-          @submit.prevent="handleLogin"
           class="login-form"
+          @submit.prevent="handleLogin"
         >
           <el-form-item label="用户名" prop="username">
             <el-input

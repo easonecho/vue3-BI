@@ -9,9 +9,9 @@
             <el-collapse v-model="activeCollapseGroups">
               <el-collapse-item
                 v-for="(catLabel, catKey) in CATEGORY_LABELS"
+                v-show="filteredComponents(catKey as any).length > 0"
                 :key="catKey"
                 :name="catKey"
-                v-show="filteredComponents(catKey as any).length > 0"
               >
                 <template #title>
                   <span class="collapse-title">{{ catLabel }}</span>
@@ -55,7 +55,7 @@
               placeholder="搜索图层名称…"
               :prefix-icon="Search"
             />
-            <div class="layer-toolbar__count" v-if="layerKeyword">
+            <div v-if="layerKeyword" class="layer-toolbar__count">
               {{ filteredLayerList.length }} / {{ store.layerList.length }}
             </div>
           </div>
@@ -147,8 +147,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, markRaw, watch, nextTick, computed } from 'vue'
-import type { ComponentInstance } from '@/views/bi-editor/types'
+import { ref, watch, nextTick, computed } from 'vue'
+import type { ComponentMeta, ComponentCategory, ComponentInstance } from '@/views/bi-editor/types'
 import {
   DocumentCopy,
   Scissor,
@@ -163,6 +163,12 @@ import {
   Setting,
   Edit,
   Search,
+  View,
+  Hide,
+  Lock,
+  Unlock,
+  ArrowLeft as Left,
+  ArrowRight as Right,
 } from '@element-plus/icons-vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import ContextMenu from './ContextMenu.vue'
@@ -171,52 +177,9 @@ import {
   CATEGORY_GROUPS,
   CATEGORY_LABELS,
   getDefaultProps,
-  getDefinition,
 } from '@/views/bi-editor/component-defs'
-import { COMPONENT_META, getMeta } from '@/stores/bi-editor/metadata'
-import type { ComponentMeta, ComponentCategory } from '@/views/bi-editor/types'
 import ComponentRenderer from './ComponentRenderer.vue'
 import { preloadComponent } from '@/views/bi-editor/component-defs/registry'
-import {
-  Document,
-  Picture,
-  FullScreen,
-  Minus,
-  DataLine,
-  TrendCharts,
-  PieChart,
-  Grid,
-  Odometer,
-  Loading,
-  Flag,
-  View,
-  Hide,
-  Lock,
-  Unlock,
-  ArrowLeft as Left,
-  ArrowRight as Right,
-} from '@element-plus/icons-vue'
-import type { Component as VComponent } from 'vue'
-
-// icon 字符串 → 图标组件对象的映射（图层缩略图失败时可能不会用到，但保留兼容）
-const ICON_MAP: ReadonlyMap<string, VComponent> = new Map([
-  ['Document', markRaw(Document)],
-  ['Picture', markRaw(Picture)],
-  ['FullScreen', markRaw(FullScreen)],
-  ['Minus', markRaw(Minus)],
-  ['DataLine', markRaw(DataLine)],
-  ['TrendCharts', markRaw(TrendCharts)],
-  ['PieChart', markRaw(PieChart)],
-  ['Grid', markRaw(Grid)],
-  ['Odometer', markRaw(Odometer)],
-  ['Loading', markRaw(Loading)],
-  ['Flag', markRaw(Flag)],
-])
-
-function resolveIcon(name?: string): VComponent {
-  if (!name) return Document
-  return (ICON_MAP.get(name) as VComponent) ?? Document
-}
 
 const emit = defineEmits<{
   (e: 'drag-start', event: DragEvent, meta: ComponentMeta): void
@@ -494,10 +457,6 @@ function handleDragStart(event: DragEvent, meta: ComponentMeta) {
 
 function handleAddComponent(meta: ComponentMeta) {
   emit('add-component', meta)
-}
-
-function getLayerIcon(type: string): VComponent {
-  return resolveIcon(getMeta(type as any)?.icon)
 }
 </script>
 
