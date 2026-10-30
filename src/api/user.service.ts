@@ -42,11 +42,6 @@ export function deleteUser(id: number) {
   return del<null>(`/api/users/${id}`)
 }
 
-/** 修改密码 */
-export function changePassword(id: number, data: { oldPassword?: string; newPassword: string }) {
-  return put<null>(`/api/users/${id}/password`, data)
-}
-
 /** 修改用户角色 */
 export function changeUserRole(id: number, roleId: number) {
   return patch<User>(`/api/users/${id}/role`, { roleId })

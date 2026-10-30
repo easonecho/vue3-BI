@@ -11,7 +11,7 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
-import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
+import { useRoute, onBeforeRouteLeave } from 'vue-router'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import HeaderToolbar from './components/HeaderToolbar.vue'
 import LeftPanel from './components/LeftPanel.vue'
@@ -22,14 +22,12 @@ import { useKeyboardShortcuts } from './composables/useCanvas'
 import type { ComponentMeta } from './types'
 
 const route = useRoute()
-const router = useRouter()
 const store = useBiEditorStore()
 
 useKeyboardShortcuts()
 
-function handleDragStart(event: DragEvent, meta: ComponentMeta) {
-  // drag start meta is captured by dataTransfer, debug log removed
-}
+// 拖拽起点由 dataTransfer 携带组件元信息，这里无需额外处理
+function handleDragStart(_event: DragEvent, _meta: ComponentMeta) {}
 
 function handleAddComponent(meta: ComponentMeta) {
   const centerX = store.canvas.width / 2 - meta.defaultWidth / 2

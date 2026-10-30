@@ -21,11 +21,6 @@ export function getChartList(params: PageQuery) {
   return get<PaginateData<Chart>>('/api/charts', params as Record<string, unknown>)
 }
 
-/** 获取图表类型列表 */
-export function getChartTypes() {
-  return get<Array<{ type: string; name: string }>>('/api/charts/types/list')
-}
-
 /** 获取图表详情 */
 export function getChartDetail(id: number) {
   return get<Chart>(`/api/charts/${id}`)
