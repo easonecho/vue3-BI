@@ -65,10 +65,10 @@ export default defineConfigWithVueTs(
       'vue/no-v-html': 'off',
       'vue/require-default-prop': 'off',
       'vue/attribute-hyphenation': ['error', 'always'],
+      // 该规则只接受一个 casing 值 + 一个选项对象, 多传参数会被新版插件判为非法配置
       'vue/component-name-in-template-casing': [
         'error',
         'kebab-case',
-        'PascalCase',
         {
           registeredComponentsOnly: true,
         },

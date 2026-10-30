@@ -25,24 +25,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: vue3-bi/package-lock.json
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: vue3-bi/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: npx oxlint src/
+        run: pnpm exec oxlint src/
 
       - name: Type check
-        run: npx vue-tsc --noEmit
+        run: pnpm exec vue-tsc --noEmit
+
+      - name: Test
+        run: pnpm exec vitest run
 
       - name: Build
-        run: npm run build
+        run: pnpm build
 
   # ==================== 后端 ====================
   backend:
