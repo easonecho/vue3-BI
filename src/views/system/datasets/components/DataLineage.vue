@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="数据血缘"
+    :title="dialogTitle"
     width="960px"
     top="6vh"
     destroy-on-close
@@ -19,6 +19,13 @@
         @clear="reload"
       />
       <el-button :loading="loading" @click="reload">查询</el-button>
+      <!-- 聚焦入口 (数据集页/看板页) -->
+      <el-tag v-if="focusLabel && !scopeCleared" type="warning" effect="plain" size="small">
+        仅展示{{ focusLabel }}相关血缘
+      </el-tag>
+      <el-button v-if="focusLabel && !scopeCleared" link type="primary" @click="showFullGraph">
+        查看全部
+      </el-button>
       <div v-if="stats" class="lineage-stats">
         <el-tag size="small" effect="plain" type="info">数据源 {{ stats.datasourceCount }}</el-tag>
         <el-tag size="small" effect="plain" type="primary">数据集 {{ stats.datasetCount }}</el-tag>
@@ -31,7 +38,7 @@
       <div ref="chartEl" class="lineage-chart" />
       <el-empty
         v-if="!loading && nodes.length === 0"
-        description="暂无血缘数据 (看板组件绑定数据集后自动生成)"
+        :description="emptyDescription"
         :image-size="70"
         class="lineage-empty"
       />
@@ -56,7 +63,15 @@ import { getLineage, type LineageEdge, type LineageNode, type LineageStats } fro
 // 🔑 ECharts 按需注册（模块级执行一次）：关系图 + 图例/提示框 + Canvas 渲染器
 use([GraphChart, LegendComponent, TooltipComponent, CanvasRenderer])
 
-const props = defineProps<{ modelValue: boolean }>()
+const props = defineProps<{
+  modelValue: boolean
+  /** 弹窗标题 (默认「数据血缘」) */
+  title?: string
+  /** 聚焦数据集 (数据集页入口) */
+  datasetId?: number
+  /** 聚焦看板 (看板页入口) */
+  dashboardId?: number
+}>()
 const emit = defineEmits<{ 'update:modelValue': [boolean] }>()
 
 const visible = computed({
@@ -66,9 +81,31 @@ const visible = computed({
 
 const keyword = ref('')
 const loading = ref(false)
+/** 聚焦模式下是否已切换为全量图 */
+const scopeCleared = ref(false)
 const nodes = ref<LineageNode[]>([])
 const edges = ref<LineageEdge[]>([])
 const stats = ref<LineageStats | null>(null)
+
+const dialogTitle = computed(() => props.title || '数据血缘')
+
+/** 当前聚焦对象文案 (为空表示全量图) */
+const focusLabel = computed(() => {
+  if (props.datasetId) return '当前数据集'
+  if (props.dashboardId) return '当前看板'
+  return ''
+})
+
+const emptyDescription = computed(() =>
+  focusLabel.value && !scopeCleared.value
+    ? `${focusLabel.value}暂无血缘数据 (绑定数据集后自动生成)`
+    : '暂无血缘数据 (看板组件绑定数据集后自动生成)',
+)
+
+function showFullGraph() {
+  scopeCleared.value = true
+  reload()
+}
 
 const chartEl = ref<HTMLDivElement>()
 let chart: ECharts | null = null
@@ -179,7 +216,12 @@ function kindLabel(kind: LineageNode['kind']): string {
 async function reload() {
   loading.value = true
   try {
-    const res = await getLineage(keyword.value.trim() || undefined)
+    const focused = focusLabel.value && !scopeCleared.value
+    const res = await getLineage({
+      keyword: keyword.value,
+      datasetId: focused ? props.datasetId : undefined,
+      dashboardId: focused ? props.dashboardId : undefined,
+    })
     nodes.value = res.data.nodes
     edges.value = res.data.edges
     stats.value = res.data.stats
@@ -215,6 +257,7 @@ watch(
   (v) => {
     if (v) {
       keyword.value = ''
+      scopeCleared.value = false
       reload()
     }
   },

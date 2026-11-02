@@ -78,6 +78,13 @@
       :dashboard="versionTarget"
       @restored="loadList"
     />
+
+    <!-- 数据血缘 (P2-3, 按看板聚焦) -->
+    <DataLineage
+      v-model="lineageVisible"
+      :dashboard-id="lineageTarget?.id"
+      :title="lineageTarget ? `数据血缘 · ${lineageTarget.name}` : '数据血缘'"
+    />
   </div>
 </template>
 
@@ -96,6 +103,7 @@ import DashboardMoveGroupDialog from './components/DashboardMoveGroupDialog.vue'
 import DashboardSaveTemplateDialog from './components/DashboardSaveTemplateDialog.vue'
 import ReportSubscriptionDialog from './components/report/ReportSubscriptionDialog.vue'
 import DashboardVersionDialog from './components/DashboardVersionDialog.vue'
+import DataLineage from '@/views/system/datasets/components/DataLineage.vue'
 import { useDashboardList } from './composables/useDashboardList'
 import { useDashboardActions } from './composables/useDashboardActions'
 
@@ -139,6 +147,8 @@ const {
   moveGroupTarget,
   saveTplVisible,
   saveTplTarget,
+  lineageVisible,
+  lineageTarget,
   handleEdit,
   handlePreview,
   openCreateDialog,

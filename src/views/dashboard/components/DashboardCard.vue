@@ -57,6 +57,9 @@
                 <el-dropdown-item command="report">
                   <el-icon><Clock /></el-icon>&nbsp;定时报表
                 </el-dropdown-item>
+                <el-dropdown-item command="lineage">
+                  <el-icon><Connection /></el-icon>&nbsp;数据血缘
+                </el-dropdown-item>
                 <el-dropdown-item command="versions">
                   <el-icon><Tickets /></el-icon>&nbsp;版本管理
                 </el-dropdown-item>
@@ -111,6 +114,7 @@ import {
   Files,
   Rank,
   Tickets,
+  Connection,
 } from '@element-plus/icons-vue'
 import type { Dashboard } from '@/api/types'
 

@@ -159,6 +159,7 @@
   "PUT /api/datasets/{id}",
   "PUT /api/datasets/{id}/column-permissions/{ruleId}",
   "PUT /api/datasets/{id}/data",
+  "PUT /api/datasets/{id}/extract/refresh",
   "PUT /api/datasets/{id}/row-permissions/{ruleId}",
   "PUT /api/datasources/{id}",
   "PUT /api/departments/{id}",

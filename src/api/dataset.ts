@@ -95,9 +95,27 @@ export interface DatasetExtractInfo {
   enabled: boolean
   rowCount: number
   lastExtractAt: string | null
+  /** 是否启用定时刷新 (P2-1) */
+  refreshEnabled: boolean
+  /** 定时刷新 cron (标准 5 段) */
+  refreshCron: string | null
+  /** 最近一次自动刷新时间 */
+  lastAutoRunAt: string | null
   /** 抽取时是否因超过上限被截断 */
   truncated?: boolean
 }
+
+/** 定时刷新配置 */
+export interface ExtractRefreshParams {
+  enabled: boolean
+  cron?: string
+}
+
+/** 手动抽取返回 (不含定时刷新配置) */
+export type DatasetExtractResult = Pick<
+  DatasetExtractInfo,
+  'enabled' | 'rowCount' | 'lastExtractAt'
+> & { truncated?: boolean }
 
 /** 查询抽取状态 */
 export function getDatasetExtract(id: number) {
@@ -106,12 +124,20 @@ export function getDatasetExtract(id: number) {
 
 /** 立即抽取 (物化快照) */
 export function extractDataset(id: number) {
-  return post<DatasetExtractInfo>(`/api/datasets/${id}/extract`)
+  return post<DatasetExtractResult>(`/api/datasets/${id}/extract`)
 }
 
 /** 取消抽取 (删除快照, 恢复实时查询) */
 export function removeDatasetExtract(id: number) {
   return del<null>(`/api/datasets/${id}/extract`)
+}
+
+/** 更新定时刷新配置 (需先执行抽取生成快照) */
+export function updateDatasetExtractRefresh(id: number, data: ExtractRefreshParams) {
+  return put<Pick<DatasetExtractInfo, 'refreshEnabled' | 'refreshCron'>>(
+    `/api/datasets/${id}/extract/refresh`,
+    data,
+  )
 }
 
 /** 预览 SQL (临时, 无需已有数据集; 支持 params) */

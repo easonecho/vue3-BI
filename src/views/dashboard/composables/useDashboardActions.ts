@@ -51,6 +51,10 @@ export function useDashboardActions(deps: DashboardActionsDeps) {
   const saveTplVisible = ref(false)
   const saveTplTarget = ref<Dashboard | null>(null)
 
+  // P2-3: 数据血缘 (按看板聚焦)
+  const lineageVisible = ref(false)
+  const lineageTarget = ref<Dashboard | null>(null)
+
   function handleEdit(id: number) {
     router.push(`/bi-editor/${id}`)
   }
@@ -90,6 +94,9 @@ export function useDashboardActions(deps: DashboardActionsDeps) {
     } else if (cmd === 'versions') {
       versionTarget.value = item
       versionVisible.value = true
+    } else if (cmd === 'lineage') {
+      lineageTarget.value = item
+      lineageVisible.value = true
     } else if (cmd === 'delete') {
       void handleDelete(item)
     } else if (cmd === 'toggleStatus') {
@@ -190,6 +197,8 @@ export function useDashboardActions(deps: DashboardActionsDeps) {
     moveGroupTarget,
     saveTplVisible,
     saveTplTarget,
+    lineageVisible,
+    lineageTarget,
     handleEdit,
     handlePreview,
     openCreateDialog,
