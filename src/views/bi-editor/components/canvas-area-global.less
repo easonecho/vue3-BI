@@ -1,0 +1,18 @@
+/* 拖拽中：全局 grabbing，覆盖所有元素（鼠标移出原组件也保持） */
+body.bi-dragging,
+body.bi-dragging * {
+  cursor: grabbing !important;
+}
+/* 框选中：全局 crosshair */
+body.bi-marqueeing,
+body.bi-marqueeing * {
+  cursor: crosshair !important;
+}
+/* 组件 hover：grab（提示可拖拽） */
+.component-layout-box:not(.locked):hover {
+  cursor: grab;
+}
+/* 锁定组件 hover：not-allowed */
+.component-layout-box.locked:hover {
+  cursor: not-allowed;
+}

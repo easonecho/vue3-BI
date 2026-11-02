@@ -1,0 +1,179 @@
+/* ===== 图层搜索 & 列表 ===== */
+.layer-tab {
+  height: 100%;
+}
+
+.layer-toolbar {
+  margin: 4px 8px 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  :deep(.el-input__wrapper) {
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  }
+  :deep(.el-input__inner) {
+    color: var(--bi-text-primary, #f3f4f6);
+  }
+  &__count {
+    font-size: 12px;
+    color: var(--bi-text-muted, #9ca3af);
+    white-space: nowrap;
+  }
+}
+.layer-list {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 100%;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bi-scrollbar-thumb, #4b5563) var(--bi-scrollbar-track, #1f2937);
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: var(--bi-scrollbar-track, #1f2937);
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--bi-scrollbar-thumb, #4b5563);
+    border-radius: 3px;
+
+    &:hover {
+      background: var(--bi-scrollbar-thumb-hover, #6b7280);
+    }
+  }
+}
+
+.layer-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: var(--bi-layer-bg, #374151);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+
+  &:hover {
+    background: var(--bi-layer-hover-bg, #4b5563);
+  }
+
+  &.active {
+    background: var(--bi-layer-active-bg, rgba(30, 64, 175, 0.55));
+    border-color: var(--bi-accent, #409eff);
+  }
+  /* 🔑 多选的非主选成员：加左色条指示 + 浅色背景 */
+  &.multi-selected {
+    background: rgba(64, 158, 255, 0.18);
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 6px;
+      bottom: 6px;
+      width: 3px;
+      border-radius: 2px;
+      background: var(--bi-accent, #409eff);
+    }
+  }
+  &.hidden .layer-thumb__inner {
+    filter: grayscale(1) opacity(0.5);
+  }
+}
+
+/* 🔑 图层缩略图：固定 40x32 视口，内层 absolute 脱离文档流，避免 scale 后撑大外层 */
+.layer-thumb {
+  width: 40px;
+  height: 32px;
+  background: #ffffff;
+  border-radius: 4px;
+  flex-shrink: 0; /* 🔑 禁止 flex item 压缩缩略图 */
+  overflow: hidden;
+  position: relative; /* 为内层 absolute 提供定位原点 */
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+
+  &__inner {
+    /* 🔑 脱离文档流，scale 尺寸不影响外层布局 */
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform-origin: 0 0;
+    will-change: transform;
+    pointer-events: none;
+  }
+}
+
+.layer-info {
+  flex: 1;
+  min-width: 0; /* 🔑 允许 flex 子项收缩，文本省略正常工作 */
+  display: flex;
+  align-items: center;
+}
+
+.layer-name {
+  font-size: 13px;
+  color: var(--bi-text-primary, #f3f4f6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.layer-name.hidden {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.layer-tag {
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: #fff;
+  background: #8b5cf6;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.layer-name-input {
+  width: 100%;
+  :deep(.el-input__wrapper) {
+    padding: 2px 6px;
+    box-shadow: 0 0 0 1px var(--bi-accent, #409eff) inset;
+    background: rgba(30, 64, 175, 0.25);
+  }
+  :deep(.el-input__inner) {
+    color: var(--bi-text-primary, #f3f4f6);
+    font-size: 13px;
+    height: 24px;
+  }
+}
+
+.layer-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.action-btn {
+  padding: 3px;
+  border-radius: 3px;
+  color: var(--bi-icon-color, #d1d5db);
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+  }
+
+  &.active {
+    color: var(--bi-accent, #60a5fa);
+  }
+}

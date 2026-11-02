@@ -35,16 +35,20 @@
             @click.self="readonly ? undefined : handleEmptyAreaClick()"
           >
             <div
-      ref="canvasSheetRef"
-      class="canvas-sheet"
-      :class="{ 'pan-mode': !readonly && (isSpacePressed || isPanning) }"
-      :style="canvasSheetStyle"
-      @click="readonly ? undefined : handleEmptyAreaDelegation($event)"
-      @mousedown="readonly ? undefined : handleSheetMouseDownDelegation($event)"
-      @contextmenu.prevent="readonly ? undefined : onCanvasContextMenu($event)"
-      @dblclick="readonly ? undefined : onSheetDblClick($event)"
-    >
-              <CanvasSnapLines v-if="!readonly" :vertical="snapLines.vertical" :horizontal="snapLines.horizontal" />
+              ref="canvasSheetRef"
+              class="canvas-sheet"
+              :class="{ 'pan-mode': !readonly && (isSpacePressed || isPanning) }"
+              :style="canvasSheetStyle"
+              @click="readonly ? undefined : handleEmptyAreaDelegation($event)"
+              @mousedown="readonly ? undefined : handleSheetMouseDownDelegation($event)"
+              @contextmenu.prevent="readonly ? undefined : onCanvasContextMenu($event)"
+              @dblclick="readonly ? undefined : onSheetDblClick($event)"
+            >
+              <CanvasSnapLines
+                v-if="!readonly"
+                :vertical="snapLines.vertical"
+                :horizontal="snapLines.horizontal"
+              />
 
               <!-- 🔑 分组统一选中边框（GroupBox）：选中组时覆盖整个 group 包围盒，
                    pointer-events=none 不拦截组员点击；拖拽预览时整体跟随偏移。
@@ -57,11 +61,7 @@
               />
 
               <!-- 🔑 框选 marquee 矩形：在画布世界坐标系下绝对定位 -->
-              <div
-                v-if="!readonly && marquee.visible"
-                class="marquee-rect"
-                :style="marqueeStyle"
-              />
+              <div v-if="!readonly && marquee.visible" class="marquee-rect" :style="marqueeStyle" />
 
               <CanvasComponentItem
                 v-for="comp in visibleComponents"
@@ -85,11 +85,8 @@
                        store.updateComponent 创建新的 props/style/dataConfig/dataSource 对象引用。
                      - 若 v-memo 数组不包含这些引用，当用户仅改了属性栏配置（x/y/宽高都不变），
                        v-memo 会认为整颗子树都「无需 re-patch」，CanvasComponentItem →
-                       ComponentRenderer → line/bar/... Widget 的 props.comp 仍是旧引用，
-                       Widget 内部的 watch 不会触发 → ECharts option 不更新。
-                     - 加入这 4 个引用后，浅比较 Object.is 会正确检测到引用变更，
-                       v-memo 失效 → 子组件收到新 prop → watch 触发 → setOption 实时生效。
-                     - 位置/尺寸/拖拽类的高频变化不经过这些引用，不影响拖拽性能。 */
+                       ComponentRenderer → Widget 的 props.comp 仍是旧引用。
+                     - 加入这 4 个引用后，浅比较 Object.is 会正确检测到引用变更。 */
                   comp.props,
                   comp.style,
                   comp.dataConfig,
@@ -124,7 +121,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import CanvasSnapLines from './CanvasSnapLines.vue'
@@ -142,6 +139,11 @@ import { useCanvasFit } from '@/views/bi-editor/composables/useCanvasFit'
 import { useViewportCulling } from '@/views/bi-editor/composables/useViewportCulling'
 import { useCanvasGroupDrag } from '@/views/bi-editor/composables/useCanvasGroupDrag'
 import { useCanvasExportPng } from '@/views/bi-editor/composables/useCanvasExportPng'
+import { useCanvasCoordinates } from '@/views/bi-editor/composables/useCanvasCoordinates'
+import {
+  eventTouchesComponent,
+  useCanvasPointerDelegation,
+} from '@/views/bi-editor/composables/useCanvasPointerDelegation'
 
 const props = withDefaults(defineProps<{ readonly?: boolean }>(), { readonly: false })
 /** 模板和 script 都要用到 readonly prop，这里解构出来便于闭包直接访问 */
@@ -222,12 +224,9 @@ escapeHook = () => abortActiveResize()
  *   - Shift：累加 / 切换多选
  *   - Ctrl (Meta)：切换该组件在选中集合中的状态
  *   - 无修饰：直接单选
- *
- * 注意：所有调用方都来自 @mousedown / @click，event 永远是 MouseEvent，
- *   不再有 VDR 的 activated/clicked 这种不带 event 的回调。
  */
 function handleSelect(event: MouseEvent | undefined, id: string) {
-  if (!event || (!(event instanceof MouseEvent))) {
+  if (!event || !(event instanceof MouseEvent)) {
     store.selectComponent(id)
     interactionHandleSelect(id)
     return
@@ -240,16 +239,11 @@ function handleSelect(event: MouseEvent | undefined, id: string) {
   interactionHandleSelect(id)
 }
 
-// ========== 框选 marquee（逻辑见 useMarqueeSelect） ==========
-// 🔑 性能优化：缓存 viewport rect，避免拖拽/框选期间每次 mousemove 都调用 getBoundingClientRect()
-//   getBoundingClientRect() 在有 pending DOM 写入时会强制布局重计算（layout thrashing）
-let cachedViewportRect: DOMRect | null = null
-
-function clientToWorld(clientX: number, clientY: number) {
-  const rect = cachedViewportRect ?? viewportRef.value?.getBoundingClientRect()
-  if (!rect) return { x: 0, y: 0 }
-  return screenToWorld(clientX - rect.left, clientY - rect.top)
-}
+// ========== 坐标换算（缓存 viewport rect，避免拖拽期间反复强制布局） ==========
+const { clientToWorld, refreshViewportRect } = useCanvasCoordinates({
+  viewportRef,
+  screenToWorld,
+})
 
 // ========== Canvas sheet (logical canvas box + component carrier) ==========
 const canvasSheetRef = ref<HTMLElement | null>(null)
@@ -282,6 +276,18 @@ const { startGroupDrag, dispose: disposeGroupDrag } = useCanvasGroupDrag({
   suppressNextClick,
 })
 
+// ========== 空白区事件委托（选中清空 / 分组拖拽 / 框选） ==========
+const { handleEmptyAreaDelegation, handleSheetMouseDownDelegation, handleEmptyAreaClick } =
+  useCanvasPointerDelegation({
+    store,
+    isSpacePressed,
+    clientToWorld,
+    refreshViewportRect,
+    startGroupDrag,
+    startMarquee,
+    getSuppressClick: () => suppressClick.value,
+  })
+
 // 右键菜单（组件 / 画布空白 / 辅助线）抽到 composable
 const { contextMenuRef, onComponentContextMenu, onCanvasContextMenu } = useCanvasContextMenu({
   store,
@@ -308,78 +314,20 @@ const { visibleComponents } = useViewportCulling({
  */
 // 🔑 性能优化：稳定的事件处理器引用。
 //   模板内联箭头函数每次渲染创建新引用 → CanvasComponentItem props 不等 → 无谓子组件更新。
-//   这些 wrapper 定义一次，引用稳定，readonly 检查移到调用时。
-const onItemSelect = (ev: MouseEvent, id: string) => { if (!readonly) handleSelect(ev, id) }
-const onItemWrapperMouseDown = (e: MouseEvent, id: string) => { if (!readonly) handleWrapperMouseDown(e, id) }
-const onItemResizeStart = (e: MouseEvent, id: string, pos: string) => { if (!readonly) handleResizeStart(e, id, pos) }
+const onItemSelect = (ev: MouseEvent, id: string) => {
+  if (!readonly) handleSelect(ev, id)
+}
+const onItemWrapperMouseDown = (e: MouseEvent, id: string) => {
+  if (!readonly) handleWrapperMouseDown(e, id)
+}
+const onItemResizeStart = (e: MouseEvent, id: string, pos: string) => {
+  if (!readonly) handleResizeStart(e, id, pos)
+}
 const onItemContextMenu = (e: MouseEvent, id: string) => {
   if (readonly) return
-  // 🔑 阻止冒泡到 canvas-sheet：否则 onCanvasContextMenu 会紧接着执行，
-  //    用「画布空白菜单」覆盖掉刚弹出的「组件菜单」。
+  // 🔑 阻止冒泡到 canvas-sheet：否则 onCanvasContextMenu 会用空白菜单覆盖组件菜单
   e.stopPropagation()
   onComponentContextMenu(e, id)
-}
-
-/**
- * 🔑 判断 mousedown / click 事件路径中是否命中了组件 DOM。
- *   由于 canvas-sheet 绑定已从 @xxx.self 改为冒泡捕获，需要手动识别「点击点真的在 sheet 空白」vs
- *   「点击点在组件内部但由子元素 DOM（如 selection-border、component-content、ECharts canvas 等）
- *   触发了事件冒泡」。命中组件 DOM → 不执行 sheet 级逻辑（清空选中 / 框选 / 分组拖拽），交给组件自身处理。
- */
-function eventTouchesComponent(e: Event): boolean {
-  const path: EventTarget[] = typeof e.composedPath === 'function'
-    ? e.composedPath()
-    : e.target ? [e.target] : []
-  for (const node of path) {
-    if (node instanceof HTMLElement) {
-      // component-layout-box：CanvasComponentItem 的根 div，每个组件一个，几何上完全等于组件矩形
-      if (node.classList.contains('component-layout-box')) return true
-      // 兜底：组件内部的 div（selection-border / canvas-component-wrapper-inner / component-content）
-      if (node.classList.contains('selection-border')
-        || node.classList.contains('canvas-component-wrapper-inner')
-        || node.classList.contains('component-content')) return true
-    }
-  }
-  return false
-}
-
-/** 🔑 画布 click：只有点在 sheet 空白时才清空选中（否则组件自身点击时不会误清空） */
-function handleEmptyAreaDelegation(e: MouseEvent) {
-  if (eventTouchesComponent(e)) return
-  handleEmptyAreaClick()
-}
-
-/** 🔑 画布 mousedown：只有点在 sheet 空白时才启动分组整体拖拽 / 框选 marquee（组件内部点击交给组件自身的拖拽会话） */
-function handleSheetMouseDownDelegation(e: MouseEvent) {
-  if (eventTouchesComponent(e)) return
-  handleSheetMouseDown(e)
-}
-
-function handleSheetMouseDown(e: MouseEvent) {
-  if (e.button !== 0) return
-  // 🔑 pan-mode（空格键/中键平移）时不触发框选/marquee/分组拖拽，
-  //   startPan 由 handleContainerMouseDown 统一处理
-  if (isSpacePressed.value) return
-
-  // 🔑 性能优化：在交互开始时缓存 viewport rect，后续 mousemove 都用缓存值
-  cachedViewportRect = viewportRef.value?.getBoundingClientRect() ?? null
-
-  // 🔑 优先：如果 mousedown 发生在「某个选中分组的包围盒内，且未命中任何组员（空白区）」
-  //   → 启动分组整体拖拽（覆盖 canvas-sheet 的框选行为），满足「边框内任何地方都能拖分组」
-  const world = clientToWorld(e.clientX, e.clientY)
-  if (startGroupDrag(e, world)) return
-
-  // 🔑 Shift+拖拽：保留已有选中（additive）；否则清空
-  startMarquee(world, e.shiftKey || e.ctrlKey || e.metaKey)
-}
-
-/**
- * 🔑 画布空白处点击 → 清空选中。但若刚结束一次真实框选，suppressClick 为 true，
- *   跳过清空以保留框选结果。
- */
-function handleEmptyAreaClick() {
-  if (suppressClick.value) return
-  store.clearSelection()
 }
 
 onBeforeUnmount(() => {
@@ -410,165 +358,9 @@ onMounted(() => {
 
 <!-- 🔑 全局 cursor 样式（非 scoped：body 级别覆盖所有元素） -->
 <style lang="less">
-/* 拖拽中：全局 grabbing，覆盖所有元素（鼠标移出原组件也保持） */
-body.bi-dragging,
-body.bi-dragging * {
-  cursor: grabbing !important;
-}
-/* 框选中：全局 crosshair */
-body.bi-marqueeing,
-body.bi-marqueeing * {
-  cursor: crosshair !important;
-}
-/* 组件 hover：grab（提示可拖拽） */
-.component-layout-box:not(.locked):hover {
-  cursor: grab;
-}
-/* 锁定组件 hover：not-allowed */
-.component-layout-box.locked:hover {
-  cursor: not-allowed;
-}
+@import './canvas-area-global.less';
 </style>
 
 <style scoped lang="less">
-.canvas-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: var(--bi-canvas-bg, #374151);
-  overflow: hidden;
-  position: relative;
-  cursor: default;
-  user-select: none;
-}
-.canvas-container::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  background-image: radial-gradient(circle, var(--bi-canvas-grid-dot-color, rgba(209, 213, 219, 0.45)) 1.2px, transparent 1.2px);
-  background-size: 24px 24px;
-}
-.canvas-container.show-dots::before {
-  opacity: 1;
-}
-.canvas-container.pan-cursor {
-  cursor: grab;
-}
-
-.canvas-layout {
-  position: absolute;
-  inset: 0 0 28px 0;
-  z-index: 1;
-  // --ruler 变量取值：标尺显示时 42px，隐藏时 0px。由 layoutStyle 注入。
-  // 所有子元素用绝对定位 + 该变量计算位置，完全不依赖兄弟元素的存在/显示，
-  // 彻底避免之前 display:grid 方案中 v-if/v-show 移除子元素后推断 1fr=0 的问题。
-}
-.ruler-corner {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: var(--ruler, 0px);
-  height: var(--ruler, 0px);
-  background: var(--bi-ruler-bg, #1f2937);
-  border-right: 1px solid var(--bi-ruler-border, #4b5563);
-  border-bottom: 1px solid var(--bi-ruler-border, #4b5563);
-  z-index: 3;
-}
-.ruler-horizontal {
-  position: absolute;
-  top: 0;
-  left: var(--ruler, 0px);
-  right: 0;
-  height: var(--ruler, 0px);
-  border-bottom: 1px solid var(--bi-ruler-border, #4b5563);
-  background: var(--bi-header-bg, #374151);
-  z-index: 2;
-}
-.ruler-vertical {
-  position: absolute;
-  left: 0;
-  top: var(--ruler, 0px);
-  bottom: 0;
-  width: var(--ruler, 0px);
-  border-right: 1px solid var(--bi-ruler-border, #4b5563);
-  background: var(--bi-header-bg, #374151);
-  z-index: 2;
-}
-.canvas-viewport {
-  position: absolute;
-  left: var(--ruler, 0px);
-  top: var(--ruler, 0px);
-  right: 0;
-  bottom: 0;
-  overflow: hidden;
-  background: transparent;
-  z-index: 1;
-}
-
-.canvas-transform-layer {
-  position: absolute;
-  left: 0;
-  top: 0;
-  will-change: transform;
-  transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-.canvas-offset-layer {
-  position: absolute;
-  left: 0;
-  top: 0;
-  transform-origin: 0 0;
-  will-change: transform;
-  transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-.canvas-sheet {
-  position: absolute;
-  box-shadow:
-    0 0 0 1px rgba(55, 65, 81, 0.5),
-    0 8px 24px rgba(0, 0, 0, 0.15);
-  background-color: var(--bi-sheet-bg, rgba(255, 255, 255, 0.96));
-  overflow: visible;
-  user-select: none;
-}
-
-/* 🔑 pan-mode：空格键/中键平移画布时，通过 CSS 一次性禁用所有组件的 pointer-events，
-     等效于 100 个组件的 isDraggable=false，但只需 1 次 DOM class 更新（替代 100 次 prop diff）。
-     组件根 div 收不到 mousedown → 不会启动拖拽；cursor: grab 提供平移视觉反馈。 */
-.canvas-sheet.pan-mode .component-layout-box {
-  pointer-events: none;
-}
-.canvas-sheet.pan-mode .canvas-component-wrapper-inner {
-  cursor: grab !important;
-}
-
-/* 🔑 GroupBox 样式已移至 GroupBox.vue 子组件 */
-
-/* 🔑 框选 marquee 矩形样式：半透明蓝色填充 + 虚线边框 */
-.marquee-rect {
-  border: 1.5px dashed rgba(64, 158, 255, 0.95);
-  background: rgba(64, 158, 255, 0.12);
-  border-radius: 2px;
-  box-sizing: border-box;
-  backdrop-filter: blur(0.4px);
-}
-
-.empty-canvas {
-  position: absolute;
-  inset: 42px 0 28px 0;
-  left: 42px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  pointer-events: none;
-  z-index: 10;
-}
-.empty-canvas p {
-  color: var(--bi-text-muted, #9ca3af);
-  font-size: 14px;
-}
+@import './canvas-area.less';
 </style>

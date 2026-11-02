@@ -76,65 +76,20 @@
     />
 
     <!-- 🔑 表格：可编辑列表，用户按每一项数据单独配置样式（series 每个数据项的颜色/线宽等） -->
-    <div v-else-if="field.type === 'table'" class="table-editor">
-      <div class="table-toolbar">
-        <el-button size="small" type="primary" plain @click="addTableRow">新增行</el-button>
-        <el-button size="small" type="danger" plain :disabled="!hasRows" @click="removeLastRow"
-          >删除末行</el-button
-        >
-      </div>
-      <div class="table-scroll">
-        <el-table :data="tableValue" size="small" border stripe style="width: 100%">
-          <el-table-column
-            v-for="col in field.columns || []"
-            :key="col.key"
-            :label="col.label"
-            :width="col.width"
-          >
-            <template #default="{ $index }">
-              <TableCellEditor
-                :row="tableValue[$index]"
-                :col="col"
-                :index="$index"
-                @change="(v: any) => handleCellChange($index, col.key, v)"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="56" align="center" fixed="right">
-            <template #default="{ $index }">
-              <el-button size="small" link type="danger" @click="removeRow($index)">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-    </div>
+    <PropTableEditor
+      v-else-if="field.type === 'table'"
+      :field="field"
+      :model-value="modelValue"
+      @update:model-value="(v: any) => emit('update:modelValue', v)"
+    />
 
     <!-- 🔑 素材选择器：从素材库选择 video/image/decor 素材，单选返回 url string，多选返回 string[] -->
-    <div v-else-if="field.type === 'asset'" class="asset-field">
-      <div v-if="assetPreview" class="asset-preview">
-        <img
-          v-if="field.assetType === 'image' || field.assetType === 'decor'"
-          :src="assetPreview"
-          class="asset-preview-img"
-        />
-        <video v-else-if="field.assetType === 'video'" :src="assetPreview" muted class="asset-preview-video" />
-        <span v-else class="asset-preview-decor">{{ field.assetType || 'decor' }}</span>
-        <el-button size="small" link type="danger" @click="emit('update:modelValue', field.multiple ? [] : '')">
-          清除
-        </el-button>
-      </div>
-      <el-button size="small" type="primary" plain @click="showAssetPicker = true">
-        {{ assetPreview ? '更换' : '从素材库选择' }}
-      </el-button>
-      <span v-if="!assetPreview && field.multiple" class="asset-hint">未选择素材</span>
-      <span v-else-if="!assetPreview" class="asset-hint">未选择{{ field.assetType || '素材' }}</span>
-      <AssetPicker
-        v-model="showAssetPicker"
-        :asset-type="field.assetType"
-        :multiple="field.multiple"
-        @confirm="onAssetConfirm"
-      />
-    </div>
+    <PropAssetField
+      v-else-if="field.type === 'asset'"
+      :field="field"
+      :model-value="modelValue"
+      @update:model-value="(v: any) => emit('update:modelValue', v)"
+    />
 
     <!-- 未知类型 fallback -->
     <span v-else class="unsupported">不支持的控件类型: {{ field.type }}</span>
@@ -144,10 +99,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import type { PropField, TableColumnSchema } from '@/views/bi-editor/component-defs/types'
+import { computed } from 'vue'
+import type { PropField } from '@/views/bi-editor/component-defs/types'
 import { isFieldVisible } from '@/views/bi-editor/component-defs/types'
-import AssetPicker from './AssetPicker.vue'
+import PropTableEditor from './PropTableEditor.vue'
+import PropAssetField from './PropAssetField.vue'
 
 const props = defineProps<{
   field: PropField
@@ -162,178 +118,6 @@ const emit = defineEmits<{
 
 /** 🔑 根据 visibleWhen 条件决定是否渲染 */
 const visible = computed(() => isFieldVisible(props.field, props.allProps || {}))
-
-/** 🔑 table 类型的行数据：局部状态，保持用户编辑中间态，外部 modelValue 变化时重新同步 */
-const tableValue = ref<any[]>(Array.isArray(props.modelValue) ? [...props.modelValue] : [])
-
-/** 同步外部 modelValue → 内部 tableValue：切组件、外部变了（组件切换/撤销重做）重新同步 */
-watch(
-  () => props.modelValue,
-  (nv) => {
-    const arr = Array.isArray(nv) ? nv : []
-    /** 仅当外部数组引用整体替换时才重置（避免每次 emitTable 后又被外部覆盖回来） */
-    if (nv !== tableValue.value && !shallowArrayEqual(arr, tableValue.value)) {
-      tableValue.value = [...arr]
-    }
-  },
-)
-
-function shallowArrayEqual(a: any[], b: any[]): boolean {
-  if (a.length !== b.length) return false
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false
-  return true
-}
-
-const hasRows = computed(() => tableValue.value.length > 0)
-
-/** 根据 columns 的默认值构造一个新行 */
-function buildEmptyRow(): Record<string, any> {
-  const row: Record<string, any> = {}
-  for (const col of props.field.columns || []) {
-    if (col.type === 'number') row[col.key] = col.min ?? 0
-    else if (col.type === 'colorpicker') row[col.key] = ''
-    else if (col.type === 'switch') row[col.key] = false
-    else if (col.type === 'select') row[col.key] = col.options?.[0]?.value ?? ''
-    else row[col.key] = ''
-  }
-  return row
-}
-
-function addTableRow() {
-  tableValue.value.push(buildEmptyRow())
-  emitTable()
-}
-
-function removeLastRow() {
-  if (tableValue.value.length > 0) {
-    tableValue.value.pop()
-    emitTable()
-  }
-}
-
-function removeRow(idx: number) {
-  tableValue.value.splice(idx, 1)
-  emitTable()
-}
-
-function emitTable() {
-  /** 整体替换数组引用，确保父组件（RightPanel）的 watch、Widget 的 deep watch 都能触发响应式更新 */
-  emit('update:modelValue', [...tableValue.value])
-}
-
-/** 单元格编辑：替换整行对象而不是就地修改，避免直接改动父组件传入的 props 数据 */
-function handleCellChange(index: number, key: string, value: any) {
-  const row = tableValue.value[index]
-  if (!row) return
-  tableValue.value[index] = { ...row, [key]: value }
-  emitTable()
-}
-
-// ============ asset 素材选择器 ============
-/** 素材选择弹窗显隐 */
-const showAssetPicker = ref(false)
-
-/** 当前选中素材的预览 URL（单选取第一个，多选取第一个用于预览） */
-const assetPreview = computed(() => {
-  const v = props.modelValue
-  if (!v) return ''
-  if (Array.isArray(v)) return v[0] || ''
-  return String(v)
-})
-
-/** 素材选择确认回调 */
-function onAssetConfirm(urls: string | string[]) {
-  emit('update:modelValue', urls)
-}
-</script>
-
-<!-- 🔑 表格单元格编辑器：按列类型渲染不同控件（内联子组件避免 template 复杂） -->
-<script lang="ts">
-// SFC 中 <script> 与 <script setup> 是两个独立模块，各自需要向 vue 引入所需符号，
-// 因此这里重复出现 'vue' 导入是必要写法
-// eslint-disable-next-line no-duplicate-imports
-import { defineComponent, h } from 'vue'
-import type { Component } from 'vue'
-import { ElInput, ElInputNumber, ElColorPicker, ElSelect, ElOption, ElSwitch } from 'element-plus'
-/**
- * 🔑 Element Plus 组件是 DefineComponent，其 props 为严格的联合类型；
- *   这里用对象字面量按字段动态拼装 props，与 h() 的 props 参数推断不兼容，
- *   统一收窄为 Vue 通用 Component 接口（h 的 RawProps 为宽松对象），
- *   避免在每个 h() 调用上重复写 `as any`。
- */
-const EP = {
-  input: ElInput as unknown as Component,
-  number: ElInputNumber as unknown as Component,
-  colorPicker: ElColorPicker as unknown as Component,
-  select: ElSelect as unknown as Component,
-  option: ElOption as unknown as Component,
-  switch: ElSwitch as unknown as Component,
-}
-
-export const TableCellEditor = defineComponent({
-  name: 'TableCellEditor',
-  props: {
-    row: { type: Object as () => Record<string, any>, required: true },
-    col: { type: Object as () => TableColumnSchema, required: true },
-    index: { type: Number, required: true },
-  },
-  emits: ['change'],
-  setup(props, { emit }) {
-    const updateVal = (v: any) => {
-      /** 只上报新值，由父组件负责写回，避免子组件直接修改 props */
-      emit('change', v)
-    }
-    return () => {
-      const c = props.col
-      const v = props.row[c.key]
-      const commonStyle = { width: '100%' }
-      // 🔑 事件必须放在第二个参数（props 对象）里，不能放在第三个参数（slots位置）
-      if (c.type === 'input')
-        return h(EP.input, {
-          modelValue: v,
-          placeholder: c.placeholder,
-          size: 'small',
-          style: commonStyle,
-          'onUpdate:modelValue': updateVal,
-        })
-      if (c.type === 'number')
-        return h(EP.number, {
-          modelValue: v,
-          min: c.min,
-          max: c.max,
-          step: c.step ?? 1,
-          size: 'small',
-          controlsPosition: 'right',
-          style: commonStyle,
-          'onUpdate:modelValue': updateVal,
-        })
-      if (c.type === 'colorpicker')
-        return h(EP.colorPicker, {
-          modelValue: v || '#ffffff',
-          size: 'small',
-          style: commonStyle,
-          'onUpdate:modelValue': (nv: string | null) => updateVal(nv ?? ''),
-        })
-      if (c.type === 'select') {
-        const children = (c.options || []).map((o) =>
-          h(EP.option, { key: String(o.value), label: o.label, value: o.value }),
-        )
-        return h(
-          EP.select,
-          { modelValue: v, size: 'small', style: commonStyle, 'onUpdate:modelValue': updateVal },
-          { default: () => children },
-        )
-      }
-      if (c.type === 'switch')
-        return h(EP.switch, {
-          modelValue: v,
-          size: 'small',
-          'onUpdate:modelValue': updateVal,
-        })
-      return null
-    }
-  },
-})
 </script>
 
 <style scoped lang="less">
@@ -364,96 +148,5 @@ export const TableCellEditor = defineComponent({
   font-size: 12px;
   color: var(--bi-text-muted, #6b7280);
   font-style: italic;
-}
-
-/* ===== table 编辑器样式 ===== */
-.table-editor {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.table-toolbar {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.table-scroll {
-  max-height: 280px;
-  overflow: auto;
-  border-radius: 6px;
-}
-
-.table-scroll :deep(.el-table) {
-  background: var(--bi-input-bg, #374151);
-}
-
-.table-scroll :deep(.el-table th),
-.table-scroll :deep(.el-table tr) {
-  background: transparent;
-  color: var(--bi-text-primary, #f3f4f6);
-}
-
-.table-scroll :deep(.el-table td),
-.table-scroll :deep(.el-table th.is-leaf) {
-  border-color: var(--bi-border-color, #4b5563);
-}
-
-.table-scroll :deep(.el-table__row--striped td.el-table__cell) {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.table-scroll :deep(.el-table__cell) {
-  padding: 6px 4px;
-}
-
-.table-scroll :deep(.el-input__wrapper),
-.table-scroll :deep(.el-select .el-input__wrapper) {
-  background: var(--bi-table-cell-bg, #1f2937);
-  box-shadow: none;
-}
-
-.table-scroll :deep(.el-input-number) {
-  width: 100%;
-}
-
-/* ===== asset 素材选择器样式 ===== */
-.asset-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.asset-preview {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px;
-  border: 1px solid var(--bi-border-color, #374151);
-  border-radius: 6px;
-  background: var(--bi-table-cell-bg, #1f2937);
-}
-
-.asset-preview-img,
-.asset-preview-video {
-  width: 60px;
-  height: 40px;
-  object-fit: cover;
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-
-.asset-preview-decor {
-  font-size: 11px;
-  color: var(--bi-text-muted, #9ca3af);
-  padding: 0 8px;
-  flex-shrink: 0;
-}
-
-.asset-hint {
-  font-size: 11px;
-  color: var(--bi-text-muted, #6b7280);
 }
 </style>

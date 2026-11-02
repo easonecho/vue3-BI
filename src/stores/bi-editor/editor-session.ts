@@ -1,12 +1,6 @@
 import { nextTick, type Ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type {
-  ComponentInstance,
-  CanvasState,
-  GuideLine,
-  DashboardLayout,
-} from '@/views/bi-editor/types'
-import { DEFAULT_ZOOM, DEFAULT_VIEWPORT_OFFSET } from '@/views/bi-editor/constants/canvas-constants'
+import type { ComponentInstance, CanvasState, GuideLine, DashboardLayout } from '@/views/bi-editor/types'
 import { createDashboard, updateDashboard, getDashboardDetail } from '@/api/dashboard'
 import {
   getDashboardTemplateDetail,
@@ -14,14 +8,11 @@ import {
   updateDashboardTemplate,
   type DashboardTemplate,
 } from '@/api/dashboard-template'
+import { draftStorageKey, readDraft, removeDraft, writeDraft } from './editor-draft'
+import type { EditorDraft } from './editor-draft'
+import { applyEditorLayout, emptyLayout, serializeEditorLayout } from './editor-layout'
 
-/** 🔑 本地草稿结构：只存 localStorage，用于意外关闭/崩溃后找回未保存内容 */
-export interface EditorDraft {
-  savedAt: number
-  name: string
-  layout: DashboardLayout
-  version: number | null
-}
+export type { EditorDraft } from './editor-draft'
 
 /** 看板/模板会话所依赖的共享状态与回调（由 store 组合根注入） */
 export interface EditorSessionDeps {
@@ -65,8 +56,6 @@ export interface EditorSessionApi {
     isPublic?: boolean
   }) => Promise<DashboardTemplate | null>
 }
-
-const DRAFT_PREFIX = 'bi_editor_draft_'
 
 /**
  * 🔑 看板 / 模板会话组合根。
@@ -112,48 +101,26 @@ export function createEditorSession(deps: EditorSessionDeps): EditorSessionApi {
 
   /**
    * 序列化当前编辑器状态为可持久化的 DashboardLayout。
-   * 视口状态(zoom/scrollX/scrollY)不持久化,加载时由 resetViewport 还原。
-   * 使用 JSON.parse(JSON.stringify(...)) 剥离 Vue 响应式 Proxy(与 history.ts 思路一致)。
+   * 视口状态(zoom/scrollX/scrollY)不持久化, 加载时由 resetViewport 还原。
    */
   function serializeLayout(): DashboardLayout {
-    return {
-      version: '1.0',
-      canvas: {
-        ...canvas.value,
-        // 视口状态不持久化,用默认值占位,加载时 resetViewport 会覆盖
-        zoom: DEFAULT_ZOOM,
-        scrollX: DEFAULT_VIEWPORT_OFFSET.x,
-        scrollY: DEFAULT_VIEWPORT_OFFSET.y,
-      },
-      components: JSON.parse(JSON.stringify(components.value)),
-      guides: JSON.parse(JSON.stringify(guides.value)),
-    }
+    return serializeEditorLayout(canvas.value, components.value, guides.value)
   }
 
   /**
    * 将 DashboardLayout 应用到当前编辑器状态。
-   * 通过 isLoading 标志拦截脏状态检测 watch,避免恢复过程被误判为用户改动。
-   * 🔑 迁移逻辑:老看板的 ComponentInstance 没有 dataSource/dataConfig 字段,统一补默认值。
+   * 通过 isLoading 标志拦截脏状态检测 watch, 避免恢复过程被误判为用户改动。
    */
   function applyLayout(layout: DashboardLayout) {
-    isLoading.value = true
-    // 迁移组件:给老组件补 dataSource/dataConfig 默认值(向后兼容)
-    components.value = (layout.components ?? []).map((c) => ({
-      ...c,
-      dataSource: c.dataSource ?? { datasetId: null },
-      dataConfig: c.dataConfig ?? {},
-      style: c.style ?? {},
-      visible: c.visible ?? true,
-    }))
-    canvas.value = { ...canvas.value, ...layout.canvas }
-    guides.value = layout.guides ?? []
-    selectedId.value = null
-    clearHistory()
-    resetViewport()
-    // nextTick 后重置标志:确保 watch 的 deep 回调(微任务)先跑完再放开
-    nextTick(() => {
-      isLoading.value = false
-      isDirty.value = false
+    applyEditorLayout(layout, {
+      canvas,
+      components,
+      guides,
+      selectedId,
+      isLoading,
+      isDirty,
+      clearHistory,
+      resetViewport,
     })
   }
 
@@ -166,15 +133,10 @@ export function createEditorSession(deps: EditorSessionDeps): EditorSessionApi {
       isTemplateMode.value = false
       currentTemplateId.value = null
       dashboardName.value = res.data.name
-      const layout = (res.data.layout ?? {
-        version: '1.0',
-        components: [],
-        canvas: canvas.value,
-        guides: [],
-      }) as unknown as DashboardLayout
+      const layout = (res.data.layout ?? emptyLayout(canvas.value)) as unknown as DashboardLayout
       applyLayout(layout)
     } catch (e) {
-      // applyLayout 未执行时手动重置 isLoading,避免标志卡死
+      // applyLayout 未执行时手动重置 isLoading, 避免标志卡死
       isLoading.value = false
       throw e
     }
@@ -194,7 +156,7 @@ export function createEditorSession(deps: EditorSessionDeps): EditorSessionApi {
     if (isSaving.value) return
     isSaving.value = true
     // 🔑 新建保存成功后 currentDashboardId 会变，草稿 key 也会变，先记下原 key
-    const draftKey = draftStorageKey()
+    const draftKey = currentDraftKey()
     try {
       // 🔑 保存前截取画布快照作为缩略图（失败不阻断保存）
       let thumbnail: string | undefined
@@ -220,7 +182,10 @@ export function createEditorSession(deps: EditorSessionDeps): EditorSessionApi {
           currentDashboardId.value = res.data.id
           dashboardVersion.value = res.data.version ?? 1
         } else {
-          const res = await updateDashboard(currentDashboardId.value, buildPayload(withVersion))
+          const res = await updateDashboard(
+            currentDashboardId.value,
+            buildPayload(withVersion),
+          )
           if (typeof res.data.version === 'number') dashboardVersion.value = res.data.version
         }
       }
@@ -251,51 +216,31 @@ export function createEditorSession(deps: EditorSessionDeps): EditorSessionApi {
     }
   }
 
-  /** 草稿 key 按「看板/模板 + id（新建为 new）」区分，避免不同看板互相覆盖 */
-  function draftStorageKey(): string {
-    const mode = isTemplateMode.value ? 'tpl' : 'dash'
+  function currentDraftKey(): string {
     const id = isTemplateMode.value ? currentTemplateId.value : currentDashboardId.value
-    return `${DRAFT_PREFIX}${mode}_${id ?? 'new'}`
+    return draftStorageKey(isTemplateMode.value, id)
   }
 
   /** 保存草稿：无改动或正在加载时跳过 */
   function saveDraft(): boolean {
     if (!isDirty.value || isLoading.value) return false
-    try {
-      const draft: EditorDraft = {
-        savedAt: Date.now(),
-        name: dashboardName.value,
-        layout: serializeLayout(),
-        version: dashboardVersion.value,
-      }
-      localStorage.setItem(draftStorageKey(), JSON.stringify(draft))
-      return true
-    } catch (e) {
-      console.warn('[bi-editor] saveDraft failed', e)
-      return false
+    const draft: EditorDraft = {
+      savedAt: Date.now(),
+      name: dashboardName.value,
+      layout: serializeLayout(),
+      version: dashboardVersion.value,
     }
+    return writeDraft(currentDraftKey(), draft)
   }
 
   /** 读取当前会话对应的草稿，不存在或格式非法返回 null */
   function loadDraft(): EditorDraft | null {
-    try {
-      const raw = localStorage.getItem(draftStorageKey())
-      if (!raw) return null
-      const draft = JSON.parse(raw) as EditorDraft
-      if (!draft || typeof draft.savedAt !== 'number' || !draft.layout) return null
-      return draft
-    } catch {
-      return null
-    }
+    return readDraft(currentDraftKey())
   }
 
   /** 清除草稿；默认清除当前会话草稿，也可指定保存前的 key（新建成功后 id 会变） */
-  function clearDraft(key: string = draftStorageKey()): void {
-    try {
-      localStorage.removeItem(key)
-    } catch {
-      /* ignore */
-    }
+  function clearDraft(key: string = currentDraftKey()): void {
+    removeDraft(key)
   }
 
   /** 恢复草稿内容到编辑器，并标记为未保存改动 */
@@ -362,12 +307,7 @@ export function createEditorSession(deps: EditorSessionDeps): EditorSessionApi {
       templateDescription.value = res.data.description ?? ''
       templateCategory.value = res.data.category ?? undefined
       templateIsPublic.value = res.data.isPublic ?? true
-      const layout = (res.data.layout ?? {
-        version: '1.0',
-        components: [],
-        canvas: canvas.value,
-        guides: [],
-      }) as unknown as DashboardLayout
+      const layout = (res.data.layout ?? emptyLayout(canvas.value)) as unknown as DashboardLayout
       applyLayout(layout)
     } catch (e) {
       isLoading.value = false
@@ -384,7 +324,7 @@ export function createEditorSession(deps: EditorSessionDeps): EditorSessionApi {
     if (isSaving.value) return null
     isSaving.value = true
     // 🔑 新建成功后会写入 currentTemplateId，草稿 key 随之变化，先记下原 key
-    const draftKey = draftStorageKey()
+    const draftKey = currentDraftKey()
     try {
       templateDescription.value = input.description ?? ''
       templateCategory.value = input.category

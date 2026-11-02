@@ -1,0 +1,138 @@
+.canvas-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bi-canvas-bg, #374151);
+  overflow: hidden;
+  position: relative;
+  cursor: default;
+  user-select: none;
+}
+.canvas-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  background-image: radial-gradient(
+    circle,
+    var(--bi-canvas-grid-dot-color, rgba(209, 213, 219, 0.45)) 1.2px,
+    transparent 1.2px
+  );
+  background-size: 24px 24px;
+}
+.canvas-container.show-dots::before {
+  opacity: 1;
+}
+.canvas-container.pan-cursor {
+  cursor: grab;
+}
+
+.canvas-layout {
+  position: absolute;
+  inset: 0 0 28px 0;
+  z-index: 1;
+  /* --ruler 变量取值：标尺显示时 42px，隐藏时 0px。由 layoutStyle 注入。 */
+}
+.ruler-corner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--ruler, 0px);
+  height: var(--ruler, 0px);
+  background: var(--bi-ruler-bg, #1f2937);
+  border-right: 1px solid var(--bi-ruler-border, #4b5563);
+  border-bottom: 1px solid var(--bi-ruler-border, #4b5563);
+  z-index: 3;
+}
+.ruler-horizontal {
+  position: absolute;
+  top: 0;
+  left: var(--ruler, 0px);
+  right: 0;
+  height: var(--ruler, 0px);
+  border-bottom: 1px solid var(--bi-ruler-border, #4b5563);
+  background: var(--bi-header-bg, #374151);
+  z-index: 2;
+}
+.ruler-vertical {
+  position: absolute;
+  left: 0;
+  top: var(--ruler, 0px);
+  bottom: 0;
+  width: var(--ruler, 0px);
+  border-right: 1px solid var(--bi-ruler-border, #4b5563);
+  background: var(--bi-header-bg, #374151);
+  z-index: 2;
+}
+.canvas-viewport {
+  position: absolute;
+  left: var(--ruler, 0px);
+  top: var(--ruler, 0px);
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  background: transparent;
+  z-index: 1;
+}
+
+.canvas-transform-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+  transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.canvas-offset-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.canvas-sheet {
+  position: absolute;
+  box-shadow:
+    0 0 0 1px rgba(55, 65, 81, 0.5),
+    0 8px 24px rgba(0, 0, 0, 0.15);
+  background-color: var(--bi-sheet-bg, rgba(255, 255, 255, 0.96));
+  overflow: visible;
+  user-select: none;
+}
+
+/* 🔑 pan-mode：空格键/中键平移画布时，通过 CSS 一次性禁用所有组件的 pointer-events */
+.canvas-sheet.pan-mode .component-layout-box {
+  pointer-events: none;
+}
+.canvas-sheet.pan-mode .canvas-component-wrapper-inner {
+  cursor: grab !important;
+}
+
+/* 🔑 框选 marquee 矩形样式：半透明蓝色填充 + 虚线边框 */
+.marquee-rect {
+  border: 1.5px dashed rgba(64, 158, 255, 0.95);
+  background: rgba(64, 158, 255, 0.12);
+  border-radius: 2px;
+  box-sizing: border-box;
+  backdrop-filter: blur(0.4px);
+}
+
+.empty-canvas {
+  position: absolute;
+  inset: 42px 0 28px 0;
+  left: 42px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  pointer-events: none;
+  z-index: 10;
+}
+.empty-canvas p {
+  color: var(--bi-text-muted, #9ca3af);
+  font-size: 14px;
+}

@@ -1,12 +1,16 @@
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount, type Ref } from 'vue'
+import { ref, computed, watch, nextTick, onBeforeUnmount, type Ref } from 'vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
+import { RULER_SIZE, DEFAULT_VIEWPORT_OFFSET } from '@/views/bi-editor/constants/canvas-constants'
+import { useCanvasPan } from './useCanvasPan'
+import { useCanvasWheel } from './useCanvasWheel'
 import {
-  RULER_SIZE,
-  DISPLAY_OFFSET,
-  MIN_ZOOM,
-  MAX_ZOOM,
-  DEFAULT_VIEWPORT_OFFSET,
-} from '@/views/bi-editor/constants/canvas-constants'
+  clampZoom,
+  screenToWorldPoint,
+  zoomAtAnchor,
+  buildLayoutStyle,
+  buildTransformLayerStyle,
+  buildOffsetLayerStyle,
+} from './canvas-transform-utils'
 
 export interface UseCanvasTransformOptions {
   /** Extra callback invoked when the user presses Escape (e.g. to abort ongoing resize). */
@@ -36,61 +40,40 @@ export function useCanvasTransform(options: UseCanvasTransformOptions = {}) {
 
   // ========== Transform state ==========
   const localScale = ref(store.canvas.zoom)
-  // 画布视图的默认平移偏移：决定 canvas-sheet 的业务 (0,0) 点相对于 viewport 左上角的屏幕距离；
-  // 同时决定标尺「0 刻度」对齐 viewport 边缘的偏移量（scale=1 时 rulerScrollPos = -localOffset）。
-  // 🔑 取值来自 DEFAULT_VIEWPORT_OFFSET 常量，与 store init / resetViewport 共用同一份配置。
+  // 画布视图的默认平移偏移：决定 canvas-sheet 的业务 (0,0) 点相对于 viewport 左上角的屏幕距离
   const localOffset = ref({ ...DEFAULT_VIEWPORT_OFFSET })
-  // 🔑 初始化立刻双向对齐：保证任何组件（含 history.clearHistory → createSnapshot）在读取
-  //   store.canvas.scrollX / scrollY 时，值与 localOffset 完全一致，避免第一次快照存错偏移。
+  // 🔑 初始化立刻双向对齐，避免第一次历史快照存错偏移
   store.canvas.scrollX = localOffset.value.x
   store.canvas.scrollY = localOffset.value.y
 
   // ========== Pan mode state ==========
-  const isSpacePressed = ref(false)
-  const isMiddlePressed = ref(false)
-  const isPanning = ref(false)
-  let panStartPos = { x: 0, y: 0 }
-  let panStartOffset = { x: 0, y: 0 }
-  let panMouseMoveHandler: ((e: MouseEvent) => void) | null = null
-  let panMouseUpHandler: ((e?: MouseEvent) => void) | null = null
+  const {
+    isSpacePressed,
+    isMiddlePressed,
+    isPanning,
+    startPan,
+    abortPan,
+    handleContainerMouseDown,
+  } = useCanvasPan({
+    localOffset,
+    onEscape: options.onEscape,
+  })
 
   // ========== Layout sizes (absolute positioning via CSS custom property) ==========
-  const layoutStyle = computed(() => {
-    const ruler = store.canvas.showRuler ? RULER_SIZE : 0
-    // 🔑 不再使用 display:grid + grid-template（会被 v-if/v-show 子元素删除触发 grid 推断错误），
-    //    改为通过 --ruler CSS 自定义变量控制所有子元素的绝对定位坐标。
-    //    ruler=42 时 viewport 左上角在 (42,42)；ruler=0 时 viewport 顶满整个布局。
-    return {
-      '--ruler': `${ruler}px`,
-    } as Record<string, string>
-  })
+  const layoutStyle = computed(() => buildLayoutStyle(store.canvas.showRuler))
 
   const viewportStyle = {}
 
   // ========== Coordinate math ==========
   function screenToWorld(sx: number, sy: number) {
-    const s = localScale.value
-    return {
-      x: (sx - localOffset.value.x) / s,
-      y: (sy - localOffset.value.y) / s,
-    }
+    return screenToWorldPoint(sx, sy, localScale.value, localOffset.value)
   }
 
   // ========== Transform layer style ==========
-  const transformLayerStyle = computed(() => {
-    const s = localScale.value
-    const tx = localOffset.value.x - DISPLAY_OFFSET * s
-    const ty = localOffset.value.y - DISPLAY_OFFSET * s
-    return {
-      transform: `translate3d(${tx}px, ${ty}px, 0) scale(${s})`,
-      transformOrigin: '0 0',
-      width: '0px',
-      height: '0px',
-    }
-  })
-  const offsetLayerStyle = computed(() => ({
-    transform: `translate(${DISPLAY_OFFSET}px, ${DISPLAY_OFFSET}px)`,
-  }))
+  const transformLayerStyle = computed(() =>
+    buildTransformLayerStyle(localScale.value, localOffset.value),
+  )
+  const offsetLayerStyle = computed(() => buildOffsetLayerStyle())
 
   // ========== Scale sync (store <-> local) ==========
   watch(
@@ -103,20 +86,9 @@ export function useCanvasTransform(options: UseCanvasTransformOptions = {}) {
   )
 
   // ========== Offset sync (store.canvas.scrollX/scrollY <-> localOffset) ==========
-  //
-  // 🔑 为什么需要：
-  //   历史记录 snapshot.canvas 里包含 scrollX / scrollY（CanvasState 定义的字段）。
-  //   restoreSnapshot 整体替换 canvas.value 后，scrollX/scrollY 会回到快照时刻的值，
-  //   如果没有这段双向同步，localOffset（真实驱动 transform 平移的内部 ref）不会更新，
-  //   表现为：撤销 / 重做后，组件回到了之前的位置，但视口没回去，用户找不到内容。
-  //
-  // 这里用「双 watcher + 阈值」模式：
-  //   - localOffset 改 → 同步到 store.canvas.scrollX/scrollY（不写历史，因为 setZoomLocal 也不写）
-  //   - store.canvas.scrollX/Y 改（例如 restoreSnapshot） → 同步回 localOffset（阈值判断避免死循环）
+  // 🔑 撤销 / 重做后 restoreSnapshot 整体替换 canvas.value，需要双向同步视口偏移。
   let suppressOffsetSync = false
-  // 🔑 性能优化：字符串签名替代 deep watch。
-  //   localOffset 是 {x,y} 对象，平移时原地修改 x/y 属性（非引用替换），
-  //   deep watch 会遍历全部属性建立依赖；签名式直接读 x/y 拼接比较。
+  // 🔑 字符串签名替代 deep watch
   watch(
     () => `${localOffset.value.x}_${localOffset.value.y}`,
     () => {
@@ -148,17 +120,13 @@ export function useCanvasTransform(options: UseCanvasTransformOptions = {}) {
   )
 
   function setZoomLocal(next: number, anchor?: { screenX: number; screenY: number }) {
-    const clamped = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, next))
+    const clamped = clampZoom(next)
     const prev = localScale.value
     if (Math.abs(prev - clamped) < 0.0001) return
     if (anchor) {
-      const before = screenToWorld(anchor.screenX, anchor.screenY)
-      localScale.value = clamped
-      const s = clamped
-      localOffset.value = {
-        x: anchor.screenX - before.x * s,
-        y: anchor.screenY - before.y * s,
-      }
+      const nextView = zoomAtAnchor(clamped, anchor, prev, localOffset.value)
+      localScale.value = nextView.scale
+      localOffset.value = nextView.offset
     } else {
       localScale.value = clamped
     }
@@ -168,184 +136,16 @@ export function useCanvasTransform(options: UseCanvasTransformOptions = {}) {
   }
 
   // ========== Wheel: pan (unmodified) / zoom (Ctrl/Cmd+wheel) ==========
-  // 🔑 rAF 节流：trackpad/鼠标滚轮事件可高达 120Hz，每帧直接更新 localOffset/localScale
-  //   会触发大量 reactive 计算和 DOM style patch。用 rAF + delta 累积将同一帧内的
-  //   多次 wheel 事件合并为一次状态更新，显著降低渲染压力。
-  let wheelRafId: number | null = null
-  let wheelBuffer = {
-    deltaX: 0,
-    deltaY: 0,
-    ctrlKey: false,
-    metaKey: false,
-    shiftKey: false,
-    anchorX: 0,
-    anchorY: 0,
-    hasAnchor: false,
-  }
-
-  function flushWheel() {
-    wheelRafId = null
-    const buf = wheelBuffer
-
-    if (buf.ctrlKey || buf.metaKey) {
-      if (buf.hasAnchor) {
-        const factor = Math.exp(-buf.deltaY * 0.0015)
-        setZoomLocal(localScale.value * factor, {
-          screenX: buf.anchorX,
-          screenY: buf.anchorY,
-        })
-      }
-    } else {
-      const scrollSpeed = 1.5
-      if (buf.shiftKey) {
-        localOffset.value = {
-          ...localOffset.value,
-          x: localOffset.value.x - buf.deltaY * scrollSpeed,
-        }
-      } else {
-        const hasHorizontal = Math.abs(buf.deltaX) > Math.abs(buf.deltaY)
-        localOffset.value = {
-          x: localOffset.value.x - (hasHorizontal ? buf.deltaX : 0) * scrollSpeed,
-          y: localOffset.value.y - (hasHorizontal ? 0 : buf.deltaY) * scrollSpeed,
-        }
-      }
-    }
-
-    // 重置 buffer
-    wheelBuffer = {
-      deltaX: 0,
-      deltaY: 0,
-      ctrlKey: false,
-      metaKey: false,
-      shiftKey: false,
-      anchorX: 0,
-      anchorY: 0,
-      hasAnchor: false,
-    }
-  }
-
-  function handleWheel(e: WheelEvent) {
-    const viewport = viewportRef.value
-    if (!viewport) return
-
-    // 🔑 滚轮交互隔离：仅当滚轮事件发生在「选中态组件」的内容区内部时，交给组件自己处理。
-    //   典型场景：ECharts inside 型 dataZoom 需要在图表 canvas 上响应滚轮来缩放数据区，
-    //   但 CanvasArea 在 capture 阶段拦截 wheel 并做画布 zoom/pan，导致两者同时触发
-    //   → 画布缩放叠加数据缩放，交互混乱。
-    //   修复：如果 target 位于 选中态组件(.selected) 的 .component-content 内部，则：
-    //   1) 仍然 preventDefault → 防止浏览器层面的页面滚动（编辑器视口内部不需要）
-    //   2) 不 stopPropagation → 让事件继续向下传递到 ECharts/table 等组件内部监听器
-    //   3) 不累积 wheelBuffer → 画布不做任何缩放 / 平移，避免与 inside dataZoom 冲突
-    //   🔑 未选中组件不隔离滚轮 → 鼠标停在未选中组件上仍可滚动画布
-    if (e.target && (e.target as HTMLElement).closest?.('.canvas-component-wrapper-inner.selected.has-dz .component-content')) {
-      e.preventDefault()
-      return
-    }
-
-    e.preventDefault()
-    e.stopPropagation()
-
-    // 累积 delta 到 buffer
-    if (e.ctrlKey || e.metaKey) {
-      if (!wheelBuffer.hasAnchor) {
-        const rect = viewport.getBoundingClientRect()
-        wheelBuffer.anchorX = e.clientX - rect.left
-        wheelBuffer.anchorY = e.clientY - rect.top
-        wheelBuffer.hasAnchor = true
-      }
-      wheelBuffer.ctrlKey = true
-      wheelBuffer.metaKey = e.metaKey
-      wheelBuffer.deltaY += e.deltaY
-    } else {
-      wheelBuffer.shiftKey = e.shiftKey
-      if (e.shiftKey) {
-        wheelBuffer.deltaY += e.deltaY
-      } else {
-        const hasHorizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY)
-        if (hasHorizontal) {
-          wheelBuffer.deltaX += e.deltaX
-        } else {
-          wheelBuffer.deltaY += e.deltaY
-        }
-      }
-    }
-
-    // 同一帧内已有 rAF pending 则跳过，只累积 delta
-    if (wheelRafId !== null) return
-    wheelRafId = requestAnimationFrame(flushWheel)
-  }
-
-  // ========== Pan mode (Space + drag or Middle-click drag) ==========
-  function startPan(e: MouseEvent) {
-    e.preventDefault()
-    isPanning.value = true
-    isMiddlePressed.value = e.button === 1 || isMiddlePressed.value
-    panStartPos = { x: e.clientX, y: e.clientY }
-    panStartOffset = { ...localOffset.value }
-
-    panMouseMoveHandler = (ev: MouseEvent) => {
-      if (!isPanning.value) return
-      const deltaX = ev.clientX - panStartPos.x
-      const deltaY = ev.clientY - panStartPos.y
-      localOffset.value = {
-        x: panStartOffset.x + deltaX,
-        y: panStartOffset.y + deltaY,
-      }
-    }
-    panMouseUpHandler = () => {
-      isPanning.value = false
-      isMiddlePressed.value = false
-      if (panMouseMoveHandler) {
-        document.removeEventListener('mousemove', panMouseMoveHandler)
-        panMouseMoveHandler = null
-      }
-      if (panMouseUpHandler) {
-        document.removeEventListener('mouseup', panMouseUpHandler)
-        panMouseUpHandler = null
-      }
-    }
-    document.addEventListener('mousemove', panMouseMoveHandler)
-    document.addEventListener('mouseup', panMouseUpHandler)
-  }
-
-  function abortPan() {
-    panMouseUpHandler?.()
-  }
-
-  function handleContainerMouseDown(e: MouseEvent) {
-    if (e.button === 1 || (e.button === 0 && isSpacePressed.value)) {
-      startPan(e)
-    }
-  }
-
-  // ========== Space key tracking ==========
-  function handleKeyDown(e: KeyboardEvent) {
-    const tag = (e.target as HTMLElement)?.tagName
-    const isInput =
-      tag === 'INPUT' ||
-      tag === 'TEXTAREA' ||
-      tag === 'SELECT' ||
-      (e.target as HTMLElement)?.isContentEditable
-    if (e.code === 'Space' && !e.repeat && !isInput) {
-      isSpacePressed.value = true
-      e.preventDefault()
-    }
-    if (e.code === 'Escape') {
-      panMouseUpHandler?.()
-      options.onEscape?.()
-    }
-  }
-  function handleKeyUp(e: KeyboardEvent) {
-    if (e.code === 'Space') {
-      isSpacePressed.value = false
-    }
-  }
+  const { handleWheel } = useCanvasWheel({
+    viewportRef,
+    localScale,
+    localOffset,
+    setZoomLocal,
+  })
 
   /**
    * 重新计算 viewport 宽高。
-   * 注意：ResizeObserver 只在「容器尺寸真正变化」时触发；
-   * 当用户只是切换 showRuler（容器本身尺寸没变）时不会触发，
-   * 必须主动调用该函数确保 viewportWidth/Height 同步。
+   * ResizeObserver 只在容器尺寸真正变化时触发；切换 showRuler 时需主动调用。
    */
   function updateViewportDimensions(onResize?: () => void) {
     if (!containerRef.value) return
@@ -371,13 +171,11 @@ export function useCanvasTransform(options: UseCanvasTransformOptions = {}) {
       }
     })
     resizeObserver.observe(containerRef.value)
-    // 🔑 首次启动立刻测量一次（避免 mount 瞬间 viewportWidth/Height 还是默认的 1400/800）
+    // 🔑 首次启动立刻测量一次，避免 mount 瞬间宽高还是默认值
     updateViewportDimensions(onResize)
   }
 
-  // 当标尺显示开关切换时：grid 布局会变（ruler 列宽/行高在 42px ↔ 0px 之间切换），
-  // 但 containerRef 自身尺寸没变，所以 ResizeObserver 不会触发，必须手动重算一次 viewport 尺寸，
-  // 并在 nextTick 后重绘 rulers/guides 避免瞬间 0 宽高。
+  // 标尺显示开关切换时容器自身尺寸不变，ResizeObserver 不会触发，需手动重算
   watch(
     () => store.canvas.showRuler,
     () => {
@@ -393,26 +191,8 @@ export function useCanvasTransform(options: UseCanvasTransformOptions = {}) {
     }
   }
 
-  onMounted(() => {
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
-  })
-
   onBeforeUnmount(() => {
     stopViewportObserver()
-    // 🔑 清理 wheel rAF，防止组件卸载后仍触发 flushWheel
-    if (wheelRafId !== null) {
-      cancelAnimationFrame(wheelRafId)
-      wheelRafId = null
-    }
-    window.removeEventListener('keydown', handleKeyDown)
-    window.removeEventListener('keyup', handleKeyUp)
-    if (panMouseMoveHandler) {
-      document.removeEventListener('mousemove', panMouseMoveHandler)
-    }
-    if (panMouseUpHandler) {
-      document.removeEventListener('mouseup', panMouseUpHandler)
-    }
   })
 
   return {
