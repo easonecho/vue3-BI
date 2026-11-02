@@ -2,6 +2,10 @@
 
 This template should help get you started developing with Vue 3 in Vite.
 
+## 项目文档
+
+- [项目结构文档（拆分后）](docs/PROJECT_STRUCTURE.md)：目录分层、业务域结构、依赖规则、拆分记录与验证命令。
+
 ## Recommended IDE Setup
 
 [VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
