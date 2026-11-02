@@ -1,0 +1,53 @@
+import type { PropField } from '../props'
+
+/** 🔑 图表动画配置 Schema（chartCommonSchema 的「动画」分组） */
+export const chartAnimationSchema: PropField[] = [
+  // ============ 动画 Animation ============
+  { key: 'animationShow', label: '开启动画', type: 'switch', default: true, group: '动画' },
+  {
+    key: 'animationDuration',
+    label: '动画时长 (ms)',
+    type: 'slider',
+    min: 0,
+    max: 3000,
+    step: 100,
+    default: 600,
+    group: '动画',
+    visibleWhen: { field: 'animationShow', truthy: true },
+  },
+  {
+    key: 'animationEasing',
+    label: '缓动效果',
+    type: 'select',
+    options: [
+      { label: '线性', value: 'linear' },
+      { label: '二次方-渐入', value: 'quadraticIn' },
+      { label: '二次方-渐出', value: 'quadraticOut' },
+      { label: '二次方-渐入渐出', value: 'quadraticInOut' },
+      { label: '三次方-渐入', value: 'cubicIn' },
+      { label: '三次方-渐出', value: 'cubicOut' },
+      { label: '三次方-渐入渐出', value: 'cubicInOut' },
+      { label: '正弦-渐入', value: 'sinusoidalIn' },
+      { label: '正弦-渐出', value: 'sinusoidalOut' },
+      { label: '正弦-渐入渐出', value: 'sinusoidalInOut' },
+      { label: '指数-渐入', value: 'exponentialIn' },
+      { label: '指数-渐出', value: 'exponentialOut' },
+      { label: '指数-渐入渐出', value: 'exponentialInOut' },
+      { label: '圆形-渐入', value: 'circularIn' },
+      { label: '圆形-渐出', value: 'circularOut' },
+      { label: '圆形-渐入渐出', value: 'circularInOut' },
+      { label: '弹性-渐入', value: 'elasticIn' },
+      { label: '弹性-渐出', value: 'elasticOut' },
+      { label: '弹性-渐入渐出', value: 'elasticInOut' },
+      { label: '回弹-渐入', value: 'backIn' },
+      { label: '回弹-渐出', value: 'backOut' },
+      { label: '回弹-渐入渐出', value: 'backInOut' },
+      { label: '弹跳-渐入', value: 'bounceIn' },
+      { label: '弹跳-渐出', value: 'bounceOut' },
+      { label: '弹跳-渐入渐出', value: 'bounceInOut' },
+    ],
+    default: 'cubicOut',
+    group: '动画',
+    visibleWhen: { field: 'animationShow', truthy: true },
+  },
+]
