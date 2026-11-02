@@ -62,11 +62,11 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted } from 'vue'
 import { Loading, WarningFilled } from '@element-plus/icons-vue'
-import ScreenKpiCards from './ScreenKpiCards.vue'
-import ScreenRatePanel from './ScreenRatePanel.vue'
-import ScreenRankingPanel from './ScreenRankingPanel.vue'
-import { useScreenCharts } from './useScreenCharts'
-import { useScreenDashboard } from './useScreenDashboard'
+import ScreenKpiCards from './components/ScreenKpiCards.vue'
+import ScreenRatePanel from './components/ScreenRatePanel.vue'
+import ScreenRankingPanel from './components/ScreenRankingPanel.vue'
+import { useScreenCharts } from './composables/useScreenCharts'
+import { useScreenDashboard } from './composables/useScreenDashboard'
 
 const { pieRef, lineRef, barRef, renderPie, renderLine, renderBar, resize, dispose } =
   useScreenCharts()
@@ -104,5 +104,5 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped lang="less">
-@import './screen.less';
+@import './styles/screen.less';
 </style>

@@ -63,7 +63,7 @@ import {
   formatTime,
   typeLabel,
   typeTagType,
-} from '../material-utils'
+} from '../utils/material-utils'
 
 defineProps<{ material: Material }>()
 

@@ -18,7 +18,7 @@ import {
   rulerScrollPos,
   formatRulerLabel,
   pickRulerUnit,
-} from './ruler-guides-utils'
+} from '../utils/ruler-guides-utils'
 
 export interface UseRulerGuidesDeps {
   localScale: Ref<number>

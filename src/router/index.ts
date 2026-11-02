@@ -63,7 +63,7 @@ const router = createRouter({
         {
           path: 'system/users',
           name: 'SystemUsers',
-          component: () => import('@/views/system/users.vue'),
+          component: () => import('@/views/system/users/index.vue'),
           meta: {
             title: '用户管理',
             requiresAuth: true,
@@ -128,7 +128,7 @@ const router = createRouter({
         {
           path: 'system/datasets',
           name: 'SystemDatasets',
-          component: () => import('@/views/system/datasets.vue'),
+          component: () => import('@/views/system/datasets/index.vue'),
           meta: {
             title: '数据集管理',
             requiresAuth: true,

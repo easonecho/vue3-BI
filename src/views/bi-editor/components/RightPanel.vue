@@ -41,7 +41,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { ArrowLeft as Left, ArrowRight as Right } from '@element-plus/icons-vue'
-import DataBindingPanel from './DataBindingPanel.vue'
+import DataBindingPanel from './property/DataBindingPanel.vue'
 import PropsTab from './right-panel/PropsTab.vue'
 import StyleTab from './right-panel/StyleTab.vue'
 import CanvasTab from './right-panel/CanvasTab.vue'

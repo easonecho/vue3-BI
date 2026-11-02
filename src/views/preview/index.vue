@@ -49,11 +49,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { Menu } from '@element-plus/icons-vue'
-import DashboardScreen from './DashboardScreen.vue'
-import PreviewToolbar from './PreviewToolbar.vue'
-import { usePreviewSession } from './usePreviewSession'
-import { usePreviewToolbar } from './usePreviewToolbar'
-import { generateTemplateThumbnail } from './useTemplateThumbnail'
+import DashboardScreen from './components/DashboardScreen.vue'
+import PreviewToolbar from './components/PreviewToolbar.vue'
+import { usePreviewSession } from './composables/usePreviewSession'
+import { usePreviewToolbar } from './composables/usePreviewToolbar'
+import { generateTemplateThumbnail } from './composables/useTemplateThumbnail'
 
 const previewRootRef = ref<HTMLElement | null>(null)
 
@@ -74,5 +74,5 @@ const {
 </script>
 
 <style scoped lang="less">
-@import './preview.less';
+@import './styles/preview.less';
 </style>

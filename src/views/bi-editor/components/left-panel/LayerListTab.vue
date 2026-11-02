@@ -87,8 +87,8 @@
 
 <script setup lang="ts">
 import { Search, View, Hide, Lock, Unlock } from '@element-plus/icons-vue'
-import ComponentRenderer from '../ComponentRenderer.vue'
-import ContextMenu from '../ContextMenu.vue'
+import ComponentRenderer from '../canvas/ComponentRenderer.vue'
+import ContextMenu from '../canvas/ContextMenu.vue'
 import { useLayerList } from './useLayerList'
 
 const {

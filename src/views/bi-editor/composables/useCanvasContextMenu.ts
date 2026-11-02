@@ -15,8 +15,8 @@ import {
 } from '@element-plus/icons-vue'
 import type { useBiEditorStore } from '@/stores/bi-editor'
 import type { GuideLine } from '@/views/bi-editor/types'
-import ContextMenu from '@/views/bi-editor/components/ContextMenu.vue'
-import type { ContextMenuGroups } from '@/views/bi-editor/components/ContextMenu.vue'
+import ContextMenu from '@/views/bi-editor/components/canvas/ContextMenu.vue'
+import type { ContextMenuGroups } from '@/views/bi-editor/components/canvas/ContextMenu.vue'
 
 type BiEditorStore = ReturnType<typeof useBiEditorStore>
 

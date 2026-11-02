@@ -60,7 +60,7 @@
 <script setup lang="ts">
 import { Download, Box } from '@element-plus/icons-vue'
 import type { Material } from '@/api/material'
-import { formatSize, formatTime, typeLabel } from '../material-utils'
+import { formatSize, formatTime, typeLabel } from '../utils/material-utils'
 
 const props = defineProps<{ material: Material | null }>()
 

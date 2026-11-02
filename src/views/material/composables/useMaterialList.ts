@@ -6,7 +6,7 @@ import {
   type Material,
   type MaterialType,
 } from '@/api/material'
-import { errorMessage } from '../material-utils'
+import { errorMessage } from '../utils/material-utils'
 
 /**
  * 🔑 素材列表 / 筛选 / 分页 / 删除逻辑。

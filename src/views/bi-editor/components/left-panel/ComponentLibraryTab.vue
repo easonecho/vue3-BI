@@ -46,7 +46,7 @@ import {
   CATEGORY_KEYS,
   getDefaultProps,
 } from '@/views/bi-editor/component-defs'
-import ComponentRenderer from '../ComponentRenderer.vue'
+import ComponentRenderer from '../canvas/ComponentRenderer.vue'
 import { preloadComponent } from '@/views/bi-editor/component-defs/registry'
 
 const props = defineProps<{

@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 import type { DashboardVersion } from '@/api/dashboard-version'
-import { formatVersionTime } from '../dashboard-version-utils'
+import { formatVersionTime } from '../utils/dashboard-version-utils'
 
 defineProps<{
   versions: DashboardVersion[]

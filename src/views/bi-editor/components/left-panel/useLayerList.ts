@@ -1,7 +1,7 @@
 import { computed, nextTick, ref } from 'vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 import { useBiEditorStore } from '@/stores/bi-editor'
-import ContextMenu from '../ContextMenu.vue'
+import ContextMenu from '../canvas/ContextMenu.vue'
 import { buildLayerContextMenu, previewScaleStyle } from './layer-list-utils'
 
 /**

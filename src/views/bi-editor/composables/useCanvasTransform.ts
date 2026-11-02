@@ -10,7 +10,7 @@ import {
   buildLayoutStyle,
   buildTransformLayerStyle,
   buildOffsetLayerStyle,
-} from './canvas-transform-utils'
+} from '../utils/canvas-transform-utils'
 
 export interface UseCanvasTransformOptions {
   /** Extra callback invoked when the user presses Escape (e.g. to abort ongoing resize). */

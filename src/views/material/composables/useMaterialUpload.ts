@@ -5,7 +5,7 @@ import {
   errorMessage,
   fileBaseName,
   inferMaterialType,
-} from '../material-utils'
+} from '../utils/material-utils'
 
 export interface MaterialUploadDeps {
   /** 上传成功后的回调（关闭对话框、通知父级刷新列表） */

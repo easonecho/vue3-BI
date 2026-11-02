@@ -43,7 +43,7 @@ import {
   countComponents,
   formatCanvasSize,
   formatVersionTime,
-} from '../dashboard-version-utils'
+} from '../utils/dashboard-version-utils'
 
 const props = defineProps<{
   detail: DashboardVersion | null

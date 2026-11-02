@@ -57,7 +57,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { Lock, Key } from '@element-plus/icons-vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import { useLinkageStore } from '@/stores/linkage'
-import CanvasArea from '@/views/bi-editor/components/CanvasArea.vue'
+import CanvasArea from '@/views/bi-editor/components/canvas/CanvasArea.vue'
 import { getPublicDashboard, verifyPublicDashboard, isPasswordRequired } from '@/api/share'
 import type { PublicDashboard } from '@/api/share'
 import {

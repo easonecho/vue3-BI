@@ -5,7 +5,7 @@
  *   import { login, getDashboardList } from '@/api'
  */
 export * as authApi from './auth'
-export * as userApi from './user.service'
+export * as userApi from './user'
 export * as datasourceApi from './datasource'
 export * as datasetApi from './dataset'
 export * as dashboardApi from './dashboard'
@@ -14,7 +14,7 @@ export * as exportApi from './export'
 
 // 同时保留命名导出便于按需引入
 export * from './auth'
-export * from './user.service'
+export * from './user'
 export * from './datasource'
 export * from './dataset'
 export * from './dashboard'
