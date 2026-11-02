@@ -9,7 +9,7 @@
     }"
     @wheel.capture="readonly ? undefined : handleWheel($event)"
     @mousedown="readonly ? undefined : handleContainerMouseDown($event)"
-    @dblclick="readonly ? undefined : onDblClickDelegation($event)"
+    @dblclick="readonly ? undefined : onCanvasDblClick($event)"
   >
     <div class="canvas-layout" :style="layoutStyle">
       <div v-if="!readonly && store.canvas.showRuler" class="ruler-corner" />
@@ -42,7 +42,7 @@
       @click="readonly ? undefined : handleEmptyAreaDelegation($event)"
       @mousedown="readonly ? undefined : handleSheetMouseDownDelegation($event)"
       @contextmenu.prevent="readonly ? undefined : onCanvasContextMenu($event)"
-      @dblclick="readonly ? undefined : handleDblClickDelegation($event)"
+      @dblclick="readonly ? undefined : onSheetDblClick($event)"
     >
               <CanvasSnapLines v-if="!readonly" :vertical="snapLines.vertical" :horizontal="snapLines.horizontal" />
 
@@ -125,8 +125,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import type { GuideLine } from '@/views/bi-editor/types'
-import { MIN_ZOOM, MAX_ZOOM } from '@/views/bi-editor/constants/canvas-constants'
 import { Plus } from '@element-plus/icons-vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import CanvasSnapLines from './CanvasSnapLines.vue'
@@ -140,6 +138,10 @@ import { useRulerGuides } from '@/views/bi-editor/composables/useRulerGuides'
 import { useCanvasInteraction } from '@/views/bi-editor/composables/useCanvasInteraction'
 import { useMarqueeSelect } from '@/views/bi-editor/composables/useMarqueeSelect'
 import { useCanvasContextMenu } from '@/views/bi-editor/composables/useCanvasContextMenu'
+import { useCanvasFit } from '@/views/bi-editor/composables/useCanvasFit'
+import { useViewportCulling } from '@/views/bi-editor/composables/useViewportCulling'
+import { useCanvasGroupDrag } from '@/views/bi-editor/composables/useCanvasGroupDrag'
+import { useCanvasExportPng } from '@/views/bi-editor/composables/useCanvasExportPng'
 
 const props = withDefaults(defineProps<{ readonly?: boolean }>(), { readonly: false })
 /** 模板和 script 都要用到 readonly prop，这里解构出来便于闭包直接访问 */
@@ -252,6 +254,15 @@ function clientToWorld(clientX: number, clientY: number) {
 // ========== Canvas sheet (logical canvas box + component carrier) ==========
 const canvasSheetRef = ref<HTMLElement | null>(null)
 
+// 自适应缩放 / 辅助线命中（内部注册 bi-editor:fit-to-screen 全局事件）
+const { hitTestGuide, onCanvasDblClick, onSheetDblClick } = useCanvasFit({
+  store,
+  containerRef,
+  readonly,
+  clientToWorld,
+  eventTouchesComponent,
+})
+
 // 框选交互（marquee / suppressClick / DOM 直改选中态）抽到 composable
 const { marquee, marqueeStyle, suppressClick, suppressNextClick, startMarquee, dispose } =
   useMarqueeSelect({
@@ -260,11 +271,34 @@ const { marquee, marqueeStyle, suppressClick, suppressNextClick, startMarquee, d
     clientToWorld,
   })
 
+// 分组整体拖拽（选中分组包围盒空白区 mousedown 时启动）
+const { startGroupDrag, dispose: disposeGroupDrag } = useCanvasGroupDrag({
+  store,
+  clientToWorld,
+  snapRectToGuides,
+  applySnapLines,
+  clearSnapLines,
+  resetSnapCache,
+  suppressNextClick,
+})
+
 // 右键菜单（组件 / 画布空白 / 辅助线）抽到 composable
-//   hitTestGuide 为函数声明，可提升，这里包一层保持「clientX/Y → 命中辅助线」契约
 const { contextMenuRef, onComponentContextMenu, onCanvasContextMenu } = useCanvasContextMenu({
   store,
-  hitTestGuide: (sx, sy) => hitTestGuide(sx, sy),
+  hitTestGuide,
+})
+
+// 画布导出 PNG：注册回调给 store（html-to-image），随组件生命周期注销
+useCanvasExportPng({ store, readonly, canvasSheetRef, contextMenuRef })
+
+// 视口裁剪（虚拟化渲染）：只渲染可见区域 + 缓冲区内的组件
+const { visibleComponents } = useViewportCulling({
+  store,
+  readonly,
+  localScale,
+  viewportWidth,
+  viewportHeight,
+  screenToWorld,
 })
 
 /**
@@ -286,88 +320,6 @@ const onItemContextMenu = (e: MouseEvent, id: string) => {
   onComponentContextMenu(e, id)
 }
 
-/** 🔑 移动距离阈值（同样用于「空白区点击」vs「整体拖拽」的区分） */
-const GROUP_DRAG_THRESHOLD = 2
-/** 🔑 自定义分组拖拽会话状态（在选中分组的空白区域 mousedown 时启动） */
-let groupDragSession: {
-  masterId: string
-  startClientX: number
-  startClientY: number
-  startMasterX: number
-  startMasterY: number
-  moved: boolean
-  /** 🔑 最后一次 dragging 的吸附后位置，mouseup 时一次性提交 */
-  lastX: number
-  lastY: number
-} | null = null
-
-function onGroupDragMove(e: MouseEvent) {
-  const s = groupDragSession
-  if (!s) return
-  const world = clientToWorld(e.clientX, e.clientY)
-  const start = clientToWorld(s.startClientX, s.startClientY)
-  const dx = world.x - start.x
-  const dy = world.y - start.y
-  if (!s.moved) {
-    if (Math.abs(dx) < GROUP_DRAG_THRESHOLD && Math.abs(dy) < GROUP_DRAG_THRESHOLD) return
-    s.moved = true
-  }
-  const master = store.getComponent?.(s.masterId) ?? store.components.find((c) => c.id === s.masterId)
-  if (!master || master.locked) return
-  const targetX = s.startMasterX + dx
-  const targetY = s.startMasterY + dy
-  const rect = { left: targetX, top: targetY, width: master.width, height: master.height }
-  let nx = targetX
-  let ny = targetY
-  if (store.canvas.snapToGrid) {
-    const snapResult = snapRectToGuides(s.masterId, rect)
-    nx = snapResult.rect.left
-    ny = snapResult.rect.top
-    applySnapLines(snapResult.hitsX, snapResult.hitsY)
-    const gs = store.canvas.gridSize
-    nx = Math.round(nx / gs) * gs
-    ny = Math.round(ny / gs) * gs
-  } else {
-    clearSnapLines()
-  }
-  // 🔑 性能优化：只更新 CSS transform 预览，不写 comp.x/y
-  s.lastX = nx
-  s.lastY = ny
-  store.setDragPreview(s.masterId, master.groupId, nx - s.startMasterX, ny - s.startMasterY)
-}
-
-function onGroupDragUp() {
-  const s = groupDragSession
-  window.removeEventListener('mousemove', onGroupDragMove)
-  window.removeEventListener('mouseup', onGroupDragUp, { capture: true })
-  groupDragSession = null
-  // 🔑 分组拖拽结束：移除全局 grabbing cursor
-  document.body.classList.remove('bi-dragging')
-  if (!s) {
-    clearSnapLines()
-    resetSnapCache()
-    return
-  }
-  if (!s.moved) {
-    // 纯点击（没移动）：选中该组的主选中组件（selectComponent 自动展开组），不改位置，不写历史
-    store.abortGroupDrag()
-    clearSnapLines()
-    resetSnapCache()
-    const master = store.getComponent?.(s.masterId) ?? store.components.find((c) => c.id === s.masterId)
-    if (master) store.selectComponent(master.id)
-    return
-  }
-  // 🔑 性能优化：一次性提交。
-  //   moveComponent 写主体最终 comp.x/y（无 opts：不触发 group 联动），
-  //   commitGroupDrag 把累计 delta 一次性应用到同组组员 + 清空预览。
-  store.moveComponent(s.masterId, s.lastX, s.lastY)
-  store.commitGroupDrag(s.masterId)
-  clearSnapLines()
-  resetSnapCache()
-  store.pushHistory()
-  // 🔑 屏蔽后续 click（mousedown/mouseup 后浏览器会派发 click，否则 sheet 的 click.self 会清空选中）
-  suppressNextClick()
-}
 /**
  * 🔑 判断 mousedown / click 事件路径中是否命中了组件 DOM。
  *   由于 canvas-sheet 绑定已从 @xxx.self 改为冒泡捕获，需要手动识别「点击点真的在 sheet 空白」vs
@@ -389,15 +341,6 @@ function eventTouchesComponent(e: Event): boolean {
     }
   }
   return false
-}
-
-/** 🔑 画布 dblclick：只有点在 sheet 空白时才 fit-to-screen（点组件内部交给组件） */
-function handleDblClickDelegation(e: MouseEvent) {
-  if (eventTouchesComponent(e)) return
-  // 命中辅助线：交给 onDblClickDelegation（外层）已通过 dblclick event 冒泡委托处理过；此处只做 sheet 空白的 fit
-  const g = hitTestGuide(e.clientX, e.clientY)
-  if (g) return // 双击辅助线会在外层委托删除
-  fitToScreen()
 }
 
 /** 🔑 画布 click：只有点在 sheet 空白时才清空选中（否则组件自身点击时不会误清空） */
@@ -422,31 +365,9 @@ function handleSheetMouseDown(e: MouseEvent) {
   cachedViewportRect = viewportRef.value?.getBoundingClientRect() ?? null
 
   // 🔑 优先：如果 mousedown 发生在「某个选中分组的包围盒内，且未命中任何组员（空白区）」
-  //   → 启动自定义分组整体拖拽（覆盖 canvas-sheet 的框选行为），满足「边框内任何地方都能拖分组」
+  //   → 启动分组整体拖拽（覆盖 canvas-sheet 的框选行为），满足「边框内任何地方都能拖分组」
   const world = clientToWorld(e.clientX, e.clientY)
-  const hit = store.hitTestSelectedGroupBlank(world.x, world.y)
-  if (hit) {
-    const master = store.getComponent?.(hit.masterId) ?? store.components.find((c) => c.id === hit.masterId)
-    if (master && !master.locked) {
-      groupDragSession = {
-        masterId: hit.masterId,
-        startClientX: e.clientX,
-        startClientY: e.clientY,
-        startMasterX: master.x,
-        startMasterY: master.y,
-        moved: false,
-        lastX: master.x,
-        lastY: master.y,
-      }
-      e.preventDefault()
-      e.stopPropagation()
-      window.addEventListener('mousemove', onGroupDragMove)
-      window.addEventListener('mouseup', onGroupDragUp, { capture: true })
-      // 🔑 分组空白拖拽中全局 cursor: grabbing
-      document.body.classList.add('bi-dragging')
-      return
-    }
-  }
+  if (startGroupDrag(e, world)) return
 
   // 🔑 Shift+拖拽：保留已有选中（additive）；否则清空
   startMarquee(world, e.shiftKey || e.ctrlKey || e.metaKey)
@@ -463,51 +384,12 @@ function handleEmptyAreaClick() {
 
 onBeforeUnmount(() => {
   dispose()
+  disposeGroupDrag()
   // 🔑 组件卸载时清理残留的全局 cursor class，避免泄露到其他页面
   document.body.classList.remove('bi-dragging', 'bi-marqueeing')
 })
 
-// ========== 🔑 视口裁剪（虚拟化渲染） ==========
-/**
- * 只渲染可见区域 + 缓冲区的组件，画布外的组件不创建 DOM/ECharts 实例。
- *
- * 收益：
- *   - 100 组件时 DOM 节点从 ~1200 降到 ~300（仅可见区域）
- *   - 画布外图表不初始化 ECharts，配合 BaseChart 按需 init，首屏从 5s → 0.5s
- *   - 滚动/缩放时 reflow 范围小，60fps 稳定
- *
- * 注意：
- *   - 选中的组件强制保留（拖拽/拉伸时不能丢失 DOM 实例，否则状态错乱）
- *   - readonly 模式（预览/发布）全量渲染，避免滚动时图表反复 init/dispose
- *   - 缓冲区防止快速滚动时组件闪现（提前渲染屏幕外的邻近组件）
- */
-const VIEWPORT_BUFFER_PX = 200
-const visibleComponents = computed(() => {
-  // 预览/发布模式全量渲染（组件数通常少，且不应有 init/dispose 抖动）
-  if (readonly) return store.components
-  const scale = localScale.value
-  if (scale <= 0) return store.components
-  // 视口在世界坐标系中的范围（screenToWorld 期望 viewport 内部相对坐标）
-  const tl = screenToWorld(0, 0)
-  const br = screenToWorld(viewportWidth.value, viewportHeight.value)
-  const buffer = VIEWPORT_BUFFER_PX / scale
-  const minX = Math.min(tl.x, br.x) - buffer
-  const minY = Math.min(tl.y, br.y) - buffer
-  const maxX = Math.max(tl.x, br.x) + buffer
-  const maxY = Math.max(tl.y, br.y) + buffer
-  // 🔑 性能优化：移除对 selectedIdSet 的依赖。
-  //   原实现 `selected.has(c.id)` 让 visibleComponents 订阅 selectedIdSet（computed），
-  //   每次框选 selectedIds 变化都触发 filter 重算 + v-for 重渲染。
-  //   但框选时组件位置不变，选中组件本来就在视口内，强制保留是冗余的。
-  //   移除后：框选期间 visibleComponents 不重算 → v-for 不重渲染 → 零组件 patch。
-  //   选中组件移出视口的低频场景（缩放/平移画布）：选中边框随组件一起消失，体验可接受。
-  return store.components.filter((c: any) =>
-    c.x + c.width >= minX && c.x <= maxX &&
-    c.y + c.height >= minY && c.y <= maxY,
-  )
-})
-
-// ========== Canvas sheet style（sheet 的 ref 声明在 composable 之前，见上方） ==========
+// ========== Canvas sheet style ==========
 const canvasSheetStyle = computed(() => ({
   left: '0px',
   top: '0px',
@@ -519,126 +401,10 @@ const canvasSheetStyle = computed(() => ({
   backgroundPosition: 'center',
 }))
 
-// ========== 🔑 fit-to-screen：自适应缩放 + 居中整张画布 ==========
-/** 计算画布 sheet 左上角在容器里的视口坐标（用于对齐） */
-function fitToScreen() {
-  const rect = containerRef.value?.getBoundingClientRect()
-  if (!rect) return
-  const cw = store.canvas.width
-  const ch = store.canvas.height
-  // 左右/上下各留 56px 边距（给标尺/留白/滚动条空间，如果 rect 本身较小则按 4%）
-  const padX = Math.min(56, Math.max(8, rect.width * 0.04))
-  const padY = Math.min(64, Math.max(8, rect.height * 0.04))
-  const availW = rect.width - padX * 2
-  const availH = rect.height - padY * 2
-  if (availW <= 20 || availH <= 20 || cw <= 0 || ch <= 0) return
-  const nextZoom = Math.min(
-    MAX_ZOOM,
-    Math.max(MIN_ZOOM, Math.min(availW / cw, availH / ch)),
-  )
-  // 居中偏移：画布中心点对齐视口中心点，换算为 scrollX/scrollY（offset layer 定位偏移）
-  const centerX = rect.width / 2
-  const centerY = rect.height / 2
-  const sheetCx = (cw / 2) * nextZoom
-  const sheetCy = (ch / 2) * nextZoom
-  const nextScrollX = centerX - sheetCx
-  const nextScrollY = centerY - sheetCy
-  store.updateCanvas({ zoom: nextZoom, scrollX: nextScrollX, scrollY: nextScrollY })
-  window.dispatchEvent(new CustomEvent('bi-editor:fit-to-screen-done'))
-}
-
-// ========== 🔑 辅助线命中考究 & 双击/右键删除 ==========
-function hitTestGuide(sx: number, sy: number): GuideLine | null {
-  if (!store.canvas.showGuides || store.guides.length === 0) return null
-  // 🔑 sx/sy 是浏览器视口坐标 (clientX/Y)，需先转成 viewport 相对坐标再 screenToWorld
-  const { x, y } = clientToWorld(sx, sy)
-  const TOLERANCE_PX = 8 // 世界坐标 8px 内视为命中
-  let hit: GuideLine | null = null
-  let best = TOLERANCE_PX + 1
-  for (const g of store.guides) {
-    const dist = g.direction === 'vertical' ? Math.abs(g.position - x) : Math.abs(g.position - y)
-    if (dist < best) {
-      best = dist
-      hit = g
-    }
-  }
-  return hit
-}
-/** dblclick 命中 guide → 删除 */
-function onDblClickDelegation(e: MouseEvent) {
-  if (readonly) return
-  const g = hitTestGuide(e.clientX, e.clientY)
-  if (!g) return
-  e.stopPropagation()
-  store.removeGuide(g.id)
-}
-
 // ========== Lifecycle ==========
-function onFitToScreenEvent() { fitToScreen() }
-onMounted(async () => {
+onMounted(() => {
   startViewportObserver(() => refreshGuides())
   initGuides()
-  window.addEventListener('bi-editor:fit-to-screen', onFitToScreenEvent)
-  onBeforeUnmount(() => {
-    window.removeEventListener('bi-editor:fit-to-screen', onFitToScreenEvent)
-  })
-
-  // 🔑 画布导出 PNG：注册回调给 store（配合 html-to-image）
-  //    导出前：临时清除选中高亮、关闭右键菜单、重置 transform 为 1:1 + 0 偏移（裁剪完整 sheet）
-  //    导出后：restore
-  if (!readonly) {
-    const unregister = store.registerExportPng(async () => {
-      const { toPng } = await import('html-to-image')
-      const sheet = canvasSheetRef.value
-      if (!sheet) return null
-      // 1) 临时隐藏选中指示：多选高亮 / marquee / contextmenu / info-bar
-      //    通过动态给 canvas-sheet 加 class + 父容器 style，避免影响 toPng 读取 DOM
-      const container = containerRef.value
-      const priorInfoBar = document.querySelector<HTMLElement>('.canvas-info-bar')
-      const priorTransform = transformLayerStyle.value
-      const priorOffset = offsetLayerStyle.value
-      const priorSelectedIds = new Set<string>(store.selectedIds ?? [])
-      const priorSelectedId = store.selectedId
-      contextMenuRef.value?.hide?.()
-      // 2) 临时清空选中态（保证导出图片没有蓝色选中框）
-      store.clearSelection()
-      // 3) transform layer 还原到 1:1 0:0 定位，保证 toPng(canvas-sheet) 刚好在视口里不被裁切
-      if (container && priorInfoBar) priorInfoBar.style.display = 'none'
-      try {
-        // 使用 toPng，将 canvas-sheet 的尺寸作为像素尺寸
-        const dataUrl = await toPng(sheet, {
-          cacheBust: true,
-          pixelRatio: 2,
-          backgroundColor: store.canvas.backgroundColor || '#ffffff',
-          // 过滤不必要的水印/右键菜单 DOM
-          filter: (node) => {
-            const cls = (node as HTMLElement).className
-            if (typeof cls !== 'string') return true
-            // 跳过右键菜单 overlay / marquee
-            if (/bi-context-menu|marquee-rect|canvas-info-bar/.test(cls)) return false
-            return true
-          },
-        })
-        return dataUrl
-      } catch (e) {
-        console.error('[CanvasArea] export PNG failed', e)
-        return null
-      } finally {
-        // 4) 恢复：选中态 + info-bar 显示
-        if (priorSelectedIds.size > 0) {
-          priorSelectedIds.forEach((id) => store.selectComponentAccum(id, false))
-        } else if (priorSelectedId) {
-          store.selectComponent(priorSelectedId)
-        }
-        if (container && priorInfoBar) priorInfoBar.style.display = ''
-
-        const _keep1 = priorTransform
-
-        const _keep2 = priorOffset
-      }
-    })
-    onBeforeUnmount(unregister)
-  }
 })
 </script>
 
