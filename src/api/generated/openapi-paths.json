@@ -117,6 +117,7 @@
   "POST /api/dashboards/{id}/versions",
   "POST /api/dashboards/{id}/versions/{versionId}/restore",
   "POST /api/datasets",
+  "POST /api/datasets/batch-query",
   "POST /api/datasets/preview",
   "POST /api/datasets/upload",
   "POST /api/datasets/validate-expression",

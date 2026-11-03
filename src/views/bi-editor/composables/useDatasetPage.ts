@@ -8,7 +8,6 @@
  */
 import { computed, getCurrentInstance, onUnmounted, ref, watch, type Ref } from 'vue'
 import {
-  fetchDatasetPage,
   type DatasetPageParams,
   type RowCondition,
 } from '@/api/dataset'
@@ -17,6 +16,7 @@ import { getPublicDashboardContext } from '@/utils/public-dashboard-context'
 import { useLinkageStore } from '@/stores/linkage'
 import { buildAggregateFilters } from './aggregate-request'
 import { refreshSignal } from './useDatasetBinding'
+import { requestDatasetPage } from './dataset-batch'
 
 export interface DatasetPageControls {
   page: Ref<number>
@@ -93,18 +93,20 @@ export function useDatasetPage(
     error.value = ''
     try {
       const publicCtx = getPublicDashboardContext()
-      const res = publicCtx
-        ? await fetchPublicDatasetPage(publicCtx.token, datasetId, {
-            ...body,
-            password: publicCtx.password,
-          })
-        : await fetchDatasetPage(datasetId, body)
+      const data = publicCtx
+        ? (
+            await fetchPublicDatasetPage(publicCtx.token, datasetId, {
+              ...body,
+              password: publicCtx.password,
+            })
+          ).data
+        : await requestDatasetPage(datasetId, body)
       if (seq !== requestSeq) return
 
-      rows.value = (res.data.rows ?? []) as Record<string, unknown>[]
-      columns.value = res.data.columns ?? []
-      total.value = res.data.total
-      hasMore.value = !!res.data.hasMore
+      rows.value = (data.rows ?? []) as Record<string, unknown>[]
+      columns.value = data.columns ?? []
+      total.value = data.total
+      hasMore.value = !!data.hasMore
     } catch (e) {
       if (seq !== requestSeq) return
       console.error('[useDatasetPage] 取数失败:', e)

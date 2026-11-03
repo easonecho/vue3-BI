@@ -234,6 +234,51 @@ export function fetchDatasetPage(id: number, body: DatasetPageParams = {}) {
   return post<DatasetPageResult>(`/api/datasets/${id}/rows`, body)
 }
 
+// ============================================================================
+// 批量取数 (看板首屏一次请求多个数据集)
+// ============================================================================
+
+export interface DatasetBatchExecuteItem {
+  /** 客户端标识, 用于对应响应 (可选) */
+  key?: string
+  kind: 'execute'
+  datasetId: number
+  limit?: number
+  params?: Record<string, unknown>
+}
+
+export interface DatasetBatchQueryItem {
+  key?: string
+  kind: 'query'
+  datasetId: number
+  query: DatasetQueryParams
+}
+
+export interface DatasetBatchPageItem {
+  key?: string
+  kind: 'page'
+  datasetId: number
+  page?: DatasetPageParams
+}
+
+export type DatasetBatchItem = DatasetBatchExecuteItem | DatasetBatchQueryItem | DatasetBatchPageItem
+
+/** 批量取数单项结果: 单项失败不影响其它项 */
+export interface DatasetBatchItemResult<T = unknown> {
+  key?: string
+  datasetId: number
+  kind: DatasetBatchItem['kind']
+  ok: boolean
+  data?: T
+  error?: { code: number; message: string }
+}
+
+/** 批量取数 (最多 20 项/请求, 后端逐项返回成功或失败) */
+export function fetchDatasetBatch(items: DatasetBatchItem[]) {
+  // 批量请求可能包含多个大查询, 单独放宽超时 (默认 15s 容易在首屏被误判超时)
+  return post<DatasetBatchItemResult[]>('/api/datasets/batch-query', { items }, { timeout: 120000 })
+}
+
 /** 上传数据集响应 */
 export interface UploadDatasetResult extends Dataset {
   rowCount: number

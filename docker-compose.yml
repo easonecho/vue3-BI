@@ -2,8 +2,14 @@
 # BI 低代码平台 - docker-compose 编排
 # ============================================================================
 # 一键启动: MySQL + Redis + 后端 + 前端
-# 使用: docker compose up -d --build
-# 生产环境请通过环境变量覆盖下列默认值（尤其是密码与密钥）
+# 使用:
+#   1) 复制 .env.docker.example 为 .env.docker 并填写密钥
+#   2) docker compose --env-file .env.docker up -d --build
+#
+# 安全约定:
+#   - JWT_SECRET / CRYPTO_KEY / MYSQL_ROOT_PASSWORD 必填, 不提供弱默认值
+#   - MySQL/Redis 仅在内部网络暴露, 不映射到宿主机
+#   - 后端 API 仅绑定回环地址, 对外统一走前端 Nginx 反向代理
 # ============================================================================
 
 services:
@@ -13,16 +19,16 @@ services:
     container_name: bi-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123456}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: bi_lowcode
       TZ: Asia/Shanghai
-    # 仅绑定宿主机回环地址，避免数据库直接暴露到公网
-    ports:
-      - '127.0.0.1:3306:3306'
+    # 不映射宿主机端口: 仅 backend 可通过服务名访问, 避免数据库暴露
+    expose:
+      - '3306'
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-p${MYSQL_ROOT_PASSWORD:-root123456}']
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-u', 'root', '-p${MYSQL_ROOT_PASSWORD:?}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -33,6 +39,8 @@ services:
     container_name: bi-redis
     restart: unless-stopped
     command: ['redis-server', '--appendonly', 'yes']
+    expose:
+      - '6379'
     volumes:
       - redis_data:/data
     healthcheck:
@@ -48,15 +56,33 @@ services:
     restart: unless-stopped
     init: true
     environment:
-      DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD:-root123456}@mysql:3306/bi_lowcode
+      DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD:?}@mysql:3306/bi_lowcode
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET:-bi-lowcode-dev-jwt-secret-change-me-in-production}
-      # crypto.ts 要求 64 字符密钥，过短会导致数据源密码加解密直接抛错
-      CRYPTO_KEY: ${CRYPTO_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      JWT_SECRET: ${JWT_SECRET:?请设置 JWT_SECRET (32 位以上随机字符串)}
+      # crypto.ts 要求 64 字符 hex 密钥
+      CRYPTO_KEY: ${CRYPTO_KEY:?请设置 CRYPTO_KEY (64 位 hex, 可用 openssl rand -hex 32 生成)}
+      # 必填: 后端 CORS 白名单, 应与实际访问地址一致
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
       NODE_ENV: production
       PORT: 3000
+      TZ: Asia/Shanghai
+      # 生产默认关闭注册, 需要时显式开启
+      ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-false}
+      # 纯 HTTP 部署(refresh Cookie 无 Secure 标记); 启用 HTTPS 后请设为 true
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      COOKIE_SAME_SITE: ${COOKIE_SAME_SITE:-lax}
+      LOGIN_MAX_FAILURES: ${LOGIN_MAX_FAILURES:-5}
+      LOGIN_FAILURE_WINDOW_MS: ${LOGIN_FAILURE_WINDOW_MS:-900000}
+      LOGIN_LOCK_MS: ${LOGIN_LOCK_MS:-900000}
+      AUTH_VERSION_TTL_MS: ${AUTH_VERSION_TTL_MS:-30000}
+      ROLE_PERMISSION_TTL_MS: ${ROLE_PERMISSION_TTL_MS:-60000}
+      METADATA_CACHE_TTL_MS: ${METADATA_CACHE_TTL_MS:-60000}
+      DB_POOL_MAX_POOLS: ${DB_POOL_MAX_POOLS:-20}
+      # 报表 Webhook 签名密钥 (可选, 留空回退使用 CRYPTO_KEY)
+      WEBHOOK_SIGNING_SECRET: ${WEBHOOK_SIGNING_SECRET:-}
+    # 仅绑定回环, 便于本机排障; 对外访问统一由 Nginx 代理
     ports:
-      - '3000:3000'
+      - '127.0.0.1:3000:3000'
     depends_on:
       mysql:
         condition: service_healthy
@@ -67,6 +93,8 @@ services:
       - uploads_data:/app/uploads
     # 启动前执行数据库迁移；种子数据不应在生产启动流程中重复执行
     command: sh -c "npx prisma migrate deploy && node dist/server.js"
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/health/ready']
       interval: 15s
@@ -79,11 +107,15 @@ services:
     build: .
     container_name: bi-frontend
     restart: unless-stopped
+    # 让 Nginx 正确接收 SIGTERM (PID 1 信号处理)
+    init: true
     ports:
-      - '80:80'
+      - '${FRONTEND_PORT:-80}:80'
     depends_on:
       backend:
         condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1/']
       interval: 15s

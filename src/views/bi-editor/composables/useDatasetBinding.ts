@@ -9,11 +9,12 @@
  *   - 自动重取:watch dataSource.datasetId 变化时自动重新取数
  */
 import { ref, watch, computed, onUnmounted, getCurrentInstance, type Ref, type ComputedRef } from 'vue'
-import { executeDataset, queryDataset, type DatasetQueryParams } from '@/api/dataset'
+import { type DatasetQueryParams } from '@/api/dataset'
 import { executePublicDataset, queryPublicDataset } from '@/api/share'
 import { getPublicDashboardContext } from '@/utils/public-dashboard-context'
 import { useLinkageStore } from '@/stores/linkage'
 import { applyRowFilters } from './linkage-filter'
+import { requestDatasetExecute, requestDatasetQuery } from './dataset-batch'
 
 /** 模块级缓存:cacheKey → { rows, fields, ts },同一数据集只取一次。缓存保存全量行,筛选后再采样 */
 const datasetCache = new Map<
@@ -183,24 +184,27 @@ export function useDatasetBinding(
     // 🔑 发起新请求:把 Promise 写入 in-flight 缓存,所有并发调用者共享
     const requestPromise = (async () => {
       const publicCtx = getPublicDashboardContext()
-      const res = spec
-        ? publicCtx
-          ? await queryPublicDataset(publicCtx.token, datasetId, {
-              password: publicCtx.password,
-              ...spec,
-            })
-          : await queryDataset(datasetId, spec)
-        : publicCtx
-          ? await executePublicDataset(publicCtx.token, datasetId, {
-              password: publicCtx.password,
-              limit: 5000,
-            })
-          : await executeDataset(datasetId)
+      // 登录态走批量调度器 (同帧多图表合并为一次 batch-query); 公开分享走匿名单请求
+      const payload = publicCtx
+        ? (
+            spec
+              ? await queryPublicDataset(publicCtx.token, datasetId, {
+                  password: publicCtx.password,
+                  ...spec,
+                })
+              : await executePublicDataset(publicCtx.token, datasetId, {
+                  password: publicCtx.password,
+                  limit: 5000,
+                })
+          ).data
+        : spec
+          ? await requestDatasetQuery(datasetId, spec)
+          : await requestDatasetExecute(datasetId, 5000)
       // 🔑 后端 execute/query 返回 { columns, rows, rowCount };优先用 rows,columns 作字段名兜底
-      const list = res.data.rows ?? []
+      const list = payload.rows ?? []
       // 字段名:优先用后端返回的 columns,否则从首行 keys 推断
-      const inferredFields = res.data.columns?.length
-        ? res.data.columns
+      const inferredFields = payload.columns?.length
+        ? payload.columns
         : list.length > 0
           ? Object.keys(list[0])
           : []

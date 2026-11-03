@@ -37,3 +37,6 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# Docker Compose 密钥 (示例文件 .env.docker.example 保留在仓库)
+.env.docker

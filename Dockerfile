@@ -29,6 +29,8 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 
 # 拷贝 Nginx 配置
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+# 共享安全响应头 (CSP/HSTS/nosniff 等), 由 nginx.conf include
+COPY security-headers.conf /etc/nginx/security-headers.conf
 
 EXPOSE 80
 
