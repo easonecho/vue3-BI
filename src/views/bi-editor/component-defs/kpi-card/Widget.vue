@@ -43,18 +43,57 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
+import { useDatasetBinding } from '../../composables/useDatasetBinding'
+import { useMetricAggregation } from '../../composables/useMetricAggregation'
 
 const props = defineProps<{ comp: ComponentInstance }>()
 
+/** 🔑 数据集绑定: KPI 只取一个全局聚合指标 (未绑定/未配置时回退静态值) */
+const dataSource = computed(() => props.comp.dataSource)
+const dataConfig = computed(() => props.comp.dataConfig ?? {})
+const metricRequest = useMetricAggregation(props.comp, {
+  field: () => String(dataConfig.value.valueField || '') || undefined,
+  aggregate: () => String(props.comp.props?.aggregate ?? 'sum'),
+})
+const { rows: datasetRows } = useDatasetBinding(dataSource, true, metricRequest)
+
+function formatMetricValue(v: unknown): string {
+  if (v === null || v === undefined || v === '') return '—'
+  if (typeof v === 'number' && Number.isFinite(v)) {
+    return v.toLocaleString('zh-CN', { maximumFractionDigits: 2 })
+  }
+  return String(v)
+}
+
+/** 数据集绑定后的数值: 聚合结果别名 value, 原始行取 valueField */
+const boundValue = computed<unknown>(() => {
+  if (!props.comp.dataSource?.datasetId) return undefined
+  const rows = datasetRows.value
+  if (rows.length === 0) return undefined
+  const field = String(dataConfig.value.valueField || '')
+  const first = rows[0]
+  if (field && first?.[field] !== undefined) return first[field]
+  if (first?.value !== undefined) return first.value
+  return undefined
+})
+
 // ============ 字段读取 ============
 const title = computed(() => props.comp.props?.title ?? '月度营收')
-const value = computed(() => props.comp.props?.value ?? '¥1,256,800')
+const value = computed(() =>
+  boundValue.value !== undefined ? formatMetricValue(boundValue.value) : props.comp.props?.value ?? '¥1,256,800',
+)
 const target = computed(() => props.comp.props?.target ?? '¥1,500,000')
 const unit = computed(() => props.comp.props?.unit ?? '')
 const trend = computed(() => props.comp.props?.trend ?? 'up')
 const trendValue = computed(() => props.comp.props?.trendValue ?? '+12.5%')
 const trendLabel = computed(() => props.comp.props?.trendLabel ?? '同比')
 const sparkData = computed<number[]>(() => {
+  const boundField = String(dataConfig.value.sparkField || '')
+  if (props.comp.dataSource?.datasetId && boundField && datasetRows.value.length > 0) {
+    return datasetRows.value
+      .map((row) => Number(row[boundField]))
+      .filter((n) => Number.isFinite(n))
+  }
   const raw = props.comp.props?.sparkData
   if (!Array.isArray(raw)) return []
   return raw.map((n: any) => Number(n)).filter((n) => !Number.isNaN(n))

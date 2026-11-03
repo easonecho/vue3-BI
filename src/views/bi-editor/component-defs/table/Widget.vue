@@ -14,6 +14,7 @@
         :sort-config="sortConfig"
         :cell-style="cellStyleFn"
         :header-cell-style="headerCellStyleFn"
+        :loading="serverLoading"
         size="small"
         auto-resize
         @sort-change="handleSortChange"
@@ -31,7 +32,7 @@
           show-overflow
         />
         <template #empty>
-          <span class="widget-table__empty">暂无数据</span>
+          <span class="widget-table__empty">{{ serverError || '暂无数据' }}</span>
         </template>
       </VxeTable>
     </div>
@@ -61,7 +62,7 @@ const { VxeTable, VxeColumn } = VxeUITable as unknown as {
   VxeColumn: Component
 }
 import type { ComponentInstance } from '@/views/bi-editor/types'
-import { useDatasetBinding } from '../../composables/useDatasetBinding'
+import { useDatasetPage } from '../../composables/useDatasetPage'
 import {
   ensureDatasetSemantics,
   formatSemanticValue,
@@ -91,30 +92,6 @@ interface TableColumn {
   align?: 'left' | 'center' | 'right'
 }
 
-// 🔑 数据绑定:有 datasetId 时直接用数据集行数据,fields 自动生成列
-const dataSourceRef = computed(() => props.comp.dataSource)
-const { rows: datasetRows, fields: datasetFields } = useDatasetBinding(dataSourceRef)
-
-const columns = computed<TableColumn[]>(() => {
-  if (props.comp.dataSource.datasetId && datasetFields.value.length > 0) {
-    return datasetFields.value.map((f) => ({
-      key: f,
-      title: f,
-      minWidth: 100,
-      align: isNumericColumn(f) ? 'right' : undefined,
-    }))
-  }
-  return props.comp.props?.columns || []
-})
-
-/** 原始行数据 (未排序/分页) */
-const rawRows = computed<Record<string, unknown>[]>(() => {
-  if (props.comp.dataSource.datasetId && datasetRows.value.length > 0) {
-    return datasetRows.value as Record<string, unknown>[]
-  }
-  return (props.comp.props?.data || []) as Record<string, unknown>[]
-})
-
 // 🔑 表格交互: 列排序 / 分页 / 合计行
 const sortState = ref<{ field: string; order: 'asc' | 'desc' | null }>({
   field: '',
@@ -126,6 +103,48 @@ const sortable = computed(() => (props.comp.props?.sortable ?? true) as boolean)
 const pageSize = computed(() => Number(props.comp.props?.pageSize ?? 20))
 const showSummary = computed(() => (props.comp.props?.showSummary ?? false) as boolean)
 const sortConfig = computed(() => ({ remote: true, trigger: 'cell' as const }))
+
+// 🔑 服务端分页: 绑定数据集时只取当前页, 不再拉全量后在内存分页
+const isDatasetBound = computed(() => !!props.comp.dataSource.datasetId)
+const sortField = computed(() => sortState.value.field)
+const sortOrder = computed(() => sortState.value.order)
+const {
+  rows: serverRows,
+  columns: serverColumns,
+  total: serverTotal,
+  hasMore,
+  loading: serverLoading,
+  error: serverError,
+} = useDatasetPage(
+  computed(() => props.comp.dataSource),
+  {
+    page: currentPage,
+    pageSize,
+    sortField,
+    sortOrder,
+  },
+)
+
+/** 表格列: 服务端返回列优先, 否则用组件静态列配置 */
+const columns = computed<TableColumn[]>(() => {
+  if (isDatasetBound.value) {
+    return serverColumns.value.map((f) => ({
+      key: f,
+      title: f,
+      minWidth: 100,
+      align: isNumericColumn(f) ? 'right' : undefined,
+    }))
+  }
+  return props.comp.props?.columns || []
+})
+
+/** 当前页行数据 (服务端分页) 或静态数据 */
+const rawRows = computed<Record<string, unknown>[]>(() => {
+  if (isDatasetBound.value) {
+    return serverRows.value
+  }
+  return (props.comp.props?.data || []) as Record<string, unknown>[]
+})
 
 /** 单元格值转可比较类型: 数字优先, 空值返回空串 */
 function toComparable(value: unknown): number | string {
@@ -143,10 +162,10 @@ function compareValues(x: number | string, y: number | string): number {
   return String(x).localeCompare(String(y), 'zh-CN')
 }
 
-/** 全量排序后再分页, 保证跨页排序正确 */
+/** 静态数据: 全量排序后再分页, 保证跨页排序正确; 数据集: 排序已在服务端完成 */
 const sortedRows = computed(() => {
   const { field, order } = sortState.value
-  if (!field || !order) return rawRows.value
+  if (isDatasetBound.value || !field || !order) return rawRows.value
   return [...rawRows.value].sort((a, b) => {
     const x = toComparable(a[field])
     const y = toComparable(b[field])
@@ -159,16 +178,29 @@ const sortedRows = computed(() => {
   })
 })
 
-const totalRows = computed(() => sortedRows.value.length)
+const totalRows = computed(() => {
+  if (isDatasetBound.value) {
+    if (serverTotal.value !== undefined) return serverTotal.value
+    // COUNT(*) 失败时的保守估算: 当前页 + 是否还有下一页
+    const size = Math.max(1, pageSize.value)
+    return currentPage.value * size - (hasMore.value ? size - 1 : 0)
+  }
+  return sortedRows.value.length
+})
 
 const displayRows = computed(() => {
+  if (isDatasetBound.value) return serverRows.value
   const size = pageSize.value
   if (!size || size <= 0) return sortedRows.value
   const start = (currentPage.value - 1) * size
   return sortedRows.value.slice(start, start + size)
 })
 
-const showPager = computed(() => pageSize.value > 0 && totalRows.value > pageSize.value)
+const showPager = computed(() =>
+  isDatasetBound.value
+    ? pageSize.value > 0 && (hasMore.value || totalRows.value > pageSize.value)
+    : pageSize.value > 0 && totalRows.value > pageSize.value,
+)
 
 function handleSortChange(params: { field?: string; property?: string; order?: 'asc' | 'desc' | null }) {
   sortState.value = {
@@ -213,9 +245,13 @@ function isNumericColumn(key: string): boolean {
   return checked > 0
 }
 
-watch(rawRows, () => {
-  currentPage.value = 1
-})
+watch(
+  () => props.comp.dataSource.datasetId,
+  () => {
+    sortState.value = { field: '', order: null }
+    currentPage.value = 1
+  },
+)
 
 watch(pageSize, () => {
   currentPage.value = 1

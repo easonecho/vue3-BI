@@ -83,7 +83,7 @@ export const bubbleChartDefinition: ComponentDefinition = {
     series: BUBBLE_DEFAULT_SERIES,
   },
   defaultStyle: {},
-  supportsDataBinding: true,
+  supportsDataBinding: false,
 }
 
 export default bubbleChartDefinition

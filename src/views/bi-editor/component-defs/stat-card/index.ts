@@ -1,4 +1,5 @@
 import type { ComponentDefinition } from '../types'
+import { aggregatePropField } from '../types'
 import Widget from './Widget.vue'
 
 export const statCardDefinition: ComponentDefinition = {
@@ -44,9 +45,13 @@ export const statCardDefinition: ComponentDefinition = {
     { key: 'fontSize', label: '数值字号', type: 'number', min: 12, max: 48, default: 24, group: '样式' },
     { key: 'borderRadius', label: '圆角', type: 'number', min: 0, max: 24, default: 8, group: '样式' },
     { key: 'showIcon', label: '显示图标', type: 'switch', default: true, group: '样式' },
+    aggregatePropField,
   ],
   defaultStyle: {},
-  supportsDataBinding: false,
+  supportsDataBinding: true,
+  dataBindingSchema: [
+    { key: 'valueField', label: '数值字段', type: 'value' },
+  ],
 }
 
 export default statCardDefinition

@@ -24,11 +24,45 @@
 import { computed } from 'vue'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
+import { useDatasetBinding } from '../../composables/useDatasetBinding'
+import { useMetricAggregation } from '../../composables/useMetricAggregation'
 
 const props = defineProps<{ comp: ComponentInstance }>()
 
+/** 🔑 数据集绑定: 统计卡取一个全局聚合指标, 未绑定/未配置时回退静态值 */
+const dataSource = computed(() => props.comp.dataSource)
+const dataConfig = computed(() => props.comp.dataConfig ?? {})
+const metricRequest = useMetricAggregation(props.comp, {
+  field: () => String(dataConfig.value.valueField || '') || undefined,
+  aggregate: () => String(props.comp.props?.aggregate ?? 'sum'),
+})
+const { rows: datasetRows } = useDatasetBinding(dataSource, true, metricRequest)
+
+function formatMetricValue(v: unknown): string {
+  if (v === null || v === undefined || v === '') return '—'
+  if (typeof v === 'number' && Number.isFinite(v)) {
+    return v.toLocaleString('zh-CN', { maximumFractionDigits: 2 })
+  }
+  return String(v)
+}
+
+const boundValue = computed<unknown>(() => {
+  if (!props.comp.dataSource?.datasetId) return undefined
+  const rows = datasetRows.value
+  if (rows.length === 0) return undefined
+  const field = String(dataConfig.value.valueField || '')
+  const first = rows[0]
+  if (field && first?.[field] !== undefined) return first[field]
+  if (first?.value !== undefined) return first.value
+  return undefined
+})
+
 const title = computed(() => props.comp.props?.title ?? '总销售额')
-const value = computed(() => props.comp.props?.value ?? '¥126,560')
+const value = computed(() =>
+  boundValue.value !== undefined
+    ? formatMetricValue(boundValue.value)
+    : props.comp.props?.value ?? '¥126,560',
+)
 const prefix = computed(() => props.comp.props?.prefix ?? '')
 const suffix = computed(() => props.comp.props?.suffix ?? '')
 const trend = computed(() => props.comp.props?.trend ?? 'up')

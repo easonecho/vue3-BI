@@ -1,4 +1,5 @@
 import type { ComponentDefinition } from '../types'
+import { aggregatePropField } from '../types'
 import Widget from './Widget.vue'
 
 export const kpiCardDefinition: ComponentDefinition = {
@@ -39,6 +40,7 @@ export const kpiCardDefinition: ComponentDefinition = {
       group: '内容',
       tip: 'mini spark 折线数据，数字数组',
     },
+    aggregatePropField,
     // ============ 样式 ============
     { key: 'showProgress', label: '显示达成率进度条', type: 'switch', default: true, group: '样式' },
     { key: 'showSpark', label: '显示迷你折线', type: 'switch', default: true, group: '样式' },
@@ -53,7 +55,11 @@ export const kpiCardDefinition: ComponentDefinition = {
     { key: 'borderRadius', label: '圆角', type: 'number', min: 0, max: 24, default: 8, group: '样式' },
   ],
   defaultStyle: {},
-  supportsDataBinding: false,
+  supportsDataBinding: true,
+  dataBindingSchema: [
+    { key: 'valueField', label: '数值字段', type: 'value' },
+    { key: 'sparkField', label: '迷你折线字段', type: 'value' },
+  ],
 }
 
 export default kpiCardDefinition

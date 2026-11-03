@@ -83,7 +83,7 @@ export const ganttChartDefinition: ComponentDefinition = {
     tasks: GANTT_DEFAULT_TASKS,
   },
   defaultStyle: {},
-  supportsDataBinding: true,
+  supportsDataBinding: false,
 }
 
 export default ganttChartDefinition

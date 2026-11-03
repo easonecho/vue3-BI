@@ -57,7 +57,7 @@ const SAMPLE_SIZE = 2000
 function sampleRows(rows: Record<string, unknown>[], size: number): Record<string, unknown>[] {
   if (rows.length <= size) return rows
   const step = rows.length / size
-  const result: Record<string, unknown>[] = Array.from({ length: 5 })
+  const result: Record<string, unknown>[] = []
   for (let i = 0; i < size; i++) {
     result[i] = rows[Math.floor(i * step)]
   }
@@ -87,6 +87,9 @@ export function clearAllDatasetCache() {
  *   替代旧的 v-for key 强制重挂载机制，避免 ECharts/VDR/ResizeObserver 全部重新初始化。
  */
 const refreshSignal = ref(0)
+
+/** 全局刷新信号：供其他取数 composable（如服务端分页）复用同一刷新机制 */
+export { refreshSignal }
 
 /** 触发所有 useDatasetBinding 实例重新取数（配合 clearAllDatasetCache 使用） */
 export function triggerDatasetRefresh() {

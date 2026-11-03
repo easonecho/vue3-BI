@@ -82,7 +82,7 @@ export const scrollTableDefinition: ComponentDefinition = {
     ],
   },
   defaultStyle: {},
-  supportsDataBinding: true,
+  supportsDataBinding: false,
 }
 
 export default scrollTableDefinition

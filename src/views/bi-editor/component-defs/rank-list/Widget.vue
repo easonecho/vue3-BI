@@ -19,8 +19,24 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
+import { useChartAggregation } from '../../composables/useChartAggregation'
+import { useDatasetBinding } from '../../composables/useDatasetBinding'
 
 const props = defineProps<{ comp: ComponentInstance }>()
+
+/** 🔑 数据集绑定: 类目 + 度量在服务端 GROUP BY, 按度量倒序取前 N 项 */
+const dataSource = computed(() => props.comp.dataSource)
+const dataConfig = computed(() => props.comp.dataConfig ?? {})
+const categoryField = computed(() => String(dataConfig.value.categoryField || ''))
+const valueField = computed(() => String(dataConfig.value.valueField || ''))
+const aggregateRequest = useChartAggregation(props.comp, {
+  groupBy: () => categoryField.value || undefined,
+  metrics: () => (valueField.value ? [valueField.value] : []),
+  orderBy: () =>
+    valueField.value ? { field: valueField.value, direction: 'desc' } : undefined,
+  limit: 500,
+})
+const { rows: datasetRows } = useDatasetBinding(dataSource, true, aggregateRequest)
 
 const title = computed(() => props.comp.props?.title ?? '排行榜')
 const showTitle = computed(() => props.comp.props?.showTitle ?? true)
@@ -38,6 +54,16 @@ interface RankItem {
 }
 
 const items = computed<RankItem[]>(() => {
+  if (props.comp.dataSource?.datasetId && categoryField.value && valueField.value) {
+    const rows = datasetRows.value
+      .map((row) => ({
+        name: String(row[categoryField.value] ?? ''),
+        value: Number(row[valueField.value]) || 0,
+      }))
+      .filter((item) => item.name !== '')
+    // 聚合结果已按度量倒序; 原始行在此统一排序, 保证「Top N」语义一致
+    return rows.sort((a, b) => b.value - a.value)
+  }
   const raw = props.comp.props?.items
   return Array.isArray(raw) ? (raw as RankItem[]) : []
 })

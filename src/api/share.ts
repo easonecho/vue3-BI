@@ -2,7 +2,7 @@
  * 看板分享模块 API
  */
 import { get, post, del } from '@/utils/request'
-import type { DatasetQueryParams, DatasetQueryResult } from './dataset'
+import type { DatasetPageParams, DatasetPageResult, DatasetQueryParams, DatasetQueryResult } from './dataset'
 
 /** 分享配置 (已登录用户查询) */
 export interface ShareConfig {
@@ -93,6 +93,18 @@ export function queryPublicDataset(
 ) {
   return post<DatasetQueryResult>(
     `/api/public/dashboards/${token}/datasets/${datasetId}/query`,
+    body,
+  )
+}
+
+/** 公开数据集服务端分页 (分享页/嵌入页表格, 无需登录) */
+export function fetchPublicDatasetPage(
+  token: string,
+  datasetId: number,
+  body: DatasetPageParams & { password?: string } = {},
+) {
+  return post<DatasetPageResult>(
+    `/api/public/dashboards/${token}/datasets/${datasetId}/rows`,
     body,
   )
 }

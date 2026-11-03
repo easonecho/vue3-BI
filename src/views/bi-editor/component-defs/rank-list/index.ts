@@ -1,4 +1,5 @@
 import type { ComponentDefinition } from '../types'
+import { aggregatePropField } from '../types'
 import Widget from './Widget.vue'
 
 export const rankListDefinition: ComponentDefinition = {
@@ -21,6 +22,7 @@ export const rankListDefinition: ComponentDefinition = {
     { key: 'nameColor', label: '名称颜色', type: 'colorpicker', default: '#e2e8f0', group: '字体' },
     { key: 'valueColor', label: '数值颜色', type: 'colorpicker', default: '#67e8f9', group: '字体' },
     { key: 'rankColors', label: '前3名颜色', type: 'textarea', default: '#fbbf24, #94a3b8, #b45309', group: '样式', tip: '前3名颜色，逗号分隔' },
+    aggregatePropField,
   ],
   extraDefaults: {
     items: [
@@ -32,6 +34,11 @@ export const rankListDefinition: ComponentDefinition = {
     ],
   },
   defaultStyle: {},
+  supportsDataBinding: true,
+  dataBindingSchema: [
+    { key: 'categoryField', label: '类目字段', type: 'category' },
+    { key: 'valueField', label: '数值字段', type: 'value' },
+  ],
 }
 
 export default rankListDefinition

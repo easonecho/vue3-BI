@@ -1,5 +1,5 @@
 import { defineAsyncComponent } from 'vue'
-import type { ComponentDefinition } from '../types'
+import { aggregatePropField, type ComponentDefinition } from '../types'
 
 export const gaugeDefinition: ComponentDefinition = {
   type: 'gauge',
@@ -10,8 +10,13 @@ export const gaugeDefinition: ComponentDefinition = {
     { key: 'max', label: '最大值', type: 'number', default: 100 },
     { key: 'min', label: '最小值', type: 'number', default: 0 },
     { key: 'color', label: '颜色', type: 'colorpicker', default: '#409EFF' },
+    aggregatePropField,
   ],
   defaultStyle: {},
+  supportsDataBinding: true,
+  dataBindingSchema: [
+    { key: 'valueField', label: '数值字段', type: 'value' },
+  ],
 }
 
 export default gaugeDefinition

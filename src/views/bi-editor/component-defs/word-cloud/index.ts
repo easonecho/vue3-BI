@@ -117,7 +117,7 @@ export const wordCloudDefinition: ComponentDefinition = {
     ],
   },
   defaultStyle: {},
-  supportsDataBinding: true,
+  supportsDataBinding: false,
 }
 
 export default wordCloudDefinition

@@ -130,7 +130,7 @@ export const chinaMapDefinition: ComponentDefinition = {
     ],
   },
   defaultStyle: {},
-  supportsDataBinding: true,
+  supportsDataBinding: false,
 }
 
 export default chinaMapDefinition

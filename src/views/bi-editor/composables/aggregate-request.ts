@@ -7,7 +7,7 @@
 import type { AggregateFn, DatasetQueryParams, RowCondition } from '@/api/dataset'
 import type { DrillFilter, FilterPrimitive, LinkFilter } from './linkage-filter'
 
-const AGGREGATE_FNS: readonly AggregateFn[] = [
+export const AGGREGATE_FNS: readonly AggregateFn[] = [
   'sum',
   'avg',
   'count',
@@ -20,7 +20,8 @@ const AGGREGATE_FNS: readonly AggregateFn[] = [
 export interface ChartAggregateOptions {
   /** 'none' 表示不聚合 (保留原始行) */
   aggregate: string
-  groupBy?: string
+  /** 分组维度; 桑基图等需要 source/target 双维度, 传数组 */
+  groupBy?: string | string[]
   metrics: { field: string; alias?: string }[]
   orderBy?: { field: string; direction?: 'asc' | 'desc' }
   limit?: number
@@ -93,10 +94,15 @@ export function buildAggregateRequest(
   filters: RowCondition[],
 ): DatasetQueryParams | null {
   if (!AGGREGATE_FNS.includes(opts.aggregate as AggregateFn)) return null
-  if (!opts.groupBy || opts.metrics.length === 0) return null
+  const groupBy = Array.isArray(opts.groupBy)
+    ? opts.groupBy.filter(Boolean)
+    : opts.groupBy
+      ? [opts.groupBy]
+      : []
+  if (groupBy.length === 0 || opts.metrics.length === 0) return null
 
   return {
-    groupBy: [opts.groupBy],
+    groupBy,
     metrics: opts.metrics.map((m) => ({
       field: m.field,
       aggregate: opts.aggregate as AggregateFn,

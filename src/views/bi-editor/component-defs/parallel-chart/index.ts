@@ -81,7 +81,7 @@ export const parallelChartDefinition: ComponentDefinition = {
     data: PARALLEL_DEFAULT_DATA,
   },
   defaultStyle: {},
-  supportsDataBinding: true,
+  supportsDataBinding: false,
 }
 
 export default parallelChartDefinition

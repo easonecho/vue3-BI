@@ -199,6 +199,41 @@ export function queryDataset(id: number, body: DatasetQueryParams) {
   return post<DatasetQueryResult>(`/api/datasets/${id}/query`, body)
 }
 
+// ============================================================================
+// 服务端分页 (表格组件, W4)
+// ============================================================================
+
+export interface DatasetPageParams {
+  offset?: number
+  limit?: number
+  params?: Record<string, unknown>
+  /** 排序字段 (展示名/别名或原始列名) */
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  /** 联动/全局筛选 (字段使用展示名) */
+  filters?: RowCondition[]
+  /** SQL 数据集是否额外统计总行数 (默认 false, 避免每页扫全表) */
+  withTotal?: boolean
+}
+
+export interface DatasetPageResult {
+  columns: string[]
+  rows: Record<string, unknown>[]
+  rowCount: number
+  offset: number
+  limit: number
+  hasMore: boolean
+  /** 仅 withTotal=true 或文件/抽取快照时返回 */
+  total?: number
+  /** 文件/抽取快照超过服务端物化上限时标记 */
+  truncated: boolean
+}
+
+/** 服务端分页取行 (表格组件不再一次性拉全量) */
+export function fetchDatasetPage(id: number, body: DatasetPageParams = {}) {
+  return post<DatasetPageResult>(`/api/datasets/${id}/rows`, body)
+}
+
 /** 上传数据集响应 */
 export interface UploadDatasetResult extends Dataset {
   rowCount: number

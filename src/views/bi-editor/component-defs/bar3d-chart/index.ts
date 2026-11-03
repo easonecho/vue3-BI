@@ -159,7 +159,7 @@ export const bar3dChartDefinition: ComponentDefinition = {
     series: BAR3D_DEFAULT_SERIES,
   },
   defaultStyle: {},
-  supportsDataBinding: true,
+  supportsDataBinding: false,
 }
 
 export default bar3dChartDefinition

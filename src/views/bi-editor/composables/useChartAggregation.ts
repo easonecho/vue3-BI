@@ -14,8 +14,8 @@ import type { DatasetQueryParams } from '@/api/dataset'
 import { buildAggregateFilters, buildAggregateRequest } from './aggregate-request'
 
 export interface ChartAggregationOptions {
-  /** 分组维度 (钻取时由图表返回当前层级字段) */
-  groupBy: () => string | undefined
+  /** 分组维度 (钻取时由图表返回当前层级字段); 桑基图可返回 [source, target] */
+  groupBy: () => string | string[] | undefined
   /** 度量字段列表, 别名与字段名一致 (图表映射按字段名取值) */
   metrics: () => string[]
   orderBy?: () => { field: string; direction?: 'asc' | 'desc' } | undefined
@@ -35,7 +35,8 @@ export function useChartAggregation(
     const mergedProps = { ...deriveDefaultPropsCached(def), ...comp.props }
     const aggregate = String(mergedProps.aggregate ?? 'none')
     const groupBy = options.groupBy()
-    if (!groupBy) return null
+    const hasGroupBy = Array.isArray(groupBy) ? groupBy.length > 0 : !!groupBy
+    if (!hasGroupBy) return null
 
     const filters = buildAggregateFilters(
       linkageStore.filterValues,

@@ -30,17 +30,41 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
+import { useDatasetBinding } from '../../composables/useDatasetBinding'
+import { useMetricAggregation } from '../../composables/useMetricAggregation'
 
 const props = defineProps<{ comp: ComponentInstance }>()
 
-const value = computed(() => props.comp.props?.value ?? 0)
-const max = computed(() => props.comp.props?.max ?? 100)
+/** 🔑 数据集绑定: 仪表盘取一个全局聚合指标, 未绑定/未配置时回退静态值 */
+const dataSource = computed(() => props.comp.dataSource)
+const dataConfig = computed(() => props.comp.dataConfig ?? {})
+const metricRequest = useMetricAggregation(props.comp, {
+  field: () => String(dataConfig.value.valueField || '') || undefined,
+  aggregate: () => String(props.comp.props?.aggregate ?? 'sum'),
+})
+const { rows: datasetRows } = useDatasetBinding(dataSource, true, metricRequest)
+
+const boundValue = computed<number | undefined>(() => {
+  if (!props.comp.dataSource?.datasetId) return undefined
+  const rows = datasetRows.value
+  if (rows.length === 0) return undefined
+  const field = String(dataConfig.value.valueField || '')
+  const first = rows[0]
+  const raw = field ? first?.[field] : first?.value
+  const num = Number(raw)
+  return Number.isFinite(num) ? num : undefined
+})
+
+const value = computed(() => boundValue.value ?? Number(props.comp.props?.value ?? 0))
+const max = computed(() => Number(props.comp.props?.max ?? 100))
+const min = computed(() => Number(props.comp.props?.min ?? 0))
 const unit = computed(() => props.comp.props?.unit || '')
 
 const percent = computed(() => {
-  const v = value.value
-  const m = max.value || 100
-  return Math.round((Math.min(v, m) / m) * 100)
+  const span = max.value - min.value
+  if (span <= 0) return 0
+  const v = Math.min(Math.max(value.value, min.value), max.value)
+  return Math.round(((v - min.value) / span) * 100)
 })
 
 const strokeWidth = 16

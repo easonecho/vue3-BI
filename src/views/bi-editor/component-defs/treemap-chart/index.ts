@@ -1,6 +1,6 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import { chartCommonSchema } from '../types'
+import { chartCommonSchema, aggregatePropField } from '../types'
 
 /** 🔑 树图默认真实数据（层级占比） */
 export const TREEMAP_DEFAULT_DATA = [
@@ -48,6 +48,7 @@ export const treemapChartDefinition: ComponentDefinition = {
   widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
     ...chartCommonSchema,
+    aggregatePropField,
     {
       key: 'visualDimension',
       label: '视觉维度',
@@ -90,6 +91,11 @@ export const treemapChartDefinition: ComponentDefinition = {
     data: TREEMAP_DEFAULT_DATA,
   },
   defaultStyle: {},
+  supportsDataBinding: true,
+  dataBindingSchema: [
+    { key: 'categoryField', label: '类目字段', type: 'category' },
+    { key: 'valueField', label: '数值字段', type: 'value' },
+  ],
 }
 
 export default treemapChartDefinition
