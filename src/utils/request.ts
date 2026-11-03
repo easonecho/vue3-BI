@@ -137,9 +137,10 @@ async function handleTokenRefresh(): Promise<boolean> {
     return false
   }
   try {
-    // 动态 import 避免循环依赖 (request.ts -> auth.ts -> request.ts)
-    const { refreshToken: refreshApi } = await import('@/api/auth')
-    const res = await refreshApi()
+    // 直接复用本实例发起刷新：api/auth.ts 反向依赖 request.ts，动态 import 会让
+    // 入口 chunk 静态依赖 Vite 的 preload helper（可能被并入 monaco chunk），
+    // 导致首屏预加载 Monaco。这里内联请求即可解除该依赖。
+    const res = await post<{ accessToken: string }>('/api/auth/refresh', {})
     if (res.code === 0 && res.data) {
       setToken(res.data.accessToken)
       // 通知 store 同步内存中的 access token, 避免路由守卫误判为未登录

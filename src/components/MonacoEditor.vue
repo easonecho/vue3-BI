@@ -4,10 +4,12 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount, shallowRef } from 'vue'
-import * as monaco from 'monaco-editor'
-// 🔑 Vite 官方推荐方式：用 ?worker 后缀导入 monaco web worker
-// 注意：monaco-editor 的 package.json exports 将 "./*" 映射到 "./esm/vs/*.js"
-// 所以导入路径不能带 esm/vs/ 前缀，否则路径会重复
+// 🔑 只引入编辑器核心 API + JSON 语言，避免把 typescript/css/html 全套语言与 worker 打进包里。
+//    monaco-editor 的 package.json exports 将 "./*" 映射到 "./esm/vs/*.js"，
+//    因此路径不能带 esm/vs/ 前缀，否则会重复。
+import * as monaco from 'monaco-editor/editor/editor.api'
+import 'monaco-editor/language/json/monaco.contribution'
+// Vite 官方推荐方式：用 ?worker 后缀导入 monaco web worker
 import editorWorker from 'monaco-editor/editor/editor.worker.js?worker'
 import jsonWorker from 'monaco-editor/language/json/json.worker.js?worker'
 

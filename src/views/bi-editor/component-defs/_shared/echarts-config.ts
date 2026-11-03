@@ -28,18 +28,13 @@ import {
   type GraphSeriesOption,
   type MapSeriesOption,
 } from 'echarts/charts'
-// 🔑 3D 图表（WebGL 渲染）：echarts-gl 扩展
-//   类型不加入 ECOption 联合，避免 echarts-gl 2.x 与 echarts 6 类型不兼容引发的 TS 错误。
-//   3D 图表组件的 specificOption 用 as ECOption 断言。
-//   echarts-gl 2.x 未提供 .d.ts 类型声明，用 @ts-expect-error 兜底。
+// 🔑 3D 图表（WebGL 渲染）：echarts-gl 扩展。
+//   刻意不在模块顶层静态 import/register：3D 图表占比很低，静态引入会让所有看板
+//   都额外下载约 500 KB 的 WebGL 依赖。改为由 3D 组件调用 ensureEchartsGl() 懒注册。
+//   echarts-gl 2.x 未提供 .d.ts 类型声明，动态 import 后用断言处理。
 //   实际导出名（见 echarts-gl/lib/export/charts.js）：Bar3DChart / Line3DChart /
 //   Scatter3DChart / Lines3DChart / Polygons3DChart / SurfaceChart / Map3DChart /
 //   ScatterGLChart / GraphGLChart / FlowGLChart / LinesGLChart。
-//   当前只注册在用的 Bar3DChart + Grid3DComponent，其余按需扩展。
-// @ts-expect-error echarts-gl 无类型声明
-import { Bar3DChart } from 'echarts-gl/charts'
-// @ts-expect-error echarts-gl 无类型声明
-import { Grid3DComponent } from 'echarts-gl/components'
 import {
   TitleComponent,
   type TitleComponentOption,
@@ -76,9 +71,6 @@ use([
   GraphChart,
   MapChart,
   ParallelChart,
-  // 🔑 3D 图表运行时注册（WebGL）
-  Bar3DChart,
-  Grid3DComponent,
   TitleComponent,
   TooltipComponent,
   LegendComponent,
@@ -121,6 +113,31 @@ export type ECOption = ComposeOption<
 
 export { init }
 export type { ECharts }
+
+/**
+ * 懒注册 echarts-gl 的 3D 渲染能力（Bar3D + Grid3D）。
+ * 仅当看板实际包含 3D 组件时才会下载 echarts-gl chunk。
+ */
+let glReady: Promise<void> | null = null
+export function ensureEchartsGl(): Promise<void> {
+  if (!glReady) {
+    glReady = Promise.all([import('echarts-gl/charts'), import('echarts-gl/components')])
+      .then(([charts, components]) => {
+        use(
+          [
+            (charts as unknown as { Bar3DChart: unknown }).Bar3DChart,
+            (components as unknown as { Grid3DComponent: unknown }).Grid3DComponent,
+          ] as unknown as Parameters<typeof use>[0],
+        )
+      })
+      .catch((err) => {
+        // 注册失败时清空缓存，允许后续重试
+        glReady = null
+        throw err
+      })
+  }
+  return glReady
+}
 
 /**
  * 单个系列配置的联合类型（从 `ECOption['series']` 中抽出元素类型）。

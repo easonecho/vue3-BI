@@ -78,18 +78,23 @@ function loadScript(url: string): Promise<void> {
 
 /** 加载全部插件脚本, 单个插件失败不影响其他插件与应用启动 */
 export async function loadExternalPlugins(): Promise<{ loaded: string[]; failed: string[] }> {
-  const loaded: string[] = []
-  const failed: string[] = []
   const manifests = await resolveManifests()
 
-  for (const item of manifests) {
-    try {
-      await loadScript(item.url)
-      loaded.push(item.url)
-    } catch (err) {
-      failed.push(item.url)
-      console.warn(`[BI Plugin] ${(err as Error).message}`)
-    }
+  // 并发加载，避免多个插件串行把启动时间累加；结果顺序与 manifest 保持一致
+  const results = await Promise.all(
+    manifests.map(async (item) => {
+      try {
+        await loadScript(item.url)
+        return { url: item.url, ok: true as const }
+      } catch (err) {
+        console.warn(`[BI Plugin] ${(err as Error).message}`)
+        return { url: item.url, ok: false as const }
+      }
+    }),
+  )
+
+  return {
+    loaded: results.filter((r) => r.ok).map((r) => r.url),
+    failed: results.filter((r) => !r.ok).map((r) => r.url),
   }
-  return { loaded, failed }
 }

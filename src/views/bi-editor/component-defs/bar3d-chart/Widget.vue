@@ -5,6 +5,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import type { ECOption } from '../_shared/echarts-config'
+import { ensureEchartsGl } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
 import { deriveDefaultPropsCached } from '../types'
@@ -180,6 +181,8 @@ function applyChartOption() {
 }
 
 onMounted(async () => {
+  // 先懒注册 echarts-gl（WebGL 扩展），再渲染首个 option
+  await ensureEchartsGl()
   initTimer = window.setTimeout(applyChartOption, 50)
 })
 

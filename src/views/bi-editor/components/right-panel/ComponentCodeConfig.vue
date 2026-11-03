@@ -59,12 +59,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, defineAsyncComponent } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 import { useBiEditorStore } from '@/stores/bi-editor'
-import MonacoEditor from '@/components/MonacoEditor.vue'
 import {
   Document as CodeIcon,
   FullScreen as FullScreenIcon,
@@ -72,6 +71,9 @@ import {
   Download as DownloadIcon,
   Upload as UploadIcon,
 } from '@element-plus/icons-vue'
+
+// 🔑 Monaco 体积大，仅在打开「代码编辑配置」弹窗时按需加载
+const MonacoEditor = defineAsyncComponent(() => import('@/components/MonacoEditor.vue'))
 
 const store = useBiEditorStore()
 

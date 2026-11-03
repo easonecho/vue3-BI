@@ -52,10 +52,29 @@ export default defineConfig({
     },
   },
   build: {
+    // 现代浏览器已原生支持 modulepreload；关闭 polyfill 可避免 Vite 的
+    // preload helper 被并入 monaco chunk，导致入口静态依赖 monaco
+    modulePreload: { polyfill: false },
     rollupOptions: {
       output: {
         // 使用函数进行精细控制
-        manualChunks(id, { _getModuleInfo }) {
+        manualChunks(id) {
+          // 0. Monaco 只被 ComponentCodeConfig 的异步组件引用，交给自动分包。
+          //    若落到下面的 vendor 兜底规则，入口会预加载整个 vendor（含 4 MB Monaco）。
+          if (id.includes('node_modules/monaco-editor')) {
+            return undefined
+          }
+
+          // 0.1 echarts-gl 仅在 3D 组件里动态 import；不能并入 echarts 主 chunk，
+          //     否则所有图表页面仍会下载 WebGL 依赖。交给自动分包生成独立异步 chunk。
+          //     注意: 'node_modules/echarts' 是 'node_modules/echarts-gl' 的前缀，
+          //     必须先排除，再走下面的 echarts 规则。
+          //     claygl 是 echarts-gl 的 WebGL 依赖，也必须随异步 chunk 走，
+          //     否则会落进首屏预加载的 vendor。
+          if (id.includes('node_modules/echarts-gl') || id.includes('node_modules/claygl')) {
+            return undefined
+          }
+
           // 1. 将 echarts 及其依赖单独打包
           if (id.includes('node_modules/echarts') || id.includes('node_modules/zrender')) {
             return 'echarts'
@@ -71,7 +90,12 @@ export default defineConfig({
             return 'vue-vendor'
           }
 
-          // 3. VXE Table 独立分包：仅编辑器表格组件使用，避免被打进首屏 vendor
+          // 3. 注意：Monaco 不放进 manualChunks。它只被 ComponentCodeConfig 的
+          //    defineAsyncComponent 动态引入，交给 Rollup/Rolldown 自动分包即可；
+          //    强行指定 chunk 名会把 preload helper 一并吸进该 chunk，使入口静态
+          //    依赖 Monaco。VXE Table 同理。
+
+          // 4. VXE Table 独立分包：仅编辑器表格组件使用，避免被打进首屏 vendor
           if (
             id.includes('node_modules/vxe-table') ||
             id.includes('node_modules/vxe-pc-ui') ||
@@ -80,7 +104,7 @@ export default defineConfig({
             return 'vxe'
           }
 
-          // 4. 将 UI 框架单独打包
+          // 5. 将 UI 框架单独打包
           if (id.includes('node_modules/element-plus')) {
             return 'ui-vendor'
           }

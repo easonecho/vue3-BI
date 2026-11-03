@@ -58,7 +58,7 @@ import {
   ElTreeSelect,
   ElUpload,
 } from 'element-plus'
-import 'element-plus/dist/index.css'
+import './styles/element-plus'
 import 'element-plus/theme-chalk/dark/css-vars.css'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
@@ -115,6 +115,15 @@ useThemeStore()
 
 // 🔑 P2-2 插件: 先安装 SDK 并加载外部插件脚本 (组件必须在 mount 前注册)
 installPluginSdk()
-loadExternalPlugins().finally(() => {
+
+/** 插件加载最长阻塞时间：超时后先挂载应用，插件脚本继续在后台加载 */
+const PLUGIN_STARTUP_TIMEOUT_MS = 3000
+const pluginReady = loadExternalPlugins().catch((err) => {
+  console.warn('[BI Plugin] 加载失败，应用继续启动', err)
+})
+const startupTimeout = new Promise<void>((resolve) => {
+  window.setTimeout(resolve, PLUGIN_STARTUP_TIMEOUT_MS)
+})
+Promise.race([pluginReady, startupTimeout]).finally(() => {
   app.mount('#app')
 })
