@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import type { RankingItem } from '../composables/useScreenDashboard'
+import type { RankingItem } from '../utils/screen-data'
 import { formatK } from '../utils/screen-utils'
 
 defineProps<{

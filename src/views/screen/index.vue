@@ -35,7 +35,7 @@
       <section class="screen-body">
         <div class="screen-col screen-col--left">
           <div class="panel">
-            <div class="panel__title">业务构成</div>
+            <div class="panel__title">{{ pieChartTitle }}</div>
             <div ref="pieRef" class="chart" />
           </div>
           <ScreenRatePanel :rates="rates" />
@@ -48,7 +48,7 @@
         </div>
         <div class="screen-col screen-col--right">
           <div class="panel">
-            <div class="panel__title">流量趋势 (近30日)</div>
+            <div class="panel__title">{{ lineChartTitle }}</div>
             <div ref="lineRef" class="chart" />
           </div>
           <ScreenRankingPanel :ranking="ranking" />
@@ -75,7 +75,9 @@ const {
   loading,
   errorMsg,
   screenTitle,
+  pieChartTitle,
   midChartTitle,
+  lineChartTitle,
   fullscreen,
   toggleFullscreen,
   back,
@@ -83,16 +85,20 @@ const {
   kpis,
   rates,
   ranking,
+  pieData,
+  barData,
+  lineData,
   init,
   stop,
-} = useScreenDashboard({ renderPie })
+} = useScreenDashboard()
 
 onMounted(async () => {
   await init()
   await nextTick()
-  renderPie()
-  renderLine()
-  renderBar()
+  // 图表容器在 loading 结束后才渲染；此时用真实数据（为空则由 option 构造器回退演示数据）
+  renderPie(pieData.value)
+  renderLine(lineData.value)
+  renderBar(barData.value)
   window.addEventListener('resize', resize)
 })
 

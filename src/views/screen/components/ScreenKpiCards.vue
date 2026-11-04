@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-import type { KpiItem } from '../composables/useScreenDashboard'
+import type { KpiItem } from '../utils/screen-data'
 
 defineProps<{
   kpis: KpiItem[]

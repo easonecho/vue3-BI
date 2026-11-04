@@ -1,17 +1,43 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getSystemStats, type SystemStats } from '@/api/monitor'
-import { getDashboardDetail } from '@/api/dashboard'
-import { executeDataset } from '@/api/dataset'
+import {
+  getProcessMemory,
+  getRuntimeMetrics,
+  getSystemStats,
+  type MetricsSnapshot,
+  type ProcessMemory,
+  type SystemStats,
+} from '@/api/monitor'
+import { getDashboardDetail, getDashboardList } from '@/api/dashboard'
+import {
+  executeDataset,
+  queryDataset,
+  type AggregateFn,
+} from '@/api/dataset'
 import { pad } from '../utils/screen-utils'
-import type { PieDatum } from '../utils/screen-chart-options'
-
-export interface KpiItem {
-  label: string
-  value: string
-  unit: string
-  color: string
-}
+import type { CategorySeriesData, PieDatum } from '../utils/screen-chart-options'
+import {
+  DEMO_RANKING,
+  DEMO_RATES,
+  buildCategorySeries,
+  buildLegacyCategorySeries,
+  buildLegacyPieData,
+  buildPieData,
+  buildRankingFromDashboards,
+  buildRankingFromSeries,
+  buildRatesFromSystem,
+  extractLayoutDatasetId,
+  findBarConfig,
+  findLineConfig,
+  findPieConfig,
+  parseLayoutChartConfigs,
+  readString,
+  readStringArray,
+  type KpiItem,
+  type RankingItem,
+  type RateItem,
+  type ScreenChartConfig,
+} from '../utils/screen-data'
 
 const DEMO_KPIS: KpiItem[] = [
   { label: '总销售额', value: '¥ 3,284,195', unit: '', color: '#00eaff' },
@@ -21,49 +47,44 @@ const DEMO_KPIS: KpiItem[] = [
   { label: '客单价', value: '263', unit: '¥', color: '#c084fc' },
 ]
 
-export interface RateItem {
-  label: string
-  value: number
-  color: string
-}
-
-const DEMO_RATES: RateItem[] = [
-  { label: '销售目标达成率', value: 78.4, color: '#00eaff' },
-  { label: '回款达成率', value: 64.2, color: '#4ade80' },
-  { label: '用户增长目标', value: 55.9, color: '#f7c365' },
-  { label: '工单处理率', value: 91.3, color: '#c084fc' },
-]
-
-export interface RankingItem {
-  name: string
-  value: number
-  percent: number
-}
-
-const DEMO_RANKING: RankingItem[] = [
-  { name: '华东大区', value: 986420, percent: 100 },
-  { name: '华南大区', value: 752100, percent: 76 },
-  { name: '华北大区', value: 634800, percent: 64 },
-  { name: '西南大区', value: 442160, percent: 45 },
-  { name: '华中大区', value: 338200, percent: 34 },
-  { name: '西北大区', value: 214000, percent: 22 },
-  { name: '东北大区', value: 182500, percent: 18 },
-  { name: '青藏大区', value: 88200, percent: 9 },
-]
+const AGGREGATE_FNS = new Set<AggregateFn>([
+  'sum',
+  'avg',
+  'count',
+  'countDistinct',
+  'max',
+  'min',
+])
+const TOP_N_MAX = 500
+const RAW_ROW_LIMIT = 5000
+const AGGREGATE_ROW_LIMIT = 2000
 
 /**
- * 🔑 大屏会话：加载状态、系统统计数据、看板标题/数据集、KPI/进度/榜单数据与时钟。
- *   图表渲染由 useScreenCharts 负责。
+ * 🔑 大屏会话：系统统计 KPI、运行指标、真实图表数据、时钟与全屏。
+ *   图表渲染由 useScreenCharts 负责；本 composable 只负责取数与数据映射。
  */
-export function useScreenDashboard(opts: { renderPie: (data?: PieDatum[]) => void }) {
+export function useScreenDashboard() {
   const route = useRoute()
   const router = useRouter()
 
   const loading = ref(false)
   const errorMsg = ref('')
   const stats = ref<SystemStats | null>(null)
+  const memory = ref<ProcessMemory | null>(null)
+  const metrics = ref<MetricsSnapshot | null>(null)
+  const dashboardStats = ref<{ total: number; withCharts: number } | null>(null)
+
   const screenTitle = ref('企业运营数据驾驶舱')
+  const pieChartTitle = ref('业务构成')
   const midChartTitle = ref('全国销售大屏')
+  const lineChartTitle = ref('流量趋势')
+
+  // 图表真实数据（为空时由图表 option 构造器回退演示数据）
+  const pieData = ref<PieDatum[]>([])
+  const barData = ref<CategorySeriesData | null>(null)
+  const lineData = ref<CategorySeriesData | null>(null)
+  const barRanking = ref<RankingItem[]>([])
+  const dashboardRanking = ref<RankingItem[]>([])
 
   const fullscreen = ref(false)
   function toggleFullscreen() {
@@ -83,10 +104,7 @@ export function useScreenDashboard(opts: { renderPie: (data?: PieDatum[]) => voi
     nowText.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
   }
 
-  /**
-   * 顶部 KPI 卡片: 优先使用后端 monitor/stats 接口的真实数据,
-   * 若接口失败则回退到内置的演示数据 (避免页面空白)。
-   */
+  /** 顶部 KPI：优先 monitor/stats 真实数据，接口失败才回退演示数据 */
   const kpis = computed<KpiItem[]>(() => {
     const s = stats.value
     if (s) {
@@ -101,29 +119,158 @@ export function useScreenDashboard(opts: { renderPie: (data?: PieDatum[]) => voi
     return DEMO_KPIS
   })
 
-  const rates = ref<RateItem[]>(DEMO_RATES)
-  const ranking = ref<RankingItem[]>(DEMO_RANKING)
+  /** 运行指标：全部来自真实接口；一项都没有时才回退演示数据 */
+  const rates = computed<RateItem[]>(() => {
+    const items = buildRatesFromSystem({
+      metrics: metrics.value,
+      stats: stats.value,
+      // /monitor/memory 失败时，运行指标快照里也带有内存数据
+      memory: memory.value ?? metrics.value?.memoryMb ?? null,
+      dashboards: dashboardStats.value,
+    })
+    return items.length > 0 ? items : DEMO_RATES
+  })
 
-  /** 加载系统统计数据 (用于顶部 KPI 卡片) */
+  /** 榜单：优先柱状图真实数据，其次看板图表数，最后演示数据 */
+  const ranking = computed<RankingItem[]>(() => {
+    if (barRanking.value.length > 0) return barRanking.value
+    if (dashboardRanking.value.length > 0) return dashboardRanking.value
+    return DEMO_RANKING
+  })
+
   async function loadStats() {
     try {
       const res = await getSystemStats()
       stats.value = res.data
     } catch {
-      // 静默失败, 使用 fallback demo 数据
+      // 静默失败，使用 fallback demo 数据
     }
   }
 
-  /** 从后端布局中收窄出 datasetId（layout 为自由结构，按 unknown 读取） */
-  function extractDatasetId(layout: unknown): number | undefined {
-    if (typeof layout !== 'object' || layout === null || !('datasetId' in layout)) return undefined
-    return Number((layout as { datasetId?: unknown }).datasetId) || undefined
+  async function loadRuntime() {
+    await Promise.allSettled([
+      getRuntimeMetrics()
+        .then((res) => {
+          metrics.value = res.data
+        })
+        .catch(() => undefined),
+      getProcessMemory()
+        .then((res) => {
+          memory.value = res.data
+        })
+        .catch(() => undefined),
+    ])
+  }
+
+  /** 看板列表：用于「看板出图率」与图表数榜单兜底 */
+  async function loadDashboardRanking() {
+    try {
+      const res = await getDashboardList({ page: 1, pageSize: 100 })
+      const list = res.data.list ?? []
+      const withCharts = list.filter((item) => Number(item._count?.charts ?? 0) > 0).length
+      dashboardStats.value = { total: res.data.total, withCharts }
+      dashboardRanking.value = buildRankingFromDashboards(list)
+    } catch {
+      // 列表接口失败：不影响大屏主体
+    }
+  }
+
+  /** 解析图表聚合配置：缺省 sum；显式 none 表示不聚合 */
+  function resolveAggregate(config: ScreenChartConfig): AggregateFn | 'none' {
+    const raw = readString(config.props.aggregate) ?? 'sum'
+    if (raw === 'none') return 'none'
+    return AGGREGATE_FNS.has(raw as AggregateFn) ? (raw as AggregateFn) : 'sum'
+  }
+
+  function resolveTopN(config: ScreenChartConfig): number {
+    const value = Number(config.props.topN)
+    if (!Number.isFinite(value) || value <= 0) return 0
+    return Math.min(TOP_N_MAX, Math.floor(value))
   }
 
   /**
-   * 加载指定 dashboard 的数据
-   * 若路由有 :id 参数, 尝试加载该 dashboard 并从中提取数据集执行结果用于图表
+   * 取图表数据：
+   *   - 聚合模式走服务端 GROUP BY（与编辑器内的图表逻辑一致）
+   *   - Top-N 模式按第一个度量排序并 LIMIT
+   *   - 非聚合模式拉取原始行，前端映射字段
    */
+  async function fetchChartRows(
+    config: ScreenChartConfig,
+    categoryField: string,
+    valueFields: string[],
+  ): Promise<Record<string, unknown>[]> {
+    const aggregate = resolveAggregate(config)
+    if (aggregate !== 'none') {
+      const topN = resolveTopN(config)
+      const direction =
+        readString(config.props.topNDirection) === 'asc' ? ('asc' as const) : ('desc' as const)
+      const res = await queryDataset(config.datasetId, {
+        groupBy: [categoryField],
+        metrics: valueFields.map((field) => ({ field, aggregate, alias: field })),
+        orderBy:
+          topN > 0
+            ? { field: valueFields[0], direction }
+            : { field: categoryField, direction: 'asc' },
+        limit: topN > 0 ? topN : AGGREGATE_ROW_LIMIT,
+      })
+      return res.data.rows ?? []
+    }
+
+    const res = await executeDataset(config.datasetId, { limit: RAW_ROW_LIMIT })
+    return res.data.rows ?? []
+  }
+
+  async function loadPieChart(config: ScreenChartConfig | null) {
+    if (!config) return
+    const nameField = readString(config.dataConfig.nameField)
+    const valueField = readString(config.dataConfig.valueField)
+    if (!nameField || !valueField) return
+    const rows = await fetchChartRows(config, nameField, [valueField])
+    pieData.value = buildPieData(rows, nameField, valueField)
+  }
+
+  async function loadCategoryChart(
+    config: ScreenChartConfig | null,
+  ): Promise<CategorySeriesData | null> {
+    if (!config) return null
+    const categoryField = readString(config.dataConfig.categoryField)
+    const valueFields = readStringArray(config.dataConfig.valueFields)
+    if (!categoryField || valueFields.length === 0) return null
+    const rows = await fetchChartRows(config, categoryField, valueFields)
+    return buildCategorySeries(rows, categoryField, valueFields)
+  }
+
+  async function loadBarChart(config: ScreenChartConfig | null) {
+    const data = await loadCategoryChart(config)
+    if (!data) return
+    barData.value = data
+    barRanking.value = buildRankingFromSeries(data)
+  }
+
+  async function loadLineChart(config: ScreenChartConfig | null) {
+    const data = await loadCategoryChart(config)
+    if (data) lineData.value = data
+  }
+
+  /** 旧布局兜底：只有顶层 datasetId、没有图表组件配置时使用 */
+  async function loadLegacyData(datasetId: number) {
+    const res = await executeDataset(datasetId, { limit: 100 })
+    const rows = res.data.rows ?? []
+    if (rows.length === 0) return
+
+    const pie = buildLegacyPieData(rows)
+    if (pie.length > 0 && pieData.value.length === 0) pieData.value = pie
+
+    const series = buildLegacyCategorySeries(rows)
+    if (!series) return
+    if (!barData.value) {
+      barData.value = series
+      barRanking.value = buildRankingFromSeries(series)
+    }
+    if (!lineData.value) lineData.value = series
+  }
+
+  /** 加载 dashboard 的真实图表数据；失败不阻断大屏渲染 */
   async function loadDashboard() {
     const id = route.params.id
     if (!id) return
@@ -131,33 +278,34 @@ export function useScreenDashboard(opts: { renderPie: (data?: PieDatum[]) => voi
     try {
       const res = await getDashboardDetail(Number(id))
       const dashboard = res.data
-      if (dashboard?.name) {
-        screenTitle.value = dashboard.name
-      }
-      const datasetId = extractDatasetId(dashboard?.layout)
-      if (datasetId) {
-        try {
-          const dsRes = await executeDataset(datasetId, { limit: 100 })
-          const rows = dsRes.data.rows || []
-          if (rows.length > 0) {
-            // 假设数据集有 name 和 value 列, 用于饼图
-            const pieData = rows
-              .slice(0, 8)
-              .map((r) => ({
-                name: String(r.name || r.label || r.region || '未知'),
-                value: Number(r.value || r.count || r.amount || 0),
-              }))
-              .filter((d) => d.value > 0)
-            if (pieData.length > 0) {
-              opts.renderPie(pieData)
-            }
-          }
-        } catch {
-          // 数据集执行失败, 使用默认渲染
-        }
+      if (dashboard?.name) screenTitle.value = dashboard.name
+
+      const layout = dashboard?.layout
+      const configs = parseLayoutChartConfigs(layout)
+      const pieConfig = findPieConfig(configs)
+      const barConfig = findBarConfig(configs)
+      const lineConfig = findLineConfig(configs)
+
+      const pieTitle = pieConfig ? readString(pieConfig.props.titleText) : null
+      if (pieTitle) pieChartTitle.value = pieTitle
+      const barTitle = barConfig ? readString(barConfig.props.titleText) : null
+      if (barTitle) midChartTitle.value = barTitle
+      const lineTitle = lineConfig ? readString(lineConfig.props.titleText) : null
+      if (lineTitle) lineChartTitle.value = lineTitle
+
+      await Promise.allSettled([
+        loadPieChart(pieConfig),
+        loadBarChart(barConfig),
+        loadLineChart(lineConfig),
+      ])
+
+      // 没有任何图表配置时，兼容旧布局的顶层 datasetId
+      if (!pieConfig && !barConfig && !lineConfig) {
+        const legacyId = extractLayoutDatasetId(layout)
+        if (legacyId) await loadLegacyData(legacyId)
       }
     } catch {
-      // dashboard 加载失败, 不阻断整个大屏渲染
+      // dashboard 加载失败：保留演示数据，不阻断整个大屏
     }
   }
 
@@ -167,14 +315,13 @@ export function useScreenDashboard(opts: { renderPie: (data?: PieDatum[]) => voi
     tickClock()
     clockTimer = window.setInterval(tickClock, 1000)
 
-    // 并行加载统计和 dashboard 数据
-    await Promise.allSettled([loadStats(), loadDashboard()])
+    await Promise.allSettled([loadStats(), loadRuntime(), loadDashboard(), loadDashboardRanking()])
 
     loading.value = false
 
-    // 每 30 秒刷新一次统计
     statsTimer = window.setInterval(() => {
-      loadStats()
+      void loadStats()
+      void loadRuntime()
     }, 30000)
   }
 
@@ -187,7 +334,9 @@ export function useScreenDashboard(opts: { renderPie: (data?: PieDatum[]) => voi
     loading,
     errorMsg,
     screenTitle,
+    pieChartTitle,
     midChartTitle,
+    lineChartTitle,
     fullscreen,
     toggleFullscreen,
     back,
@@ -195,6 +344,9 @@ export function useScreenDashboard(opts: { renderPie: (data?: PieDatum[]) => voi
     kpis,
     rates,
     ranking,
+    pieData,
+    barData,
+    lineData,
     init,
     stop,
   }

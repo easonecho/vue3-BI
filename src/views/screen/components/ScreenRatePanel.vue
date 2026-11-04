@@ -1,6 +1,6 @@
 <template>
   <div class="panel">
-    <div class="panel__title">目标达成率</div>
+    <div class="panel__title">系统运行指标</div>
     <div class="rate-grid">
       <div v-for="r in rates" :key="r.label" class="rate-item">
         <div class="rate-item__top">
@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import type { RateItem } from '../composables/useScreenDashboard'
+import type { RateItem } from '../utils/screen-data'
 
 defineProps<{
   rates: RateItem[]

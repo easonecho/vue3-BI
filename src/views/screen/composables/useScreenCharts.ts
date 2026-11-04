@@ -1,9 +1,10 @@
 import { ref } from 'vue'
-import { init as echartsInit, use, type ECharts } from 'echarts/core'
+import { getInstanceByDom, init as echartsInit, use, type ECharts } from 'echarts/core'
 import { BarChart, LineChart, PieChart } from 'echarts/charts'
 import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import {
+  type CategorySeriesData,
   type PieDatum,
   buildBarOption,
   buildLineOption,
@@ -23,26 +24,41 @@ export function useScreenCharts() {
   const barRef = ref<HTMLDivElement | null>(null)
   let charts: ECharts[] = []
 
+  /**
+   * 复用已有 ECharts 实例。
+   * 避免同一容器重复 init（会导致内存泄漏与图表叠加）。
+   */
+  function ensureChart(target: HTMLDivElement | null): ECharts | null {
+    if (!target) return null
+    const existing = getInstanceByDom(target)
+    if (existing) {
+      if (!charts.includes(existing)) charts.push(existing)
+      return existing
+    }
+    const instance = echartsInit(target)
+    charts.push(instance)
+    return instance
+  }
+
   /** 业务构成饼图；传入真实数据集结果时替换演示数据 */
   function renderPie(data?: PieDatum[]) {
-    if (!pieRef.value) return
-    const c = echartsInit(pieRef.value)
-    charts.push(c)
-    c.setOption(buildPieOption(data))
+    const chart = ensureChart(pieRef.value)
+    if (!chart) return
+    chart.setOption(buildPieOption(data), true)
   }
 
-  function renderLine() {
-    if (!lineRef.value) return
-    const c = echartsInit(lineRef.value)
-    charts.push(c)
-    c.setOption(buildLineOption())
+  /** 流量趋势折线图；传入真实数据集结果时替换演示数据 */
+  function renderLine(data?: CategorySeriesData | null) {
+    const chart = ensureChart(lineRef.value)
+    if (!chart) return
+    chart.setOption(buildLineOption(data), true)
   }
 
-  function renderBar() {
-    if (!barRef.value) return
-    const c = echartsInit(barRef.value)
-    charts.push(c)
-    c.setOption(buildBarOption())
+  /** 全国销售柱状图；传入真实数据集结果时替换演示数据 */
+  function renderBar(data?: CategorySeriesData | null) {
+    const chart = ensureChart(barRef.value)
+    if (!chart) return
+    chart.setOption(buildBarOption(data), true)
   }
 
   function resize() {
