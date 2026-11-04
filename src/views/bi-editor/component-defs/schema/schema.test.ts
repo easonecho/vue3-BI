@@ -27,13 +27,15 @@ function keysOf(fields: PropField[]): string[] {
 }
 
 describe('组件 Schema 组合', () => {
-  it('chartCommonSchema 按「标题 / 图例 / 提示框 / 动画 / 画布内边距」顺序组合', () => {
+  it('chartCommonSchema 按「标题 / 图例 / 提示框 / 动画 / 画布内边距 / 注释」顺序组合', () => {
     const keys = keysOf(chartCommonSchema)
     expect(keys[0]).toBe('titleShow')
     expect(keys).toContain('legendShow')
     expect(keys).toContain('tooltipShow')
     expect(keys).toContain('animationShow')
-    expect(keys[keys.length - 1]).toBe('gridContainLabel')
+    expect(keys).toContain('gridContainLabel')
+    expect(keys[keys.indexOf('gridContainLabel') + 1]).toBe('annotationShow')
+    expect(keys[keys.length - 1]).toBe('annotationFontSize')
   })
 
   it('chartAxesSchema 按「X 轴 / Y 轴 / 数据缩放 / 数据对比 / 参考线」顺序组合', () => {

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  applyUserChartConfig,
   deepMerge,
   mergeOptions,
   getBaseOption,
@@ -141,6 +142,36 @@ describe('buildReferenceLineMarkLine', () => {
     expect(markLine.lineStyle).toMatchObject({ color: '#2563eb' })
     const formatter = (markLine.label as { formatter: () => string }).formatter
     expect(formatter()).toBe('目标线')
+  })
+})
+
+describe('applyUserChartConfig 图表注释', () => {
+  function merge(props: PropBag, series: Array<Record<string, unknown>>) {
+    return applyUserChartConfig(
+      {},
+      props,
+      { series } as unknown as ECOption,
+      { hasAxes: true },
+    )
+  }
+
+  it('文本注释注入 graphic', () => {
+    const merged = merge(
+      { annotationShow: true, annotationType: 'text', annotationText: '本月峰值' } as PropBag,
+      [{ type: 'bar', data: [10, 20] }],
+    )
+    const graphic = (merged as Record<string, unknown>).graphic as Array<Record<string, unknown>>
+    expect(graphic).toHaveLength(1)
+    expect(graphic[0]).toMatchObject({ type: 'text', style: { text: '本月峰值' } })
+  })
+
+  it('标记点挂到 bar 系列', () => {
+    const merged = merge(
+      { annotationShow: true, annotationType: 'markPoint', annotationValue: 20 } as PropBag,
+      [{ type: 'bar', data: [10, 20] }],
+    )
+    const series = merged.series as Array<Record<string, unknown>>
+    expect(series[0].markPoint).toMatchObject({ data: [{ yAxis: 20, name: '' }] })
   })
 })
 

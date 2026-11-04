@@ -24,6 +24,7 @@ import {
   toNumericValue,
   type SeriesAnalysis,
 } from './chart-analysis'
+import { applyChartAnnotation } from './chart-annotation'
 
 // ================= 公共默认配置 =================
 
@@ -394,6 +395,17 @@ export function applyUserChartConfig(
   applyProgressive(merged)
   // 🔑 参考线：在第一个数值系列上叠加 markLine（追加而非覆盖系列配置）
   applyReferenceLine(merged, p)
+  // 🔑 图表注释：文本注释挂到 graphic，标记点挂到第一个数值系列
+  applyChartAnnotation(merged, {
+    show: p.annotationShow,
+    type: p.annotationType,
+    text: p.annotationText,
+    value: p.annotationValue,
+    left: p.annotationLeft,
+    top: p.annotationTop,
+    color: p.annotationColor,
+    fontSize: p.annotationFontSize,
+  })
   // 🔑 分析指标（占比 / 同环比）：包装 tooltip formatter，不修改 series 数据
   applyAnalysisTooltip(merged, p)
   return merged
