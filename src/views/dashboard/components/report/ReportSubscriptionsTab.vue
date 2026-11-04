@@ -6,7 +6,7 @@
       </el-button>
       <el-button size="small" :loading="loading" @click="emit('refresh')">刷新</el-button>
       <span class="report-hint">
-        按 cron 定时生成看板数据快照并落库，可在「投递记录」查看；Webhook 渠道额外推送摘要
+        按 cron 定时生成看板数据快照并落库；站内 / 邮件 / 企业微信 / 钉钉 / Webhook 按渠道投递
       </span>
     </div>
 
@@ -19,8 +19,8 @@
       </el-table-column>
       <el-table-column label="渠道" width="110" align="center">
         <template #default="{ row }">
-          <el-tag size="small" :type="row.channel === 'webhook' ? 'warning' : 'primary'">
-            {{ row.channel === 'webhook' ? 'Webhook' : '站内' }}
+          <el-tag size="small" :type="reportChannelTagType(row.channel)">
+            {{ reportChannelLabel(row.channel) }}
           </el-tag>
         </template>
       </el-table-column>
@@ -73,6 +73,7 @@
 import { Plus } from '@element-plus/icons-vue'
 import type { ReportSubscription } from '@/api/report'
 import { formatTime } from '../../utils/report-utils'
+import { reportChannelLabel, reportChannelTagType } from '../../utils/report-channel'
 
 defineProps<{
   subscriptions: ReportSubscription[]

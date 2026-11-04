@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cellValue, formatTime } from './report-utils'
+import { cellValue, formatTime, parseRecipientEmails } from './report-utils'
 
 describe('report-utils.formatTime', () => {
   it('空值显示占位符', () => {
@@ -10,6 +10,25 @@ describe('report-utils.formatTime', () => {
   it('按 zh-CN 24 小时制格式化时间', () => {
     const value = '2024-01-02T03:04:05.000Z'
     expect(formatTime(value)).toBe(new Date(value).toLocaleString('zh-CN', { hour12: false }))
+  })
+})
+
+describe('report-utils.parseRecipientEmails', () => {
+  it('支持逗号/分号/中文分隔符/空白并去重', () => {
+    const result = parseRecipientEmails('A@b.com;c@d.com，a@b.com  e@f.com')
+    expect(result.valid).toEqual(['A@b.com', 'c@d.com', 'e@f.com'])
+    expect(result.invalid).toEqual([])
+  })
+
+  it('识别非法邮箱并保留在 invalid', () => {
+    const result = parseRecipientEmails('bad@, @bad.com, ok@example.com')
+    expect(result.valid).toEqual(['ok@example.com'])
+    expect(result.invalid).toEqual(['bad@', '@bad.com'])
+  })
+
+  it('空输入返回空结果', () => {
+    expect(parseRecipientEmails(null)).toEqual({ valid: [], invalid: [] })
+    expect(parseRecipientEmails('   ')).toEqual({ valid: [], invalid: [] })
   })
 })
 

@@ -7,10 +7,10 @@
 
     <el-table v-loading="loading" :data="deliveries" size="small" border>
       <el-table-column prop="title" label="报表标题" min-width="260" show-overflow-tooltip />
-      <el-table-column label="渠道" width="100" align="center">
+      <el-table-column label="渠道" width="110" align="center">
         <template #default="{ row }">
-          <el-tag size="small" :type="row.channel === 'webhook' ? 'warning' : 'primary'">
-            {{ row.channel === 'webhook' ? 'Webhook' : '站内' }}
+          <el-tag size="small" :type="reportChannelTagType(row.channel)">
+            {{ reportChannelLabel(row.channel) }}
           </el-tag>
         </template>
       </el-table-column>
@@ -60,6 +60,7 @@
 <script setup lang="ts">
 import type { ReportDelivery } from '@/api/report'
 import { formatTime } from '../../utils/report-utils'
+import { reportChannelLabel, reportChannelTagType } from '../../utils/report-channel'
 
 defineProps<{
   deliveries: ReportDelivery[]

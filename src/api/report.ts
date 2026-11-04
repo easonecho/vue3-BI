@@ -4,7 +4,7 @@
 import { get, post, put, del } from '@/utils/request'
 import type { PaginateData } from '@/utils/request'
 
-export type ReportChannel = 'inbox' | 'webhook'
+export type ReportChannel = 'inbox' | 'webhook' | 'email' | 'wecom' | 'dingtalk'
 export type ReportRunStatus = 'success' | 'failed'
 
 export interface ReportSubscription {
@@ -15,6 +15,8 @@ export interface ReportSubscription {
   recipients: string | null
   channel: ReportChannel
   webhookUrl: string | null
+  /** 钉钉机器人加签密钥（可选） */
+  webhookSecret: string | null
   enabled: boolean
   lastRunAt: string | null
   lastStatus: ReportRunStatus | null
@@ -32,6 +34,8 @@ export interface ReportSubscriptionInput {
   recipients?: string | null
   channel: ReportChannel
   webhookUrl?: string | null
+  /** 钉钉机器人加签密钥（可选） */
+  webhookSecret?: string | null
   enabled?: boolean
 }
 

@@ -197,7 +197,8 @@ views/dashboard/
 │     └─ useSubscriptionForm.ts
 └─ utils/
    ├─ dashboard-version-utils.ts      # 版本号、时间等格式化
-   └─ report-utils.ts                 # 报表状态与摘要格式化
+   ├─ report-utils.ts                 # 报表状态、收件人解析与摘要格式化
+   └─ report-channel.ts               # 投递渠道中文名/标签色/表单提示
 ```
 
 ### 5.3 看板模板（`views/dashboard-templates/`）

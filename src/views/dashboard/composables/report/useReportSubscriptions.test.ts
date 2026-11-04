@@ -38,6 +38,7 @@ function makeSubscription(overrides: Partial<ReportSubscription> = {}): ReportSu
     recipients: null,
     channel: 'inbox',
     webhookUrl: null,
+    webhookSecret: null,
     enabled: true,
     lastRunAt: null,
     lastStatus: null,
