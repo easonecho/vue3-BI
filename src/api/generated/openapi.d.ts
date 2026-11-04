@@ -2056,6 +2056,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/datasets/{id}/distinct": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * POST /api/datasets/{id}/distinct
+         * @description 由路由扫描自动收录；请求体 / 响应结构尚未补充文档，接入时可参考 DTO 定义。
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 成功 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/datasets/{id}/execute": {
         parameters: {
             query?: never;
@@ -4566,6 +4603,43 @@ export interface paths {
         put?: never;
         /**
          * POST /api/public/dashboards/{token}
+         * @description 由路由扫描自动收录；请求体 / 响应结构尚未补充文档，接入时可参考 DTO 定义。
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 成功 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/dashboards/{token}/datasets/{datasetId}/distinct": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * POST /api/public/dashboards/{token}/datasets/{datasetId}/distinct
          * @description 由路由扫描自动收录；请求体 / 响应结构尚未补充文档，接入时可参考 DTO 定义。
          */
         post: {

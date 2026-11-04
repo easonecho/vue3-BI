@@ -348,10 +348,16 @@ function dateStamp(): string {
 
 async function handleExport(row: any, format: ExportFormat) {
   try {
-    const blob = await exportDatasetByFormat(row.id, format, { filename: row.name })
+    const result = await exportDatasetByFormat(row.id, format, { filename: row.name })
     const safeName = String(row.name || 'dataset').replace(/[\\/:*?"<>|]/g, '_')
-    saveAs(blob, `${safeName}_${dateStamp()}.${format}`)
-    ElMessage.success('导出已开始')
+    saveAs(result.blob, `${safeName}_${dateStamp()}.${format}`)
+    if (result.truncated) {
+      ElMessage.warning(
+        `数据量超过导出行数上限${result.limit ? `（${result.limit} 行）` : ''}，已导出 ${result.rowCount ?? ''} 行，请缩小筛选范围后重试`,
+      )
+    } else {
+      ElMessage.success('导出已开始')
+    }
   } catch (e: any) {
     ElMessage.error(e?.message || '导出失败')
   }

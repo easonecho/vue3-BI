@@ -2,8 +2,8 @@
  * 全局筛选器组件定义
  * 下拉选择器, 选中后广播值到其他图表组件
  */
-import { defineAsyncComponent } from 'vue';
-import type { ComponentDefinition } from '../types';
+import { defineAsyncComponent } from 'vue'
+import type { ComponentDefinition } from '../types'
 
 export const filterDefinition: ComponentDefinition = {
   type: 'filter',
@@ -17,7 +17,13 @@ export const filterDefinition: ComponentDefinition = {
   widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
     { key: 'title', label: '标题', type: 'input', default: '请选择', group: '基础' },
-    { key: 'filterKey', label: '筛选字段', type: 'input', default: 'region', group: '基础' },
+    {
+      key: 'filterKey',
+      label: '筛选字段（未绑定数据集时手写）',
+      type: 'input',
+      default: 'region',
+      group: '基础',
+    },
     {
       key: 'filterType',
       label: '类型',
@@ -34,14 +40,22 @@ export const filterDefinition: ComponentDefinition = {
     { key: 'placeholder', label: '占位文字', type: 'input', default: '请选择', group: '基础' },
     {
       key: 'options',
-      label: '选项(每行一个 label:value)',
+      label: '静态选项（未绑定数据集时使用，每行 label:value）',
       type: 'textarea',
       default: '北京:bj\n上海:sh\n广州:gz\n深圳:sz',
       group: '选项',
     },
   ],
+  dataBindingSchema: [
+    {
+      key: 'field',
+      label: '筛选字段',
+      type: 'category',
+      multiple: false,
+    },
+  ],
   extraDefaults: {},
-  supportsDataBinding: false,
-};
+  supportsDataBinding: true,
+}
 
-export default filterDefinition;
+export default filterDefinition

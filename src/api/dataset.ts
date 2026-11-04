@@ -155,7 +155,10 @@ export function previewSql(params: {
 }
 
 /** 执行数据集 SQL (支持 params) */
-export function executeDataset(id: number, body?: { limit?: number; params?: Record<string, unknown> }) {
+export function executeDataset(
+  id: number,
+  body?: { limit?: number; params?: Record<string, unknown> },
+) {
   return post<{
     columns: string[]
     rows: Record<string, unknown>[]
@@ -261,7 +264,8 @@ export interface DatasetBatchPageItem {
   page?: DatasetPageParams
 }
 
-export type DatasetBatchItem = DatasetBatchExecuteItem | DatasetBatchQueryItem | DatasetBatchPageItem
+export type DatasetBatchItem =
+  DatasetBatchExecuteItem | DatasetBatchQueryItem | DatasetBatchPageItem
 
 /** 批量取数单项结果: 单项失败不影响其它项 */
 export interface DatasetBatchItemResult<T = unknown> {
@@ -277,6 +281,30 @@ export interface DatasetBatchItemResult<T = unknown> {
 export function fetchDatasetBatch(items: DatasetBatchItem[]) {
   // 批量请求可能包含多个大查询, 单独放宽超时 (默认 15s 容易在首屏被误判超时)
   return post<DatasetBatchItemResult[]>('/api/datasets/batch-query', { items }, { timeout: 120000 })
+}
+
+// ============================================================================
+// 筛选器候选值
+// ============================================================================
+
+export interface DatasetDistinctParams {
+  field: string
+  /** 默认 200, 后端硬上限 500 */
+  limit?: number
+  /** 关键字模糊搜索 */
+  search?: string
+  params?: Record<string, unknown>
+}
+
+export interface DatasetDistinctResult {
+  field: string
+  values: Array<string | number | boolean>
+  truncated: boolean
+}
+
+/** 查询筛选器候选值 (服务端 DISTINCT, 已应用 RLS/列权限) */
+export function fetchDatasetDistinct(datasetId: number, body: DatasetDistinctParams) {
+  return post<DatasetDistinctResult>(`/api/datasets/${datasetId}/distinct`, body)
 }
 
 /** 上传数据集响应 */

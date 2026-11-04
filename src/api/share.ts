@@ -2,7 +2,14 @@
  * 看板分享模块 API
  */
 import { get, post, del } from '@/utils/request'
-import type { DatasetPageParams, DatasetPageResult, DatasetQueryParams, DatasetQueryResult } from './dataset'
+import type {
+  DatasetPageParams,
+  DatasetPageResult,
+  DatasetQueryParams,
+  DatasetQueryResult,
+  DatasetDistinctParams,
+  DatasetDistinctResult,
+} from './dataset'
 
 /** 分享配置 (已登录用户查询) */
 export interface ShareConfig {
@@ -40,7 +47,9 @@ export interface PublicDashboard {
 export type PublicDashboardResult = PublicDashboard | { passwordRequired: boolean }
 
 /** 判断是否需要密码 */
-export function isPasswordRequired(data: PublicDashboardResult): data is { passwordRequired: boolean } {
+export function isPasswordRequired(
+  data: PublicDashboardResult,
+): data is { passwordRequired: boolean } {
   // 🔑 响应来自网络，按 unknown 读取后再收窄，不直接断言整体形状
   if (typeof data !== 'object' || data === null || !('passwordRequired' in data)) return false
   return (data as { passwordRequired?: unknown }).passwordRequired === true
@@ -103,8 +112,17 @@ export function fetchPublicDatasetPage(
   datasetId: number,
   body: DatasetPageParams & { password?: string } = {},
 ) {
-  return post<DatasetPageResult>(
-    `/api/public/dashboards/${token}/datasets/${datasetId}/rows`,
+  return post<DatasetPageResult>(`/api/public/dashboards/${token}/datasets/${datasetId}/rows`, body)
+}
+
+/** 公开数据集筛选候选值 (分享页/嵌入页筛选器, 无需登录) */
+export function fetchPublicDatasetDistinct(
+  token: string,
+  datasetId: number,
+  body: DatasetDistinctParams & { password?: string },
+) {
+  return post<DatasetDistinctResult>(
+    `/api/public/dashboards/${token}/datasets/${datasetId}/distinct`,
     body,
   )
 }

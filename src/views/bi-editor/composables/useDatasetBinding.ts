@@ -8,7 +8,15 @@
  *   - 缓存:模块级 Map 按 datasetId 缓存取数结果,避免多组件绑同数据集重复请求
  *   - 自动重取:watch dataSource.datasetId 变化时自动重新取数
  */
-import { ref, watch, computed, onUnmounted, getCurrentInstance, type Ref, type ComputedRef } from 'vue'
+import {
+  ref,
+  watch,
+  computed,
+  onUnmounted,
+  getCurrentInstance,
+  type Ref,
+  type ComputedRef,
+} from 'vue'
 import { type DatasetQueryParams } from '@/api/dataset'
 import { executePublicDataset, queryPublicDataset } from '@/api/share'
 import { getPublicDashboardContext } from '@/utils/public-dashboard-context'
@@ -46,24 +54,6 @@ function buildCacheKey(datasetId: number): string {
 
 /** 缓存有效期 5 分钟(同一编辑会话内不重复请求) */
 const CACHE_TTL = 5 * 60 * 1000
-
-/**
- * 🔑 大数据集采样：超过 SAMPLE_SIZE 行的数据集等距采样到 SAMPLE_SIZE 行。
- *   避免大数据集（10万行）直接进 ECharts 导致编辑器卡顿。
- *   fields 仍从全量数据推断，不受采样影响。
- */
-const SAMPLE_SIZE = 2000
-
-/** 等距采样：保留数据分布特征，比 slice(0, N) 更有代表性 */
-function sampleRows(rows: Record<string, unknown>[], size: number): Record<string, unknown>[] {
-  if (rows.length <= size) return rows
-  const step = rows.length / size
-  const result: Record<string, unknown>[] = []
-  for (let i = 0; i < size; i++) {
-    result[i] = rows[Math.floor(i * step)]
-  }
-  return result
-}
 
 /** 手动清除指定数据集缓存(配置变更后可调用) */
 export function invalidateDatasetCache(datasetId: number) {
@@ -112,8 +102,7 @@ export function useDatasetBinding(
   //    用于联动筛选时排除源组件自身;非组件场景(如右侧面板数据预览)为 undefined。
   const componentId = (() => {
     const comp = (getCurrentInstance()?.props as Record<string, unknown> | undefined)?.comp as
-      | { id?: string }
-      | undefined
+      { id?: string } | undefined
     return comp?.id ? String(comp.id) : undefined
   })()
 
@@ -124,7 +113,11 @@ export function useDatasetBinding(
   /** 🔑 当前数据是否已在服务端完成过滤+聚合 (此时不再重复客户端联动过滤) */
   const serverFiltered = ref(false)
 
-  /** 🔑 联动/钻取/全局筛选后展示行:先过滤再等距采样,避免采样丢弃筛选目标 */
+  /**
+   * 🔑 联动/钻取/全局筛选后展示行。
+   * 不再做 2000 行等距采样: 采样会让求和/计数类图表结果失真;
+   * 本 composable 仍按 5000 行请求, 图表侧按需使用自身的聚合/分页能力。
+   */
   const rows = computed<Record<string, unknown>[]>(() => {
     const source = serverFiltered.value
       ? rawRows.value
@@ -134,7 +127,7 @@ export function useDatasetBinding(
           drillFilters: componentId ? linkageStore.getDrillStack(componentId) : [],
           componentId,
         })
-    return sampleRows(source, SAMPLE_SIZE)
+    return source
   })
 
   async function loadData() {
@@ -186,16 +179,15 @@ export function useDatasetBinding(
       const publicCtx = getPublicDashboardContext()
       // 登录态走批量调度器 (同帧多图表合并为一次 batch-query); 公开分享走匿名单请求
       const payload = publicCtx
-        ? (
-            spec
-              ? await queryPublicDataset(publicCtx.token, datasetId, {
-                  password: publicCtx.password,
-                  ...spec,
-                })
-              : await executePublicDataset(publicCtx.token, datasetId, {
-                  password: publicCtx.password,
-                  limit: 5000,
-                })
+        ? (spec
+            ? await queryPublicDataset(publicCtx.token, datasetId, {
+                password: publicCtx.password,
+                ...spec,
+              })
+            : await executePublicDataset(publicCtx.token, datasetId, {
+                password: publicCtx.password,
+                limit: 5000,
+              })
           ).data
         : spec
           ? await requestDatasetQuery(datasetId, spec)
@@ -208,7 +200,7 @@ export function useDatasetBinding(
         : list.length > 0
           ? Object.keys(list[0])
           : []
-      // 缓存结果行,展示时再采样(聚合结果不再走客户端过滤)
+      // 缓存结果行;过滤在渲染时进行,不再采样
       datasetCache.set(cacheKey, {
         rows: list,
         fields: inferredFields.slice(),
@@ -250,7 +242,7 @@ export function useDatasetBinding(
     watch(refreshSignal, () => loadData())
     // 🔑 聚合规格变化 (切换聚合方式/映射字段/联动筛选/钻取) → 重新请求
     if (aggregateRequest) {
-      watch(() => JSON.stringify(aggregateRequest.value), () => loadData())
+      watch(aggregateRequest, () => loadData(), { deep: true })
     }
   }
 
@@ -287,7 +279,9 @@ export function useWorkerMappedData(
   categoryField: ComputedRef<string | undefined>,
   valueFields: ComputedRef<string[] | undefined>,
 ) {
-  const result = ref<{ categories: string[]; series: { name: string; data: number[] }[] } | null>(null)
+  const result = ref<{ categories: string[]; series: { name: string; data: number[] }[] } | null>(
+    null,
+  )
   let requestId = 0
 
   const worker = getSharedWorker()

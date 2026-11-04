@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import type { Dashboard } from '@/api/types'
 import DashboardGrid from './DashboardGrid.vue'

@@ -336,10 +336,35 @@ export function del<T = unknown>(
   return request.delete(url, { params, ...config }) as unknown as Promise<ApiResult<T>>
 }
 
+/** 下载响应中的导出元信息 (后端通过响应头返回行数与截断状态) */
+export interface DownloadResult {
+  blob: Blob
+  truncated: boolean
+  rowCount?: number
+  limit?: number
+}
+
+function headerNumber(value: unknown): number | undefined {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : undefined
+}
+
+/** 下载并保留后端响应头 (用于提示「已截断，请缩小筛选范围」) */
+export function downloadWithMeta(url: string, data?: unknown): Promise<DownloadResult> {
+  return request.post(url, data, { responseType: 'blob' }).then((res) => {
+    const response = res as unknown as AxiosResponse<Blob>
+    const headers = (response.headers || {}) as Record<string, unknown>
+    return {
+      blob: response.data as Blob,
+      truncated: headers['x-export-truncated'] === '1',
+      rowCount: headerNumber(headers['x-export-row-count']),
+      limit: headerNumber(headers['x-export-limit']),
+    }
+  })
+}
+
 export function download(url: string, data?: unknown): Promise<Blob> {
-  return request
-    .post(url, data, { responseType: 'blob' })
-    .then((res) => (res as unknown as AxiosResponse).data as Blob)
+  return downloadWithMeta(url, data).then((r) => r.blob)
 }
 
 export default request

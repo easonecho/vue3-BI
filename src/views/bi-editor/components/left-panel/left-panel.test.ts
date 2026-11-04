@@ -22,7 +22,8 @@ const stubs = {
   // 🔑 暴露 modelValue 长度，用于断言 collapsed 切换会收起所有分类
   'el-collapse': {
     props: ['modelValue'],
-    template: '<div class="collapse-stub" :data-groups="modelValue ? modelValue.length : 0"><slot /></div>',
+    template:
+      '<div class="collapse-stub" :data-groups="modelValue ? modelValue.length : 0"><slot /></div>',
   },
   'el-collapse-item': {
     props: ['name'],
@@ -69,7 +70,8 @@ describe('ComponentLibraryTab', () => {
     await items[0].trigger('click')
     const events = wrapper.emitted('add-component')
     expect(events).toHaveLength(1)
-    expect((events?.[0]?.[0] as ComponentMeta).type).toBeTruthy()
+    const firstComponent = events?.[0]?.[0] as ComponentMeta | undefined
+    expect(firstComponent?.type).toBeTruthy()
   })
 
   it('拖拽卡片会写入 dataTransfer 并对外 emit drag-start', async () => {

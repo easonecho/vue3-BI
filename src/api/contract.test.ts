@@ -25,6 +25,7 @@ const METHOD_ALIAS: Record<string, string> = {
   del: 'DELETE',
   delete: 'DELETE',
   download: 'POST',
+  downloadWithMeta: 'POST',
 }
 
 export interface EndpointCall {
@@ -172,7 +173,10 @@ describe('前后端接口契约', () => {
       .filter((call) => !specIndex.has(`${call.method} ${canonical(normalizePath(call.rawPath))}`))
       .map((call) => `${call.file}:${call.line}  ${call.method} ${call.rawPath}`)
 
-    expect(missing, `以下调用在后端不存在（请核对后端路由后修正前端，或补充后端接口）:\n${missing.join('\n')}`).toEqual([])
+    expect(
+      missing,
+      `以下调用在后端不存在（请核对后端路由后修正前端，或补充后端接口）:\n${missing.join('\n')}`,
+    ).toEqual([])
   })
 
   it('路径参数写法统一，不允许把参数拼进静态段落', () => {

@@ -1,7 +1,7 @@
 /**
  * 数据导出模块 API
  */
-import { download } from '@/utils/request'
+import { downloadWithMeta } from '@/utils/request'
 
 /** 导出参数 */
 export interface ExportParams {
@@ -11,32 +11,32 @@ export interface ExportParams {
 
 /** 导出数据集为 CSV */
 export function exportDatasetCsv(id: number, params?: ExportParams) {
-  return download(`/api/export/dataset/${id}/csv`, params)
+  return downloadWithMeta(`/api/export/dataset/${id}/csv`, params)
 }
 
 /** 导出数据集为 Excel */
 export function exportDatasetXlsx(id: number, params?: ExportParams) {
-  return download(`/api/export/dataset/${id}/xlsx`, params)
+  return downloadWithMeta(`/api/export/dataset/${id}/xlsx`, params)
 }
 
 /** 导出数据集为 JSON */
 export function exportDatasetJson(id: number, params?: ExportParams) {
-  return download(`/api/export/dataset/${id}/json`, params)
+  return downloadWithMeta(`/api/export/dataset/${id}/json`, params)
 }
 
 /** 导出图表数据为 CSV */
 export function exportChartCsv(id: number, params?: ExportParams) {
-  return download(`/api/export/chart/${id}/csv`, params)
+  return downloadWithMeta(`/api/export/chart/${id}/csv`, params)
 }
 
 /** 导出图表数据为 Excel */
 export function exportChartXlsx(id: number, params?: ExportParams) {
-  return download(`/api/export/chart/${id}/xlsx`, params)
+  return downloadWithMeta(`/api/export/chart/${id}/xlsx`, params)
 }
 
 /** 导出图表数据为 JSON */
 export function exportChartJson(id: number, params?: ExportParams) {
-  return download(`/api/export/chart/${id}/json`, params)
+  return downloadWithMeta(`/api/export/chart/${id}/json`, params)
 }
 
 export type ExportFormat = 'csv' | 'json' | 'xlsx'

@@ -78,6 +78,7 @@ services:
       ROLE_PERMISSION_TTL_MS: ${ROLE_PERMISSION_TTL_MS:-60000}
       METADATA_CACHE_TTL_MS: ${METADATA_CACHE_TTL_MS:-60000}
       DB_POOL_MAX_POOLS: ${DB_POOL_MAX_POOLS:-20}
+      SLOW_QUERY_MS: ${SLOW_QUERY_MS:-500}
       # 报表 Webhook 签名密钥 (可选, 留空回退使用 CRYPTO_KEY)
       WEBHOOK_SIGNING_SECRET: ${WEBHOOK_SIGNING_SECRET:-}
     # 仅绑定回环, 便于本机排障; 对外访问统一由 Nginx 代理
