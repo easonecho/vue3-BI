@@ -35,6 +35,7 @@ export {
   baseSeriesStylesWithAxesColumns,
   baseSeriesStylesNoAxesColumns,
   aggregatePropField,
+  topNPropFields,
 } from './schema/presets'
 
 export {

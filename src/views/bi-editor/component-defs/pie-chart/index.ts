@@ -1,6 +1,6 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import { chartCommonSchema, baseSeriesStylesNoAxesColumns, buildSeriesLabelSchema, aggregatePropField } from '../types' // 饼图没有 X/Y 轴，只引入通用 Schema（title/legend/tooltip/animation）
+import { chartCommonSchema, baseSeriesStylesNoAxesColumns, buildSeriesLabelSchema, aggregatePropField, topNPropFields } from '../types' // 饼图没有 X/Y 轴，只引入通用 Schema（title/legend/tooltip/animation）
 
 /** 🔑 饼图默认真实数据（[{name, value}, ...]） */
 export const PIE_DEFAULT_DATA = [
@@ -24,6 +24,7 @@ export const pieChartDefinition: ComponentDefinition = {
   propsSchema: [
     ...chartCommonSchema,
     aggregatePropField,
+    ...topNPropFields,
     {
       key: 'radius',
       label: '外半径 (%)',

@@ -1,6 +1,6 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema, aggregatePropField } from '../types'
+import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema, aggregatePropField, topNPropFields } from '../types'
 
 export const BAR_MIN_WIDTH = 5
 export const BAR_MAX_WIDTH = 50
@@ -27,6 +27,7 @@ export const barChartDefinition: ComponentDefinition = {
   propsSchema: [
     ...chartBaseSchema,
     aggregatePropField,
+    ...topNPropFields,
     {
       key: 'barWidth',
       label: '柱宽',

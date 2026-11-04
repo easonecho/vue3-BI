@@ -1,6 +1,6 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import { chartCommonSchema, aggregatePropField } from '../types'
+import { chartCommonSchema, aggregatePropField, topNPropFields } from '../types'
 
 /** 🔑 桑基图默认真实数据（节点 + 流向） */
 export const SANKEY_DEFAULT_NODES = [
@@ -37,6 +37,7 @@ export const sankeyChartDefinition: ComponentDefinition = {
   propsSchema: [
     ...chartCommonSchema,
     aggregatePropField,
+    ...topNPropFields,
     {
       key: 'nodeWidth',
       label: '节点宽度',

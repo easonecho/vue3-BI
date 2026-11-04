@@ -5,6 +5,7 @@ import {
   baseSeriesStylesWithAxesColumns,
   buildSeriesLabelSchema,
   aggregatePropField,
+  topNPropFields,
 } from '../types'
 
 /** 🔑 面积图默认真实数据 */
@@ -27,6 +28,7 @@ const definition: ComponentDefinition = {
   propsSchema: [
     ...chartBaseSchema,
     aggregatePropField,
+    ...topNPropFields,
     { key: 'smooth', label: '平滑曲线', type: 'switch', default: true, group: '样式' },
     { key: 'areaOpacity', label: '面积透明度', type: 'slider', min: 0, max: 1, step: 0.05, default: 0.35, group: '样式' },
     { key: 'stack', label: '堆叠', type: 'switch', default: false, group: '样式' },

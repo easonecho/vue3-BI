@@ -5,6 +5,7 @@ import {
   baseSeriesStylesWithAxesColumns,
   buildSeriesLabelSchema,
   aggregatePropField,
+  topNPropFields,
 } from '../types'
 
 /** 🔑 双轴组合图默认真实数据 */
@@ -25,6 +26,7 @@ const definition: ComponentDefinition = {
   propsSchema: [
     ...chartBaseSchema,
     aggregatePropField,
+    ...topNPropFields,
     { key: 'barWidth', label: '柱宽', type: 'slider', min: 5, max: 50, default: 20, group: '样式' },
     { key: 'smooth', label: '折线平滑', type: 'switch', default: true, group: '样式' },
     { key: 'rightAxisPercent', label: '右轴百分比显示', type: 'switch', default: true, group: '样式' },

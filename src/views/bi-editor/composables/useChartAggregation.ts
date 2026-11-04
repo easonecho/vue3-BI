@@ -22,6 +22,41 @@ export interface ChartAggregationOptions {
   limit?: number
 }
 
+/** Top-N 服务端硬上限, 避免一次请求过多分组 */
+export const TOP_N_MAX = 500
+
+/** 规范化 Top-N 配置: 非法/负数按 0 (不限) 处理 */
+export function clampTopN(value: unknown): number {
+  const n = Number(value)
+  if (!Number.isFinite(n)) return 0
+  return Math.min(TOP_N_MAX, Math.max(0, Math.floor(n)))
+}
+
+/**
+ * 计算聚合排序与行数限制:
+ *   - 配置了 Top-N 且有度量字段 → 按第一个度量排序 + LIMIT N (覆盖图表默认排序)
+ *   - 未配置 → 沿用图表默认 orderBy / limit
+ */
+export function resolveTopNPolicy(args: {
+  topN: unknown
+  topNDirection: unknown
+  metrics: string[]
+  fallbackOrderBy?: { field: string; direction?: 'asc' | 'desc' }
+  fallbackLimit: number
+}): { orderBy?: { field: string; direction?: 'asc' | 'desc' }; limit: number } {
+  const topN = clampTopN(args.topN)
+  if (topN > 0 && args.metrics.length > 0) {
+    return {
+      orderBy: {
+        field: args.metrics[0],
+        direction: args.topNDirection === 'asc' ? 'asc' : 'desc',
+      },
+      limit: topN,
+    }
+  }
+  return { orderBy: args.fallbackOrderBy, limit: args.fallbackLimit }
+}
+
 export function useChartAggregation(
   comp: ComponentInstance,
   options: ChartAggregationOptions,
@@ -45,13 +80,22 @@ export function useChartAggregation(
       comp.id,
     )
 
+    const metrics = options.metrics()
+    const { orderBy, limit } = resolveTopNPolicy({
+      topN: mergedProps.topN,
+      topNDirection: mergedProps.topNDirection,
+      metrics,
+      fallbackOrderBy: options.orderBy?.(),
+      fallbackLimit: options.limit ?? 2000,
+    })
+
     return buildAggregateRequest(
       {
         aggregate,
         groupBy,
-        metrics: options.metrics().map((field) => ({ field, alias: field })),
-        orderBy: options.orderBy?.(),
-        limit: options.limit ?? 2000,
+        metrics: metrics.map((field) => ({ field, alias: field })),
+        orderBy,
+        limit,
       },
       filters,
     )

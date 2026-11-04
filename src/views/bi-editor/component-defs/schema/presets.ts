@@ -31,3 +31,34 @@ export const aggregatePropField: PropField = {
   group: '数据聚合',
   tip: '选择聚合方式后, GROUP BY 在数据源侧执行, 指标不受前端采样影响',
 }
+
+/** 🔑 聚合后 Top-N —— 0 表示不限；排序按第一个数值指标，在数据源侧 LIMIT */
+export const topNPropFields: PropField[] = [
+  {
+    key: 'topN',
+    label: 'Top N',
+    type: 'number',
+    default: 0,
+    min: 0,
+    max: 500,
+    group: '数据聚合',
+    tip: '仅保留聚合结果的前 N 项，0 表示全部（在数据源侧排序 + LIMIT）',
+    visibleWhen: {
+      field: 'aggregate',
+      in: ['sum', 'avg', 'count', 'countDistinct', 'max', 'min'],
+    },
+  },
+  {
+    key: 'topNDirection',
+    label: 'Top N 排序',
+    type: 'select',
+    options: [
+      { label: '从大到小', value: 'desc' },
+      { label: '从小到大', value: 'asc' },
+    ],
+    default: 'desc',
+    group: '数据聚合',
+    tip: '按第一个数值指标排序',
+    visibleWhen: { field: 'topN', truthy: true },
+  },
+]

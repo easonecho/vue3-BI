@@ -1,6 +1,6 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema, aggregatePropField } from '../types'
+import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema, aggregatePropField, topNPropFields } from '../types'
 
 /** 🔑 折线图默认真实数据 */
 export const LINE_DEFAULT_CATEGORIES = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
@@ -22,6 +22,7 @@ export const lineChartDefinition: ComponentDefinition = {
   propsSchema: [
     ...chartBaseSchema,
     aggregatePropField,
+    ...topNPropFields,
     { key: 'smooth', label: '平滑曲线', type: 'switch', default: true, group: '样式' },
     { key: 'area', label: '面积填充', type: 'switch', default: false, group: '样式' },
     {

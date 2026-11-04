@@ -5,6 +5,7 @@ import {
   baseSeriesStylesNoAxesColumns,
   buildSeriesLabelSchema,
   aggregatePropField,
+  topNPropFields,
 } from '../types'
 
 /** 🔑 玫瑰图默认真实数据（[{name, value}, ...]） */
@@ -38,6 +39,7 @@ export const pieRoseChartDefinition: ComponentDefinition = {
   propsSchema: [
     ...chartBaseSchema,
     aggregatePropField,
+    ...topNPropFields,
     {
       key: 'roseType',
       label: '玫瑰模式',

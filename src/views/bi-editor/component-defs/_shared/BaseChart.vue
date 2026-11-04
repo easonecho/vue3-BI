@@ -1,14 +1,36 @@
 <template>
   <div class="base-chart-wrap">
     <div ref="chartRef" class="base-chart" :style="{ width: '100%', height: '100%' }" />
-    <transition name="chart-chip-fade">
-      <div v-if="chipText" class="chart-chip" @click.stop>
-        <span class="chart-chip__text">{{ chipText }}</span>
-        <button class="chart-chip__btn" type="button" @click.stop="handleChipAction">
-          {{ isDrilling ? '返回' : '×' }}
-        </button>
-      </div>
-    </transition>
+    <div
+      v-if="detailAvailable || chipText"
+      class="chart-actions"
+      @mousedown.stop
+      @click.stop
+    >
+      <button
+        v-if="detailAvailable"
+        class="chart-action-btn"
+        type="button"
+        title="查看当前筛选条件下的原始数据明细"
+        @click="openDetail"
+      >
+        明细
+      </button>
+      <transition name="chart-chip-fade">
+        <div v-if="chipText" class="chart-chip">
+          <span class="chart-chip__text">{{ chipText }}</span>
+          <button class="chart-chip__btn" type="button" @click.stop="handleChipAction">
+            {{ isDrilling ? '返回' : '×' }}
+          </button>
+        </div>
+      </transition>
+    </div>
+    <ChartDetailDrawer
+      v-model:visible="detailVisible"
+      :dataset-id="detailDatasetId"
+      :filters="detailFilters"
+      :title="comp.name"
+    />
   </div>
 </template>
 
@@ -16,6 +38,8 @@
 import { ref, onMounted, onBeforeUnmount, shallowRef, computed, type ShallowRef } from 'vue'
 import { init, type ECharts, type ECOption } from './echarts-config'
 import { useLinkageStore } from '@/stores/linkage'
+import { buildDetailFilters } from '@/views/bi-editor/composables/drill-through'
+import ChartDetailDrawer from './ChartDetailDrawer.vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 const props = defineProps<{ comp: ComponentInstance }>()
@@ -101,6 +125,33 @@ function handleChipAction() {
   }
   const filter = appliedLinkFilter.value
   if (filter) linkageStore.clearLinkFiltersBySource(filter.sourceId)
+}
+
+// ========== 🔑 明细钻取 (drill-through) ==========
+/** 图表绑定数据集时才提供明细入口 */
+const detailDatasetId = computed(() => {
+  const id = Number(props.comp.dataSource?.datasetId ?? 0)
+  return Number.isFinite(id) && id > 0 ? id : null
+})
+const detailAvailable = computed(() => detailDatasetId.value !== null)
+const detailVisible = ref(false)
+
+/**
+ * 明细查询沿用全局筛选 / 钻取 / 全部联动筛选。
+ * 注意与图表自身查询不同：这里不能排除当前组件作为源的联动，
+ * 否则点击柱子产生的筛选不会体现在明细中。
+ */
+const detailFilters = computed(() =>
+  buildDetailFilters({
+    globalFilters: linkageStore.filterValues,
+    linkFilters: linkageStore.linkFilters,
+    drillFilters: linkageStore.getDrillStack(compId.value),
+  }),
+)
+
+function openDetail() {
+  if (!detailAvailable.value) return
+  detailVisible.value = true
 }
 
 /** ECharts 数据项点击：配置 drillFields 时逐层下钻，否则联动其他图表 */
@@ -325,8 +376,8 @@ defineExpose({
   height: 100%;
 }
 
-/* 联动 / 钻取提示 chip：右上角浮层，不遮挡图表主体 */
-.chart-chip {
+/* 右上角操作区：明细按钮 + 联动/钻取提示 chip，不遮挡图表主体 */
+.chart-actions {
   position: absolute;
   top: 6px;
   right: 6px;
@@ -335,6 +386,35 @@ defineExpose({
   align-items: center;
   gap: 6px;
   max-width: calc(100% - 12px);
+}
+
+/* 明细入口：默认半透明，悬停时高亮 */
+.chart-action-btn {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(17, 24, 39, 0.68);
+  color: #e5e7eb;
+  font-size: 12px;
+  line-height: 18px;
+  cursor: pointer;
+  opacity: 0.72;
+  transition: opacity 0.18s ease, background 0.18s ease;
+
+  &:hover {
+    opacity: 1;
+    background: rgba(17, 24, 39, 0.9);
+  }
+}
+
+/* 联动 / 钻取提示 chip */
+.chart-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
   padding: 3px 8px;
   border-radius: 999px;
   background: rgba(17, 24, 39, 0.82);
@@ -347,6 +427,7 @@ defineExpose({
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 
   &__text {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

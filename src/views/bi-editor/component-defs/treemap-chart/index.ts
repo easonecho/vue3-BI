@@ -1,6 +1,6 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import { chartCommonSchema, aggregatePropField } from '../types'
+import { chartCommonSchema, aggregatePropField, topNPropFields } from '../types'
 
 /** 🔑 树图默认真实数据（层级占比） */
 export const TREEMAP_DEFAULT_DATA = [
@@ -49,6 +49,7 @@ export const treemapChartDefinition: ComponentDefinition = {
   propsSchema: [
     ...chartCommonSchema,
     aggregatePropField,
+    ...topNPropFields,
     {
       key: 'visualDimension',
       label: '视觉维度',

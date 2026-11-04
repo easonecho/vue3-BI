@@ -23,6 +23,7 @@ import {
   ElDescriptionsItem,
   ElDialog,
   ElDivider,
+  ElDrawer,
   ElDropdown,
   ElDropdownItem,
   ElDropdownMenu,
@@ -91,7 +92,7 @@ app.use(i18n)
 const elementPlusComponents = [
   ElAlert, ElAvatar, ElBadge, ElBreadcrumb, ElBreadcrumbItem, ElButton, ElButtonGroup,
   ElCard, ElCheckbox, ElCol, ElCollapse, ElCollapseItem, ElColorPicker, ElDatePicker,
-  ElDescriptions, ElDescriptionsItem, ElDialog, ElDivider, ElDropdown, ElDropdownItem,
+  ElDescriptions, ElDescriptionsItem, ElDialog, ElDivider, ElDrawer, ElDropdown, ElDropdownItem,
   ElDropdownMenu, ElEmpty, ElForm, ElFormItem, ElIcon, ElInput, ElInputNumber, ElMenu,
   ElMenuItem, ElOption, ElPagination, ElPopconfirm, ElProgress, ElRadio, ElRadioButton,
   ElRadioGroup, ElResult, ElRow, ElSelect, ElSlider, ElSubMenu, ElSwitch, ElTable,
