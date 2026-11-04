@@ -68,6 +68,16 @@ import {
   formatSemanticValue,
   getFieldSemantic,
 } from '../../composables/useDatasetSemantics'
+import {
+  buildConditionalCellStyle,
+  computeColumnRange,
+  computeDataBarMax,
+  normalizeField,
+  type ColorScaleRule,
+  type ColumnRange,
+  type ConditionalRule,
+  type DataBarRule,
+} from './conditional-format'
 
 const props = defineProps<{ comp: ComponentInstance }>()
 
@@ -202,6 +212,55 @@ const showPager = computed(() =>
     : pageSize.value > 0 && totalRows.value > pageSize.value,
 )
 
+// ================= 条件格式：阈值规则 / 色阶 / 数据条 =================
+
+/** 读取 props 中的配置行；开关关闭时不参与计算 */
+function readConfigRows<T>(show: unknown, rows: unknown): T[] {
+  if (!show || !Array.isArray(rows)) return []
+  return rows.filter(
+    (row): row is T => Boolean(row) && typeof row === 'object' && !Array.isArray(row),
+  )
+}
+
+const conditionalRules = computed<ConditionalRule[]>(() =>
+  readConfigRows<ConditionalRule>(
+    props.comp.props?.conditionalRuleShow,
+    props.comp.props?.conditionalRules,
+  ),
+)
+const colorScaleRules = computed<ColorScaleRule[]>(() =>
+  readConfigRows<ColorScaleRule>(
+    props.comp.props?.colorScaleShow,
+    props.comp.props?.colorScales,
+  ),
+)
+const dataBarRules = computed<DataBarRule[]>(() =>
+  readConfigRows<DataBarRule>(props.comp.props?.dataBarShow, props.comp.props?.dataBars),
+)
+
+/** 色阶按当前页数据计算量程（翻页/排序后自动更新） */
+const colorScaleRanges = computed<Record<string, ColumnRange>>(() => {
+  const ranges: Record<string, ColumnRange> = {}
+  for (const rule of colorScaleRules.value) {
+    const field = normalizeField(rule.field)
+    if (!field || ranges[field]) continue
+    const range = computeColumnRange(displayRows.value, field)
+    if (range) ranges[field] = range
+  }
+  return ranges
+})
+
+/** 数据条量程：配置值优先，否则取当前页最大值 */
+const dataBarMaxValues = computed<Record<string, number>>(() => {
+  const maxValues: Record<string, number> = {}
+  for (const rule of dataBarRules.value) {
+    const field = normalizeField(rule.field)
+    if (!field || Object.prototype.hasOwnProperty.call(maxValues, field)) continue
+    maxValues[field] = computeDataBarMax(displayRows.value, rule)
+  }
+  return maxValues
+})
+
 function handleSortChange(params: { field?: string; property?: string; order?: 'asc' | 'desc' | null }) {
   sortState.value = {
     field: params.field || params.property || '',
@@ -294,11 +353,31 @@ const containerStyle = computed(() => ({
   fontSize: `${props.comp.props?.fontSize || 12}px`,
 }))
 
-function cellStyleFn() {
-  return {
+interface CellStyleParams {
+  row?: Record<string, unknown>
+  column?: { field?: string }
+}
+
+/** 单元格样式：基础样式 + 条件格式（阈值规则 / 数据条 / 色阶） */
+function cellStyleFn(params?: CellStyleParams) {
+  const baseStyle = {
     fontSize: `${props.comp.props?.fontSize || 12}px`,
     color: props.comp.props?.color || '#374151',
   }
+  const field = normalizeField(params?.column?.field)
+  if (!field || !params?.row) return baseStyle
+
+  const conditionalStyle = buildConditionalCellStyle({
+    value: params.row[field],
+    field,
+    rules: conditionalRules.value,
+    scales: colorScaleRules.value,
+    bars: dataBarRules.value,
+    ranges: colorScaleRanges.value,
+    dataBarMax: dataBarMaxValues.value,
+  })
+  if (Object.keys(conditionalStyle).length === 0) return baseStyle
+  return { ...baseStyle, ...conditionalStyle }
 }
 
 function headerCellStyleFn() {
