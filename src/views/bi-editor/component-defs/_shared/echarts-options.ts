@@ -17,6 +17,13 @@ import {
   tooltipTriggerOf,
   type PropBag,
 } from './props'
+import {
+  buildAnalysisLines,
+  buildSeriesAnalyses,
+  escapeHtml,
+  toNumericValue,
+  type SeriesAnalysis,
+} from './chart-analysis'
 
 // ================= 公共默认配置 =================
 
@@ -387,6 +394,8 @@ export function applyUserChartConfig(
   applyProgressive(merged)
   // 🔑 参考线：在第一个数值系列上叠加 markLine（追加而非覆盖系列配置）
   applyReferenceLine(merged, p)
+  // 🔑 分析指标（占比 / 同环比）：包装 tooltip formatter，不修改 series 数据
+  applyAnalysisTooltip(merged, p)
   return merged
 }
 
@@ -470,4 +479,133 @@ function applyProgressive(option: ECOption) {
       series.progressiveThreshold = 3000
     }
   }
+}
+
+// ================= 分析指标 tooltip（占比 / 环比 / 同比） =================
+
+type TooltipFormatter = (params: unknown) => unknown
+
+interface AnalysisTooltipConfig {
+  showPercent?: boolean
+  showCompare?: boolean
+}
+
+const ANALYSIS_UP_COLOR = '#16a34a'
+const ANALYSIS_DOWN_COLOR = '#dc2626'
+
+function formatTooltipValue(value: unknown): string {
+  const numeric = toNumericValue(value)
+  return numeric === null ? escapeHtml(String(value ?? '-')) : String(numeric)
+}
+
+function resolveTooltipCategory(params: unknown): string {
+  const first = (Array.isArray(params) ? params[0] : params) as
+    | Record<string, unknown>
+    | undefined
+  const value = first?.axisValueLabel ?? first?.axisValue ?? first?.name ?? ''
+  return escapeHtml(String(value))
+}
+
+function analysisLineHtml(line: string): string {
+  const match = line.match(/([+-]?\d+(?:\.\d+)?)%$/)
+  const comparable = line.startsWith('环比：') || line.startsWith('同比：')
+  const color =
+    comparable && match
+      ? match[1].startsWith('-')
+        ? ANALYSIS_DOWN_COLOR
+        : match[1].startsWith('+')
+          ? ANALYSIS_UP_COLOR
+          : 'inherit'
+      : 'inherit'
+  return `<div style="font-size:12px;line-height:18px;opacity:.86;color:${color}">${escapeHtml(line)}</div>`
+}
+
+/**
+ * 生成 tooltip HTML。
+ *   - includeBase=true：完整 tooltip（类目 + 系列值 + 分析行）
+ *   - includeBase=false：只输出分析行，追加到图表已有的 formatter 结果后
+ */
+export function buildAnalysisTooltipHtml(
+  params: unknown,
+  analyses: Array<SeriesAnalysis | null>,
+  config: AnalysisTooltipConfig,
+  includeBase: boolean,
+): string {
+  const list = (Array.isArray(params) ? params : [params]).filter(
+    (item): item is Record<string, unknown> => !!item && typeof item === 'object',
+  )
+  if (list.length === 0) return ''
+
+  const rows = list
+    .map((param, index) => {
+      const rawSeriesIndex = Number(param.seriesIndex)
+      const seriesIndex = Number.isFinite(rawSeriesIndex) ? rawSeriesIndex : index
+      const rawDataIndex = Number(param.dataIndex)
+      const dataIndex = Number.isFinite(rawDataIndex) ? rawDataIndex : 0
+      const extra = buildAnalysisLines(analyses[seriesIndex], dataIndex, config)
+        .map((line) => analysisLineHtml(line))
+        .join('')
+      if (!includeBase) return extra
+
+      const marker = typeof param.marker === 'string' ? param.marker : ''
+      const name = escapeHtml(String(param.seriesName ?? ''))
+      return (
+        `<div style="display:flex;align-items:center;justify-content:space-between;` +
+        `gap:16px;line-height:22px;">` +
+        `<span>${marker}${name}</span>` +
+        `<span style="font-weight:600;">${formatTooltipValue(param.value)}</span>` +
+        `</div>${extra}`
+      )
+    })
+    .join('')
+
+  if (!includeBase) return rows
+  return `<div style="font-weight:600;margin-bottom:4px;">${resolveTooltipCategory(params)}</div>${rows}`
+}
+
+/**
+ * 把占比/同环比注入 tooltip：
+ *   - 已有函数 formatter：保留原内容，追加分析行
+ *   - 无 formatter：生成完整 tooltip（沿用用户配置的 tooltip 样式）
+ *   - 字符串模板 formatter：不处理（避免破坏模板语义）
+ */
+export function applyAnalysisTooltip(option: ECOption, p: PropBag) {
+  const showPercent = Boolean(p.sharePercentShow)
+  const showCompare = Boolean(p.compareShow)
+  if (!showPercent && !showCompare) return
+
+  const seriesList = Array.isArray(option.series)
+    ? option.series
+    : option.series
+      ? [option.series]
+      : []
+  const analyses = buildSeriesAnalyses(seriesList, {
+    showPercent,
+    showCompare,
+    yoyLag: Number(p.compareYoyLag),
+  })
+  if (!analyses.some(Boolean)) return
+
+  const tooltip = (Array.isArray(option.tooltip) ? option.tooltip[0] : option.tooltip) as unknown as
+    | Record<string, unknown>
+    | undefined
+  if (!tooltip || typeof tooltip !== 'object') return
+
+  const config: AnalysisTooltipConfig = { showPercent, showCompare }
+  const original = tooltip.formatter
+
+  if (typeof original === 'function') {
+    tooltip.formatter = (params: unknown) => {
+      const base = (original as TooltipFormatter)(params)
+      if (typeof base !== 'string') return base
+      return base + buildAnalysisTooltipHtml(params, analyses, config, false)
+    }
+    return
+  }
+
+  if (original === undefined) {
+    tooltip.formatter = (params: unknown) =>
+      buildAnalysisTooltipHtml(params, analyses, config, true)
+  }
+  // 字符串模板 formatter 无法安全追加，保持原样
 }

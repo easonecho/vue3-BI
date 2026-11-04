@@ -4,7 +4,11 @@ import {
   mergeOptions,
   getBaseOption,
   buildReferenceLineMarkLine,
+  buildAnalysisTooltipHtml,
+  applyAnalysisTooltip,
 } from './echarts-options'
+import type { ECOption } from './echarts-config'
+import type { PropBag } from './props'
 
 /**
  * 🔑 测试专用窄化辅助：deepMerge 的 specific 形参是 `Partial<T>`（仅顶层可选），
@@ -137,5 +141,142 @@ describe('buildReferenceLineMarkLine', () => {
     expect(markLine.lineStyle).toMatchObject({ color: '#2563eb' })
     const formatter = (markLine.label as { formatter: () => string }).formatter
     expect(formatter()).toBe('目标线')
+  })
+})
+
+describe('buildAnalysisTooltipHtml', () => {
+  const analyses = [
+    { percent: [25, 75], mom: [null, 100], yoy: [null, -50] },
+    null,
+  ]
+  const params = [
+    {
+      seriesIndex: 0,
+      dataIndex: 1,
+      seriesName: '销售额',
+      value: 300,
+      marker: '<span style="color:red"></span>',
+      axisValue: '2月',
+    },
+  ]
+
+  it('完整 tooltip 包含类目、数值与占比/同环比', () => {
+    const html = buildAnalysisTooltipHtml(
+      params,
+      analyses,
+      { showPercent: true, showCompare: true },
+      true,
+    )
+    expect(html).toContain('2月')
+    expect(html).toContain('销售额')
+    expect(html).toContain('300')
+    expect(html).toContain('占比：75.0%')
+    expect(html).toContain('环比：+100.0%')
+    expect(html).toContain('同比：-50.0%')
+    // 正增长绿色 / 负增长红色
+    expect(html).toContain('#16a34a')
+    expect(html).toContain('#dc2626')
+  })
+
+  it('includeBase=false 时只输出分析行', () => {
+    const html = buildAnalysisTooltipHtml(
+      params,
+      analyses,
+      { showPercent: true },
+      false,
+    )
+    expect(html).not.toContain('2月')
+    expect(html).not.toContain('销售额')
+    expect(html).toContain('占比：75.0%')
+  })
+
+  it('系列名与类目做 HTML 转义', () => {
+    const html = buildAnalysisTooltipHtml(
+      [{ seriesIndex: 0, dataIndex: 0, seriesName: '<b>x</b>', value: 1, axisValue: '<i>y</i>' }],
+      [{ percent: [100] }],
+      { showPercent: true },
+      true,
+    )
+    expect(html).toContain('&lt;b&gt;x&lt;/b&gt;')
+    expect(html).toContain('&lt;i&gt;y&lt;/i&gt;')
+    expect(html).not.toContain('<b>x</b>')
+  })
+
+  it('空参数返回空字符串', () => {
+    expect(buildAnalysisTooltipHtml([], analyses, { showPercent: true }, true)).toBe('')
+  })
+})
+
+describe('applyAnalysisTooltip', () => {
+  function makeOption(extra: Record<string, unknown> = {}): ECOption {
+    return {
+      tooltip: { trigger: 'axis' },
+      series: [{ type: 'bar', data: [10, 20, 70] }],
+      ...extra,
+    } as unknown as ECOption
+  }
+
+  function tooltipOf(option: ECOption): { formatter?: unknown } {
+    return (Array.isArray(option.tooltip) ? option.tooltip[0] : option.tooltip) as {
+      formatter?: unknown
+    }
+  }
+
+  function paramsOf(axisValue = '3月') {
+    return [
+      { seriesIndex: 0, dataIndex: 2, seriesName: '销售额', value: 70, axisValue },
+    ]
+  }
+
+  it('未开启时保持 tooltip 原样', () => {
+    const option = makeOption()
+    applyAnalysisTooltip(option, {} as PropBag)
+    expect(tooltipOf(option).formatter).toBeUndefined()
+  })
+
+  it('开启后生成 formatter 并返回完整 tooltip', () => {
+    const option = makeOption()
+    applyAnalysisTooltip(option, {
+      sharePercentShow: true,
+      compareShow: true,
+      compareYoyLag: 2,
+    } as PropBag)
+    const formatter = tooltipOf(option).formatter as (params: unknown) => string
+    const html = formatter(paramsOf())
+    expect(html).toContain('3月')
+    expect(html).toContain('占比：70.0%')
+    expect(html).toContain('环比：+250.0%')
+    expect(html).toContain('同比：+600.0%')
+  })
+
+  it('已有函数 formatter 时保留原内容并追加分析行', () => {
+    const option = makeOption({
+      tooltip: { trigger: 'axis', formatter: (p: Array<{ axisValue: string }>) => `raw:${p[0].axisValue}` },
+    })
+    applyAnalysisTooltip(option, {
+      sharePercentShow: true,
+      compareShow: true,
+      compareYoyLag: 2,
+    } as PropBag)
+    const formatter = tooltipOf(option).formatter as (params: unknown) => string
+    const html = formatter(paramsOf())
+    expect(html).toContain('raw:3月')
+    expect(html).toContain('占比：70.0%')
+    expect(html).not.toContain('font-weight:600;margin-bottom:4px')
+  })
+
+  it('字符串模板 formatter 保持不变', () => {
+    const option = makeOption({ tooltip: { trigger: 'axis', formatter: '{b}: {c}' } })
+    applyAnalysisTooltip(option, { sharePercentShow: true } as PropBag)
+    expect(tooltipOf(option).formatter).toBe('{b}: {c}')
+  })
+
+  it('没有可分析系列时不修改 tooltip', () => {
+    const option = {
+      tooltip: { trigger: 'item' },
+      series: [{ type: 'pie', data: [1, 2] }],
+    } as unknown as ECOption
+    applyAnalysisTooltip(option, { sharePercentShow: true } as PropBag)
+    expect(tooltipOf(option).formatter).toBeUndefined()
   })
 })
