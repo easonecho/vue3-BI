@@ -385,7 +385,71 @@ export function applyUserChartConfig(
   const merged = deepMerge(deepMerge(baseOption, userConfig), widgetOption)
   // 🔑 大数据集分块渲染：数据量超过阈值时 ECharts 自动分块，避免一次性渲染所有数据点
   applyProgressive(merged)
+  // 🔑 参考线：在第一个数值系列上叠加 markLine（追加而非覆盖系列配置）
+  applyReferenceLine(merged, p)
   return merged
+}
+
+/** 参考线配置（来自 Schema 字段） */
+export interface ReferenceLineConfig {
+  show?: unknown
+  value?: unknown
+  label?: unknown
+  color?: unknown
+}
+
+/**
+ * 构建 markLine 配置；未开启 / 参考值非法时返回 null。
+ * 纯函数，便于单测。
+ */
+export function buildReferenceLineMarkLine(
+  config: ReferenceLineConfig,
+): Record<string, unknown> | null {
+  if (!config.show) return null
+  const value = Number(config.value)
+  if (!Number.isFinite(value)) return null
+  const color = String(config.color ?? '').trim() || '#ef4444'
+  const label = String(config.label ?? '').trim() || String(value)
+  return {
+    silent: true,
+    symbol: 'none',
+    animation: false,
+    lineStyle: { color, type: 'dashed', width: 1.5 },
+    label: {
+      show: true,
+      position: 'insideEnd',
+      color,
+      formatter: () => label,
+    },
+    data: [{ yAxis: value }],
+  }
+}
+
+/**
+ * 把参考线挂到第一个 bar/line/scatter 系列。
+ * markLine 依赖数值轴，饼图/仪表盘等无坐标轴图表不会命中。
+ */
+function applyReferenceLine(option: ECOption, p: PropBag) {
+  const markLine = buildReferenceLineMarkLine({
+    show: p.referenceLineShow,
+    value: p.referenceLineValue,
+    label: p.referenceLineLabel,
+    color: p.referenceLineColor,
+  })
+  if (!markLine) return
+
+  const seriesList = Array.isArray(option.series)
+    ? option.series
+    : option.series
+      ? [option.series]
+      : []
+  const target = seriesList.find((item) => {
+    if (!item || typeof item !== 'object') return false
+    const type = (item as { type?: unknown }).type
+    return type === 'bar' || type === 'line' || type === 'scatter'
+  })
+  if (!target) return
+  ;(target as { markLine?: unknown }).markLine = markLine
 }
 
 /**

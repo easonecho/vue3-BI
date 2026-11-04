@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { deepMerge, mergeOptions, getBaseOption } from './echarts-options'
+import {
+  deepMerge,
+  mergeOptions,
+  getBaseOption,
+  buildReferenceLineMarkLine,
+} from './echarts-options'
 
 /**
  * 🔑 测试专用窄化辅助：deepMerge 的 specific 形参是 `Partial<T>`（仅顶层可选），
@@ -92,5 +97,45 @@ describe('mergeOptions 兼容别名', () => {
       title: { show: false },
       color: ['#1', '#2'],
     })
+  })
+})
+
+describe('buildReferenceLineMarkLine', () => {
+  it('未开启时返回 null', () => {
+    expect(buildReferenceLineMarkLine({ show: false, value: 100 })).toBeNull()
+    expect(buildReferenceLineMarkLine({ value: 100 })).toBeNull()
+  })
+
+  it('参考值非法时返回 null', () => {
+    expect(buildReferenceLineMarkLine({ show: true, value: 'abc' })).toBeNull()
+    expect(buildReferenceLineMarkLine({ show: true, value: undefined })).toBeNull()
+    expect(buildReferenceLineMarkLine({ show: true, value: Infinity })).toBeNull()
+  })
+
+  it('默认颜色与标签: 标签留空时显示参考值', () => {
+    const markLine = buildReferenceLineMarkLine({ show: true, value: 120 })
+    if (!markLine) throw new Error('未生成参考线')
+    expect(markLine).toMatchObject({
+      silent: true,
+      symbol: 'none',
+      lineStyle: { color: '#ef4444', type: 'dashed', width: 1.5 },
+      data: [{ yAxis: 120 }],
+    })
+    expect(markLine.label).toMatchObject({ show: true, position: 'insideEnd' })
+    const formatter = (markLine.label as { formatter: () => string }).formatter
+    expect(formatter()).toBe('120')
+  })
+
+  it('自定义颜色与标签', () => {
+    const markLine = buildReferenceLineMarkLine({
+      show: true,
+      value: 80,
+      label: '目标线',
+      color: '#2563eb',
+    })
+    if (!markLine) throw new Error('未生成参考线')
+    expect(markLine.lineStyle).toMatchObject({ color: '#2563eb' })
+    const formatter = (markLine.label as { formatter: () => string }).formatter
+    expect(formatter()).toBe('目标线')
   })
 })

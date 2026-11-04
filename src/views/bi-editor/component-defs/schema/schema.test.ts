@@ -36,12 +36,13 @@ describe('组件 Schema 组合', () => {
     expect(keys[keys.length - 1]).toBe('gridContainLabel')
   })
 
-  it('chartAxesSchema 按「X 轴 / Y 轴 / 数据缩放」顺序组合', () => {
+  it('chartAxesSchema 按「X 轴 / Y 轴 / 数据缩放 / 参考线」顺序组合', () => {
     const keys = keysOf(chartAxesSchema)
     expect(keys[0]).toBe('xAxisShow')
     expect(keys[keys.indexOf('xAxisInverse') + 1]).toBe('yAxisShow')
     expect(keys[keys.indexOf('yAxisInverse') + 1]).toBe('dataZoomShow')
-    expect(keys[keys.length - 1]).toBe('dataZoomEnd')
+    expect(keys[keys.indexOf('dataZoomEnd') + 1]).toBe('referenceLineShow')
+    expect(keys[keys.length - 1]).toBe('referenceLineColor')
   })
 
   it('chartBaseSchema 等价于 通用 + 坐标轴 的拼接', () => {
