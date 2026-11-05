@@ -19,6 +19,9 @@ import {
   Histogram,
   Files,
   TrendCharts,
+  Postcard,
+  Timer,
+  Cpu,
 } from '@element-plus/icons-vue'
 
 export interface BreadcrumbItem {
@@ -87,6 +90,9 @@ const ICON_MAP: Record<string, Component> = {
   Histogram,
   Files,
   TrendCharts,
+  Postcard,
+  Timer,
+  Cpu,
 }
 
 /** 菜单图标名 -> Element Plus 图标组件（未知名称回退到 DataBoard） */
