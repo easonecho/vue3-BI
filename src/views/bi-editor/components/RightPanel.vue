@@ -29,6 +29,11 @@
           <DataBindingPanel />
         </el-tab-pane>
 
+        <!-- 协作评论面板：按组件定位、编辑/删除、标记已解决 -->
+        <el-tab-pane label="评论" name="comment" lazy>
+          <CommentTab />
+        </el-tab-pane>
+
         <!-- 🔑 画布全局设置：背景/尺寸/网格/标尺 -->
         <el-tab-pane label="画布" name="canvas">
           <CanvasTab />
@@ -45,6 +50,7 @@ import DataBindingPanel from './property/DataBindingPanel.vue'
 import PropsTab from './right-panel/PropsTab.vue'
 import StyleTab from './right-panel/StyleTab.vue'
 import CanvasTab from './right-panel/CanvasTab.vue'
+import CommentTab from './right-panel/CommentTab.vue'
 
 const activeTab = ref('props')
 
@@ -133,7 +139,7 @@ function toggleCollapsed() {
 }
 
 :deep(.el-tabs__nav-wrap) {
-  padding-left: 20px;
+  padding-left: 12px;
 }
 
 :deep(.el-tabs__header) {
@@ -149,6 +155,8 @@ function toggleCollapsed() {
 :deep(.el-tabs__item) {
   color: var(--bi-text-secondary, #9ca3af);
   font-size: 13px;
+  /* 5 个页签在 300px 面板内保持完整可见 */
+  padding: 0 10px;
 }
 
 :deep(.el-tabs__item.is-active) {
