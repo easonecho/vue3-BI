@@ -72,6 +72,7 @@ import ErrorBoundary from './components/ErrorBoundary.vue'
 import { vPermission } from './directives/permission'
 import { installPluginSdk } from './plugins/plugin-sdk'
 import { loadExternalPlugins } from './plugins/plugin-loader'
+import { installClientObservability, reportClientError } from './utils/observability'
 import './styles/global.less'
 import './styles/theme.css'
 
@@ -105,6 +106,7 @@ elementPlusComponents.forEach((comp) => {
 // 全局错误处理
 app.config.errorHandler = (err, _instance, info) => {
   console.error('[Global Error]', err, info)
+  reportClientError(err, 'vue-error', info)
 }
 
 // 注册全局 ErrorBoundary 组件
@@ -113,6 +115,9 @@ app.directive('permission', vPermission)
 
 // 初始化主题（需要在 pinia 安装之后调用，触发 watch 立即应用主题）
 useThemeStore()
+
+// 安装前端可观测性监听 (异常上报 + Web Vitals)
+installClientObservability()
 
 // 🔑 P2-2 插件: 先安装 SDK 并加载外部插件脚本 (组件必须在 mount 前注册)
 installPluginSdk()
