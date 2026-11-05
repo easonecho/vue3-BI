@@ -198,6 +198,21 @@ const router = createRouter({
           },
         },
         {
+          path: 'system/tenants',
+          name: 'SystemTenants',
+          component: () => import('@/views/system/tenants.vue'),
+          meta: {
+            title: '租户管理',
+            requiresAuth: true,
+            permissions: [
+              'system:tenant:view',
+              'system:tenant:list',
+              'system:tenant:add',
+              'system:tenant:edit',
+            ],
+          },
+        },
+        {
           path: 'system/positions',
           name: 'SystemPositions',
           component: () => import('@/views/system/positions.vue'),

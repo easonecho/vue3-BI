@@ -34,6 +34,14 @@
               size="large"
             />
           </el-form-item>
+          <el-form-item label="租户编码" prop="tenantCode">
+            <el-input
+              v-model="form.tenantCode"
+              placeholder="单租户可留空，默认为 default"
+              :prefix-icon="OfficeBuilding"
+              size="large"
+            />
+          </el-form-item>
           <el-form-item label="密码" prop="password">
             <el-input
               v-model="form.password"
@@ -77,7 +85,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { User, Lock, InfoFilled } from '@element-plus/icons-vue'
+import { User, Lock, InfoFilled, OfficeBuilding } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
 
@@ -91,6 +99,7 @@ const loading = ref(false)
 const form = reactive({
   username: 'admin',
   password: 'admin123',
+  tenantCode: '',
 })
 
 const rules: FormRules = {
@@ -104,7 +113,11 @@ async function handleLogin() {
     if (!valid) return
     loading.value = true
     try {
-      const result = await userStore.login(form.username, form.password)
+      const result = await userStore.login(
+        form.username,
+        form.password,
+        form.tenantCode.trim() || undefined,
+      )
       ElMessage.success(`登录成功，欢迎 ${result.user.nickname || result.user.username}`)
       const redirect = (route.query.redirect as string) || '/dashboard'
       router.push(redirect)

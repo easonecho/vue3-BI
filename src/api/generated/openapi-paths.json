@@ -94,6 +94,9 @@
   "GET /api/system-configs",
   "GET /api/system-configs/key/{configKey}",
   "GET /api/system-configs/{id}",
+  "GET /api/tenants",
+  "GET /api/tenants/current",
+  "GET /api/tenants/{id}",
   "GET /api/usage/overview",
   "GET /api/users",
   "GET /api/users/{id}",
@@ -157,6 +160,7 @@
   "POST /api/scheduled-tasks/{id}/run",
   "POST /api/system-configs",
   "POST /api/system-configs/batch-delete",
+  "POST /api/tenants",
   "POST /api/users",
   "PUT /api/alert-events/{id}/read",
   "PUT /api/alert-rules/{id}",
@@ -184,6 +188,7 @@
   "PUT /api/scheduled-tasks/{id}",
   "PUT /api/scheduled-tasks/{id}/toggle-status",
   "PUT /api/system-configs/{id}",
+  "PUT /api/tenants/{id}",
   "PUT /api/users/{id}",
   "PUT /api/users/{id}/password"
 ]

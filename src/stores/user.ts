@@ -35,8 +35,12 @@ export const useUserStore = defineStore(
 
     // ========== 方法 ==========
     /** 登录: 仅保存 access token + 用户信息; refresh token 由服务端写入 HttpOnly Cookie */
-    async function login(username: string, password: string) {
-      const res = await loginApi({ username, password })
+    async function login(username: string, password: string, tenantCode?: string) {
+      const res = await loginApi({
+        username,
+        password,
+        ...(tenantCode ? { tenantCode } : {}),
+      })
       token.value = res.data.accessToken
       setToken(res.data.accessToken)
       userInfo.value = res.data.user
@@ -50,6 +54,7 @@ export const useUserStore = defineStore(
       password: string
       email?: string
       nickname?: string
+      tenantCode?: string
     }) {
       const res = await registerApi(params)
       token.value = res.data.accessToken

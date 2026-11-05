@@ -8,6 +8,8 @@ import type { LoginResult, RefreshResult, User } from './types'
 export interface LoginParams {
   username: string
   password: string
+  /** 租户编码: 多租户下同名用户必填; 单租户可省略 */
+  tenantCode?: string
 }
 
 /** 注册请求参数 */
@@ -16,6 +18,7 @@ export interface RegisterParams {
   password: string
   email?: string
   nickname?: string
+  tenantCode?: string
 }
 
 /** 用户登录 */
