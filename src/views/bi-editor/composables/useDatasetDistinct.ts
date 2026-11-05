@@ -23,16 +23,26 @@ const CACHE_TTL = 5 * 60 * 1000
 const cache = new Map<string, DistinctCacheEntry>()
 const inflight = new Map<string, Promise<DatasetDistinctResult>>()
 
+/** 级联参数序列化: 排序后拼接, 保证相同筛选条件命中同一缓存 */
+export function buildDistinctParamsKey(params?: Record<string, unknown>): string {
+  if (!params) return ''
+  const entries = Object.entries(params)
+    .filter(([, value]) => value !== null && value !== undefined && value !== '')
+    .sort(([a], [b]) => a.localeCompare(b))
+  return entries.length > 0 ? JSON.stringify(entries) : ''
+}
+
 /** 缓存 key: 公开分享与登录态隔离, 避免不同看板复用同一候选值 */
 export function buildDistinctCacheKey(
   datasetId: number,
   field: string,
   limit: number,
   search = '',
+  paramsKey = '',
 ): string {
   const publicCtx = getPublicDashboardContext()
   const scope = publicCtx ? `public:${publicCtx.token}` : 'auth'
-  return `${scope}:${datasetId}:${field}:${limit}:${search}`
+  return `${scope}:${datasetId}:${field}:${limit}:${search}${paramsKey ? `:${paramsKey}` : ''}`
 }
 
 /** 后端返回值 → el-select options (值统一转字符串, 与联动过滤的比较语义一致) */
@@ -51,12 +61,14 @@ export function invalidateDatasetDistinctCache(datasetId?: number) {
  * @param datasetId 绑定的数据集 ID (未绑定为空)
  * @param field 筛选字段 (优先 dataConfig.field, 回退 filterKey)
  * @param enabled 是否启用 (仅 select / multi-select 需要候选值)
+ * @param extraParams 级联参数: 其他筛选器当前值, 传给后端缩小候选范围
  */
 export function useDatasetDistinct(
   datasetId: Ref<number | null | undefined>,
   field: Ref<string | undefined>,
   enabled: Ref<boolean> = ref(true),
   limit = 200,
+  extraParams?: Ref<Record<string, unknown> | undefined>,
 ) {
   const values = ref<Array<string | number | boolean>>([])
   const truncated = ref(false)
@@ -64,6 +76,15 @@ export function useDatasetDistinct(
   const error = ref('')
   const query = ref('')
   const resolvedField = ref('')
+
+  const paramsKey = computed(() => buildDistinctParamsKey(extraParams?.value))
+  const compactParams = computed<Record<string, unknown>>(() => {
+    const result: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(extraParams?.value ?? {})) {
+      if (value !== null && value !== undefined && value !== '') result[key] = value
+    }
+    return result
+  })
 
   const currentKey = computed(() => {
     const id = Number(datasetId.value || 0)
@@ -89,7 +110,7 @@ export function useDatasetDistinct(
       return
     }
 
-    const key = buildDistinctCacheKey(id, f, limit, search)
+    const key = buildDistinctCacheKey(id, f, limit, search, paramsKey.value)
     const cached = !search ? cache.get(key) : undefined
     if (cached && Date.now() - cached.ts < CACHE_TTL) {
       values.value = cached.values
@@ -105,7 +126,12 @@ export function useDatasetDistinct(
     try {
       let task = inflight.get(key)
       if (!task) {
-        const body = { field: f, limit, ...(search ? { search } : {}) }
+        const body = {
+          field: f,
+          limit,
+          ...(search ? { search } : {}),
+          ...(paramsKey.value ? { params: compactParams.value } : {}),
+        }
         const publicCtx = getPublicDashboardContext()
         task = (
           publicCtx
@@ -156,7 +182,7 @@ export function useDatasetDistinct(
   }
 
   watch(
-    [datasetId, field, enabled],
+    [datasetId, field, enabled, paramsKey],
     () => {
       query.value = ''
       load('')

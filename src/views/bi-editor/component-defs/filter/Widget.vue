@@ -33,6 +33,24 @@
       @visible-change="onVisibleChange"
     >
       <el-option v-for="opt in optionList" :key="opt.value" :label="opt.label" :value="opt.value" />
+      <template v-if="allowSelectAll" #footer>
+        <div class="filter-widget__bulk">
+          <el-button link size="small" :disabled="optionList.length === 0" @click="selectAll">
+            全选
+          </el-button>
+          <el-button link size="small" :disabled="optionList.length === 0" @click="invertSelection">
+            反选
+          </el-button>
+          <el-button
+            link
+            size="small"
+            :disabled="selectedValues.length === 0"
+            @click="clearSelection"
+          >
+            清空
+          </el-button>
+        </div>
+      </template>
     </el-select>
     <el-date-picker
       v-else-if="props.filterType === 'date'"
@@ -47,6 +65,7 @@
       v-else-if="props.filterType === 'date-range'"
       v-model="dateRange"
       type="daterange"
+      :shortcuts="dateShortcuts"
       range-separator="至"
       start-placeholder="开始"
       end-placeholder="结束"
@@ -96,6 +115,36 @@ const isSelect = computed(
 )
 const datasetBound = computed(() => Boolean(datasetId.value && boundField.value && isSelect.value))
 
+/** 是否显示多选全选/反选工具条 */
+const allowSelectAll = computed(() => props.comp?.props?.allowSelectAll !== false)
+
+/** 级联筛选: 用其他筛选器当前值缩小候选范围 */
+const cascadeEnabled = computed(() => props.comp?.props?.cascade === true)
+const cascadeKeys = computed(() =>
+  String(props.comp?.props?.cascadeKeys || '')
+    .split(/[,，\s]+/)
+    .map((s) => s.trim())
+    .filter(Boolean),
+)
+
+const cascadeParams = computed<Record<string, unknown> | undefined>(() => {
+  if (!cascadeEnabled.value || !datasetBound.value) return undefined
+  const own = effectiveKey.value
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(linkageStore.filterValues)) {
+    if (value === null || value === undefined || value === '') continue
+    // 排除自身字段及其日期范围键, 避免自己过滤自己
+    if (key === own || key.startsWith(`${own}_`)) continue
+    // 配置了父字段时仅使用指定字段 (含其 _start/_end)
+    if (cascadeKeys.value.length > 0) {
+      const matched = cascadeKeys.value.some((k) => key === k || key.startsWith(`${k}_`))
+      if (!matched) continue
+    }
+    result[key] = value
+  }
+  return Object.keys(result).length > 0 ? result : undefined
+})
+
 const {
   values: distinctValues,
   truncated,
@@ -103,7 +152,7 @@ const {
   error,
   handleSearch,
   resetSearch,
-} = useDatasetDistinct(datasetId, boundField, isSelect, OPTION_LIMIT)
+} = useDatasetDistinct(datasetId, boundField, isSelect, OPTION_LIMIT, cascadeParams)
 
 /** 静态选项(未绑定数据集时使用) */
 const parsedOptions = computed(() => {
@@ -143,6 +192,24 @@ function onMultiFilterChange(vals: string[]) {
   linkageStore.setFilter(effectiveKey.value, vals.length > 0 ? vals.join(',') : null)
 }
 
+function selectAll() {
+  selectedValues.value = optionList.value.map((opt) => String(opt.value))
+  onMultiFilterChange(selectedValues.value)
+}
+
+function invertSelection() {
+  const current = new Set(selectedValues.value.map(String))
+  selectedValues.value = optionList.value
+    .map((opt) => String(opt.value))
+    .filter((value) => !current.has(value))
+  onMultiFilterChange(selectedValues.value)
+}
+
+function clearSelection() {
+  selectedValues.value = []
+  onMultiFilterChange([])
+}
+
 function onDateRangeChange(val: [string, string] | null) {
   const key = effectiveKey.value
   if (val) {
@@ -154,11 +221,74 @@ function onDateRangeChange(val: [string, string] | null) {
   }
 }
 
+// ---- 相对日期 ----
+
+function formatDate(date: Date): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+/** 根据预设返回相对区间 (每次调用都以当天为基准) */
+function relativeRange(preset: string): [Date, Date] | null {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const day = (offset: number) => {
+    const d = new Date(today)
+    d.setDate(d.getDate() + offset)
+    return d
+  }
+  switch (preset) {
+    case 'today':
+      return [today, today]
+    case 'yesterday':
+      return [day(-1), day(-1)]
+    case 'last7days':
+      return [day(-6), today]
+    case 'last30days':
+      return [day(-29), today]
+    case 'thisMonth':
+      return [new Date(today.getFullYear(), today.getMonth(), 1), today]
+    case 'lastMonth':
+      return [
+        new Date(today.getFullYear(), today.getMonth() - 1, 1),
+        new Date(today.getFullYear(), today.getMonth(), 0),
+      ]
+    default:
+      return null
+  }
+}
+
+const dateShortcuts = [
+  { text: '今天', value: () => relativeRange('today') || [] },
+  { text: '昨天', value: () => relativeRange('yesterday') || [] },
+  { text: '最近 7 天', value: () => relativeRange('last7days') || [] },
+  { text: '最近 30 天', value: () => relativeRange('last30days') || [] },
+  { text: '本月', value: () => relativeRange('thisMonth') || [] },
+  { text: '上月', value: () => relativeRange('lastMonth') || [] },
+]
+
+/** 默认相对区间: 每次打开看板按当天滚动, 已有筛选值时不再覆盖 */
+function applyDefaultRelative(key: string) {
+  if (props.filterType !== 'date-range') return
+  const preset = String(props.comp?.props?.defaultRelative || 'none')
+  if (preset === 'none') return
+  if (linkageStore.getFilter(`${key}_start`) || linkageStore.getFilter(`${key}_end`)) return
+  const range = relativeRange(preset)
+  if (!range) return
+  const formatted: [string, string] = [formatDate(range[0]), formatDate(range[1])]
+  dateRange.value = formatted
+  linkageStore.setFilter(`${key}_start`, formatted[0])
+  linkageStore.setFilter(`${key}_end`, formatted[1])
+}
+
 // 注册/更新联动订阅: 字段随数据集绑定变化时同步更新, 避免筛错图表
 watch(
   effectiveKey,
   (key) => {
     if (key) linkageStore.subscribe(props.comp?.id || 'unknown', [key])
+    applyDefaultRelative(key)
   },
   { immediate: true },
 )
@@ -177,6 +307,14 @@ watch(
     color: #606266;
     margin-bottom: 6px;
     font-weight: 500;
+  }
+
+  &__bulk {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 4px 8px;
+    border-top: 1px solid var(--el-border-color-lighter);
   }
 
   &__hint {
