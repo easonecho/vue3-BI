@@ -25,6 +25,19 @@
         <el-icon><component :is="isFullscreen ? CloseBold : FullScreen" /></el-icon>
       </el-button>
     </el-tooltip>
+    <!-- 查看者导出：PNG / PDF（导出目标仅画布本身，不含工具栏） -->
+    <el-dropdown trigger="click" :disabled="exporting" @command="handleExport">
+      <el-button text :loading="exporting" :disabled="exporting">
+        <el-icon><Download /></el-icon>
+        <span class="export-label">导出</span>
+      </el-button>
+      <template #dropdown>
+        <el-dropdown-menu>
+          <el-dropdown-item command="png">导出图片 (PNG)</el-dropdown-item>
+          <el-dropdown-item command="pdf">导出 PDF</el-dropdown-item>
+        </el-dropdown-menu>
+      </template>
+    </el-dropdown>
     <el-divider direction="vertical" />
     <el-select
       :model-value="autoRefreshInterval"
@@ -47,6 +60,7 @@ import {
   ArrowLeft,
   Clock,
   CloseBold,
+  Download,
   FullScreen,
   Hide,
   Menu,
@@ -61,6 +75,7 @@ defineProps<{
   pureMode: boolean
   isFullscreen: boolean
   autoRefreshInterval: number
+  exporting: boolean
 }>()
 
 const emit = defineEmits<{
@@ -70,7 +85,15 @@ const emit = defineEmits<{
   'toggle-pure': []
   'toggle-fullscreen': []
   'reset-auto-refresh': []
+  'export-png': []
+  'export-pdf': []
 }>()
+
+/** 导出菜单命令 → 事件 */
+function handleExport(command: string) {
+  if (command === 'png') emit('export-png')
+  else if (command === 'pdf') emit('export-pdf')
+}
 </script>
 
 <style scoped lang="less">
@@ -187,7 +210,8 @@ const emit = defineEmits<{
 
   .refresh-time,
   :deep(.el-divider--vertical),
-  :deep(.el-select) {
+  :deep(.el-select),
+  .export-label {
     display: none;
   }
 

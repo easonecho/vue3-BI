@@ -37,7 +37,21 @@
           <h2>{{ dashboard.name }}</h2>
           <p v-if="dashboard.description">{{ dashboard.description }}</p>
         </div>
-        <el-tag type="success" size="small" effect="dark">公开分享</el-tag>
+        <div class="share-actions">
+          <el-tag type="success" size="small" effect="dark">公开分享</el-tag>
+          <!-- 查看者导出：与预览页共用截图逻辑，导出画布本身 -->
+          <el-dropdown trigger="click" :disabled="exporting" @command="handleExportCommand">
+            <el-button size="small" :loading="exporting" :disabled="exporting">
+              导出<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="png">导出图片 (PNG)</el-dropdown-item>
+                <el-dropdown-item command="pdf">导出 PDF</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
       </div>
       <CanvasArea readonly />
     </template>
@@ -54,7 +68,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Lock, Key } from '@element-plus/icons-vue'
+import { ArrowDown, Lock, Key } from '@element-plus/icons-vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import { useLinkageStore } from '@/stores/linkage'
 import CanvasArea from '@/views/bi-editor/components/canvas/CanvasArea.vue'
@@ -65,6 +79,7 @@ import {
   clearPublicDashboardContext,
 } from '@/utils/public-dashboard-context'
 import type { DashboardLayout } from '@/views/bi-editor/types'
+import { useDashboardExport } from '@/views/preview/composables/useDashboardExport'
 
 const route = useRoute()
 const router = useRouter()
@@ -81,6 +96,16 @@ const needPassword = ref(false)
 const passwordInput = ref('')
 const passwordError = ref('')
 const dashboard = ref<PublicDashboard | null>(null)
+
+// 分享页查看者导出（与预览页共用实现）
+const { exporting, exportPng, exportPdf } = useDashboardExport(
+  () => dashboard.value?.name || '看板',
+)
+
+function handleExportCommand(command: string) {
+  if (command === 'png') void exportPng()
+  else if (command === 'pdf') void exportPdf()
+}
 
 onMounted(async () => {
   // 🔑 公开分享页开启图表联动/钻取
@@ -202,6 +227,13 @@ function goHome() {
       color: var(--bi-text-secondary, #9ca3af);
     }
   }
+
+  .share-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
 }
 
 .password-panel {
@@ -258,6 +290,10 @@ function goHome() {
 
   .share-header .share-title p {
     font-size: 12px;
+  }
+
+  .share-header .share-actions {
+    gap: 8px;
   }
 
   .password-card {

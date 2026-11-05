@@ -20,12 +20,15 @@
         :pure-mode="pureMode"
         :is-fullscreen="isFullscreen"
         :auto-refresh-interval="autoRefreshInterval"
+        :exporting="exporting"
         @update:auto-refresh-interval="autoRefreshInterval = $event"
         @back="handleBack"
         @refresh="handleRefresh()"
         @toggle-pure="togglePureMode"
         @toggle-fullscreen="toggleFullscreen"
         @reset-auto-refresh="resetAutoRefresh"
+        @export-png="exportPng"
+        @export-pdf="exportPdf"
       />
     </transition>
 
@@ -53,12 +56,15 @@ import DashboardScreen from './components/DashboardScreen.vue'
 import PreviewToolbar from './components/PreviewToolbar.vue'
 import { usePreviewSession } from './composables/usePreviewSession'
 import { usePreviewToolbar } from './composables/usePreviewToolbar'
+import { useDashboardExport } from './composables/useDashboardExport'
 import { generateTemplateThumbnail } from './composables/useTemplateThumbnail'
 
 const previewRootRef = ref<HTMLElement | null>(null)
 
 const { store, loading, loadError, refreshing, lastRefreshAt, handleRefresh, handleBack } =
   usePreviewSession({ onTemplateLoaded: generateTemplateThumbnail })
+
+const { exporting, exportPng, exportPdf } = useDashboardExport(() => store.dashboardName)
 
 const {
   showToolbar,
