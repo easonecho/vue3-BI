@@ -172,7 +172,7 @@ describe('SystemLayout 用户命令', () => {
     header.vm.$emit('user-command', 'screen')
 
     expect(routerMock.push).toHaveBeenNthCalledWith(1, '/bi-editor')
-    expect(routerMock.push).toHaveBeenNthCalledWith(2, '/screen/demo')
+    expect(routerMock.push).toHaveBeenNthCalledWith(2, '/screen')
     wrapper.unmount()
   })
 

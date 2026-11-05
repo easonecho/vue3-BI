@@ -89,7 +89,7 @@ export function useSystemLayout(deps: SystemLayoutDeps) {
     } else if (cmd === 'editor') {
       deps.push('/bi-editor')
     } else if (cmd === 'screen') {
-      deps.push('/screen/demo')
+      deps.push('/screen')
     }
   }
 

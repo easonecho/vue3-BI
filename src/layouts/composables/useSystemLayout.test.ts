@@ -104,7 +104,7 @@ describe('useSystemLayout 用户命令', () => {
     api.handleUserCmd('screen')
 
     expect(pushMock).toHaveBeenNthCalledWith(1, '/bi-editor')
-    expect(pushMock).toHaveBeenNthCalledWith(2, '/screen/demo')
+    expect(pushMock).toHaveBeenNthCalledWith(2, '/screen')
     expect(logoutMock).not.toHaveBeenCalled()
     scope.stop()
   })
