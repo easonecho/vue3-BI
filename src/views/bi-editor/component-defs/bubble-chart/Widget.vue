@@ -3,15 +3,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
 import { deriveDefaultPropsCached } from '../types'
 import { getDefinition } from '../index'
+import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 const props = defineProps<{ comp: ComponentInstance }>()
+const dataSourceRef = computed(() => props.comp.dataSource)
+const { rows } = useDatasetBinding(dataSourceRef)
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 let initTimer: number | undefined
 
@@ -31,6 +34,33 @@ function debouncedSetOption(builder: () => ECOption) {
 }
 
 /**
+ * 数据集绑定：把 x / y / size 字段映射为散点三元组。
+ * 缺少 x 或 y 字段、或无数值行时返回 null，沿用静态示例数据。
+ */
+function buildBoundPoints(): { name: string; data: number[][]; sizeMax: number } | null {
+  if (!props.comp.dataSource?.datasetId || rows.value.length === 0) return null
+  const cfg = (props.comp.dataConfig ?? {}) as Record<string, unknown>
+  const xField = String(cfg.xField ?? '')
+  const yField = String(cfg.yField ?? '')
+  const sizeField = String(cfg.sizeField ?? '')
+  if (!xField || !yField) return null
+
+  const points: number[][] = []
+  let sizeMax = 0
+  for (const row of rows.value) {
+    const x = Number(row[xField])
+    const y = Number(row[yField])
+    if (!Number.isFinite(x) || !Number.isFinite(y)) continue
+    const rawSize = sizeField ? Number(row[sizeField]) : 0
+    const size = Number.isFinite(rawSize) ? rawSize : 0
+    points.push([x, y, size])
+    if (size > sizeMax) sizeMax = size
+  }
+  if (points.length === 0) return null
+  return { name: yField, data: points, sizeMax: sizeMax || 1 }
+}
+
+/**
  * 🔑 气泡图"组件特有"option —— scatter 系列 + visualMap 按 size 维度映射颜色。
  *   x,y,size 三维度，颜色按 size 第四维度渐变。
  */
@@ -42,6 +72,7 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
+  const bound = buildBoundPoints()
   const seriesData = Array.isArray(mergedProps.series)
     ? mergedProps.series
     : [
@@ -60,10 +91,14 @@ function getChartSpecificOption(): {
         },
       ]
   const firstSeries =
-    (seriesData[0] as { name: string; data: number[][] }) || {
+    bound ??
+    ((seriesData[0] as { name: string; data: number[][]; sizeMax?: number }) || {
       name: '数据',
       data: [],
-    }
+      sizeMax: 100,
+    })
+  // 静态示例的三维值按 100 为上限，绑定数据按实际最大值缩放
+  const sizeScaleMax = firstSeries.sizeMax ?? 100
 
   const symbolSizeMin = Number(mergedProps.symbolSizeMin || 8)
   const symbolSizeMax = Number(mergedProps.symbolSizeMax || 50)
@@ -75,7 +110,7 @@ function getChartSpecificOption(): {
     visualMap: {
       show: false,
       min: 0,
-      max: 100,
+      max: sizeScaleMax,
       dimension: 2,
       inRange: {
         color: [bubbleColor, bubbleColor2],
@@ -88,7 +123,7 @@ function getChartSpecificOption(): {
         data: firstSeries.data,
         symbolSize: (val: any[]) => {
           const s = (val && val[2]) || 0
-          return symbolSizeMin + (symbolSizeMax - symbolSizeMin) * Math.min(1, s / 100)
+          return symbolSizeMin + (symbolSizeMax - symbolSizeMin) * Math.min(1, s / sizeScaleMax)
         },
         itemStyle: { color: bubbleColor, opacity },
         emphasis: {
@@ -120,12 +155,9 @@ onMounted(async () => {
   initTimer = window.setTimeout(applyChartOption, 50)
 })
 
-watch(
-  [() => JSON.stringify(props.comp.props)],
-  () => {
-    applyChartOption()
-  },
-)
+watch([() => JSON.stringify(props.comp.props), () => props.comp.dataConfig, rows], () => {
+  applyChartOption()
+})
 
 onUnmounted(() => {
   if (initTimer) clearTimeout(initTimer)

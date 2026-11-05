@@ -81,7 +81,8 @@ export const parallelChartDefinition: ComponentDefinition = {
     data: PARALLEL_DEFAULT_DATA,
   },
   defaultStyle: {},
-  supportsDataBinding: false,
+  supportsDataBinding: true,
+  dataBindingSchema: [{ key: 'dimensionFields', label: '指标字段', type: 'value', multiple: true }],
 }
 
 export default parallelChartDefinition

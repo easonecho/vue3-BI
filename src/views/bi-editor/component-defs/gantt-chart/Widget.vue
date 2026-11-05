@@ -3,15 +3,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
 import { deriveDefaultPropsCached } from '../types'
 import { getDefinition } from '../index'
+import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 const props = defineProps<{ comp: ComponentInstance }>()
+const dataSourceRef = computed(() => props.comp.dataSource)
+const { rows } = useDatasetBinding(dataSourceRef)
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 let initTimer: number | undefined
 
@@ -30,6 +33,29 @@ function debouncedSetOption(builder: () => ECOption) {
   })
 }
 
+function pad2(n: number): string {
+  return String(n).padStart(2, '0')
+}
+
+/** 兼容时间戳 / ISO 字符串 / "YYYY-MM-DD HH:mm:ss" 三种数据集取值 */
+function toDate(v: unknown): Date | null {
+  if (v === null || v === undefined || v === '') return null
+  const d = typeof v === 'number' ? new Date(v) : new Date(String(v).trim().replace(' ', 'T'))
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+function toTs(v: unknown): number {
+  const d = toDate(v)
+  return d ? d.getTime() : NaN
+}
+
+/** 统一成 "YYYY-MM-DD HH:mm"，供坐标轴与 tooltip 展示 */
+function toDisplayTime(v: unknown): string {
+  const d = toDate(v)
+  if (!d) return String(v ?? '').trim()
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+}
+
 /** 把时间戳按 day/hour/month 粒度格式化为可读标签 */
 function formatTimeLabel(val: number, fmt: string): string {
   const d = new Date(val)
@@ -46,6 +72,44 @@ function formatTimeLabel(val: number, fmt: string): string {
 }
 
 /**
+ * 数据集绑定：按字段映射构建任务列表。
+ * 缺少任务名/开始/结束字段或结果为空时返回 null，沿用静态示例数据。
+ */
+function buildBoundTasks(): Array<{
+  name: string
+  start: string
+  end: string
+  progress?: number
+}> | null {
+  if (!props.comp.dataSource?.datasetId || rows.value.length === 0) return null
+  const cfg = (props.comp.dataConfig ?? {}) as Record<string, unknown>
+  const nameField = String(cfg.nameField ?? '')
+  const startField = String(cfg.startField ?? '')
+  const endField = String(cfg.endField ?? '')
+  const progressField = String(cfg.progressField ?? '')
+  if (!nameField || !startField || !endField) return null
+
+  const tasks: Array<{ name: string; start: string; end: string; progress?: number }> = []
+  for (const row of rows.value) {
+    const name = String(row[nameField] ?? '').trim()
+    const start = toDisplayTime(row[startField])
+    const end = toDisplayTime(row[endField])
+    if (!name || !start || !end) continue
+    const task: { name: string; start: string; end: string; progress?: number } = {
+      name,
+      start,
+      end,
+    }
+    if (progressField) {
+      const progress = Number(row[progressField])
+      if (Number.isFinite(progress)) task.progress = progress
+    }
+    tasks.push(task)
+  }
+  return tasks.length > 0 ? tasks : null
+}
+
+/**
  * 🔑 甘特图"组件特有"option —— 使用 bar 浮动条（stacked）技术实现甘特：
  *   offset 系列（透明）= 起点时间戳，duration 系列（可见）= 持续时长，
  *   堆叠后 duration 条出现在 [start, end] 区间。
@@ -59,12 +123,13 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
+  const boundTasks = buildBoundTasks()
   const tasks: Array<{
     name: string
     start: string
     end: string
     progress?: number
-  }> = Array.isArray(mergedProps.tasks) ? mergedProps.tasks : []
+  }> = boundTasks ?? (Array.isArray(mergedProps.tasks) ? mergedProps.tasks : [])
 
   const barColor = String(mergedProps.barColor || '#22d3ee')
   const barColor2 = String(mergedProps.barColor2 || '#67e8f9')
@@ -81,8 +146,8 @@ function getChartSpecificOption(): {
   let minTs = Infinity
   let maxTs = -Infinity
   for (const t of tasks) {
-    const s = new Date(t.start).getTime()
-    const e = new Date(t.end).getTime()
+    const s = toTs(t.start)
+    const e = toTs(t.end)
     if (!Number.isNaN(s) && s < minTs) minTs = s
     if (!Number.isNaN(e) && e > maxTs) maxTs = e
   }
@@ -116,7 +181,7 @@ function getChartSpecificOption(): {
         type: 'bar',
         stack: 'gantt',
         barWidth: barHeight,
-        data: reversedTasks.map((t) => new Date(t.start).getTime()),
+        data: reversedTasks.map((t) => toTs(t.start)),
         itemStyle: { color: 'transparent', borderColor: 'transparent' },
         silent: true,
       },
@@ -127,7 +192,7 @@ function getChartSpecificOption(): {
         stack: 'gantt',
         barWidth: barHeight,
         data: reversedTasks.map((t, i) => ({
-          value: new Date(t.end).getTime() - new Date(t.start).getTime(),
+          value: toTs(t.end) - toTs(t.start),
           itemStyle: { color: i % 2 === 0 ? barColor : barColor2 },
         })),
         label: {
@@ -140,8 +205,7 @@ function getChartSpecificOption(): {
           formatter: (p: any) => {
             const task = reversedTasks[p.dataIndex]
             if (!task) return ''
-            const progress =
-              typeof task.progress === 'number' ? ` (${task.progress}%)` : ''
+            const progress = typeof task.progress === 'number' ? ` (${task.progress}%)` : ''
             return `${task.name}<br/>${task.start} ~ ${task.end}${progress}`
           },
         },
@@ -173,12 +237,9 @@ onMounted(async () => {
   initTimer = window.setTimeout(applyChartOption, 50)
 })
 
-watch(
-  [() => JSON.stringify(props.comp.props)],
-  () => {
-    applyChartOption()
-  },
-)
+watch([() => JSON.stringify(props.comp.props), () => props.comp.dataConfig, rows], () => {
+  applyChartOption()
+})
 
 onUnmounted(() => {
   if (initTimer) clearTimeout(initTimer)

@@ -83,7 +83,12 @@ export const bubbleChartDefinition: ComponentDefinition = {
     series: BUBBLE_DEFAULT_SERIES,
   },
   defaultStyle: {},
-  supportsDataBinding: false,
+  supportsDataBinding: true,
+  dataBindingSchema: [
+    { key: 'xField', label: 'X 轴字段', type: 'value' },
+    { key: 'yField', label: 'Y 轴字段', type: 'value' },
+    { key: 'sizeField', label: '气泡大小字段', type: 'value' },
+  ],
 }
 
 export default bubbleChartDefinition

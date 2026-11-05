@@ -159,7 +159,12 @@ export const bar3dChartDefinition: ComponentDefinition = {
     series: BAR3D_DEFAULT_SERIES,
   },
   defaultStyle: {},
-  supportsDataBinding: false,
+  supportsDataBinding: true,
+  dataBindingSchema: [
+    { key: 'categoryField', label: 'X 轴类目字段', type: 'category' },
+    { key: 'seriesField', label: 'Y 轴系列字段', type: 'category' },
+    { key: 'valueField', label: '数值字段', type: 'value' },
+  ],
 }
 
 export default bar3dChartDefinition

@@ -6,16 +6,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
 import { deriveDefaultPropsCached } from '../types'
 import { getDefinition } from '../index'
+import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import { registerMap } from 'echarts/core'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 const props = defineProps<{ comp: ComponentInstance }>()
+const dataSourceRef = computed(() => props.comp.dataSource)
+const { rows } = useDatasetBinding(dataSourceRef)
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 const mapError = ref<string>('')
 let initTimer: number | undefined
@@ -67,6 +70,27 @@ function debouncedSetOption(builder: () => ECOption) {
   })
 }
 
+/**
+ * 数据集绑定：把地区名称 / 数值字段映射为地图 series 数据。
+ * 未配置字段或结果为空时返回 null，沿用静态示例数据。
+ */
+function buildBoundMapData(): Array<{ name: string; value: number }> | null {
+  if (!props.comp.dataSource?.datasetId || rows.value.length === 0) return null
+  const cfg = (props.comp.dataConfig ?? {}) as Record<string, unknown>
+  const nameField = String(cfg.nameField ?? '')
+  const valueField = String(cfg.valueField ?? '')
+  if (!nameField || !valueField) return null
+
+  const data: Array<{ name: string; value: number }> = []
+  for (const row of rows.value) {
+    const name = String(row[nameField] ?? '').trim()
+    if (!name) continue
+    const value = Number(row[valueField] ?? 0)
+    data.push({ name, value: Number.isFinite(value) ? value : 0 })
+  }
+  return data.length > 0 ? data : null
+}
+
 function applyChartOption() {
   if (!_mapRegistered) return
   debouncedSetOption(() => {
@@ -74,7 +98,10 @@ function applyChartOption() {
     const def = getDefinition(props.comp.type)
     const mergedProps = { ...deriveDefaultPropsCached(def), ...props?.comp?.props }
 
-    const mapData = Array.isArray(mergedProps.data) ? mergedProps.data : []
+    const boundMapData = buildBoundMapData()
+    const mapData = boundMapData ?? (Array.isArray(mergedProps.data) ? mergedProps.data : [])
+    // 绑定数据集时按实际最大值映射颜色，静态示例保持 0-100
+    const visualMax = boundMapData ? Math.max(...boundMapData.map((d) => d.value), 1) : 100
     const mapColor = String(mergedProps.mapColor)
     const mapBorderColor = String(mergedProps.mapBorderColor)
     const mapBorderWidth = Number(mergedProps.mapBorderWidth)
@@ -113,7 +140,7 @@ function applyChartOption() {
         show: true,
         type: 'continuous',
         min: 0,
-        max: 100,
+        max: visualMax,
         calculable: true,
         inRange: { color: [visualFrom, visualTo] },
         textStyle: { color: '#e2e8f0' },
@@ -123,7 +150,7 @@ function applyChartOption() {
         show: false,
         type: 'continuous',
         min: 0,
-        max: 100,
+        max: visualMax,
         calculable: false,
         inRange: { color: [mapColor, mapColor] },
         textStyle: { color: '#e2e8f0' },
@@ -147,12 +174,9 @@ onMounted(async () => {
   }
 })
 
-watch(
-  [() => JSON.stringify(props.comp.props)],
-  () => {
-    applyChartOption()
-  },
-)
+watch([() => JSON.stringify(props.comp.props), () => props.comp.dataConfig, rows], () => {
+  applyChartOption()
+})
 
 onUnmounted(() => {
   if (initTimer) clearTimeout(initTimer)

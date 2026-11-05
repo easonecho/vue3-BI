@@ -3,16 +3,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { ECOption } from '../_shared/echarts-config'
 import { ensureEchartsGl } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
 import { deriveDefaultPropsCached } from '../types'
 import { getDefinition } from '../index'
+import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 const props = defineProps<{ comp: ComponentInstance }>()
+const dataSourceRef = computed(() => props.comp.dataSource)
+const { rows } = useDatasetBinding(dataSourceRef)
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 let initTimer: number | undefined
 let debounceTimer: number | null = null
@@ -35,15 +38,65 @@ interface SeriesItem {
   data: number[]
 }
 
+/**
+ * 数据集绑定：按 dataConfig 的字段映射构建「类目 × 系列」矩阵。
+ * 未绑定数据集或缺少必需字段时返回 null，沿用静态示例数据。
+ */
+function buildBoundGrid(): { categories: string[]; series: SeriesItem[] } | null {
+  if (!props.comp.dataSource?.datasetId || rows.value.length === 0) return null
+  const cfg = (props.comp.dataConfig ?? {}) as Record<string, unknown>
+  const categoryField = String(cfg.categoryField ?? '')
+  const seriesField = String(cfg.seriesField ?? '')
+  const valueField = String(cfg.valueField ?? '')
+  if (!categoryField || !valueField) return null
+
+  const categories: string[] = []
+  const categoryIndex = new Map<string, number>()
+  const seriesNames: string[] = []
+  const seriesIndex = new Map<string, number>()
+  const matrix: number[][] = []
+
+  for (const row of rows.value) {
+    const category = String(row[categoryField] ?? '')
+    let ci = categoryIndex.get(category)
+    if (ci === undefined) {
+      ci = categories.length
+      categoryIndex.set(category, ci)
+      categories.push(category)
+    }
+    // 未指定系列字段时，整个数值列作为单一系列
+    const seriesName = seriesField ? String(row[seriesField] ?? '') : valueField
+    let si = seriesIndex.get(seriesName)
+    if (si === undefined) {
+      si = seriesNames.length
+      seriesIndex.set(seriesName, si)
+      seriesNames.push(seriesName)
+      matrix.push([])
+    }
+    const value = Number(row[valueField] ?? 0)
+    matrix[si][ci] = (matrix[si][ci] ?? 0) + (Number.isFinite(value) ? value : 0)
+  }
+
+  return {
+    categories,
+    series: seriesNames.map((name, si) => ({
+      name,
+      data: categories.map((_, ci) => matrix[si][ci] ?? 0),
+    })),
+  }
+}
+
 function getChartSpecificOption(): { specificOption: any; mergedProps: Record<string, any> } {
   const def = getDefinition(props.comp.type)
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const categories: string[] = (mergedProps.categories as string[]) || ['Q1', 'Q2', 'Q3', 'Q4']
-  const series: SeriesItem[] = (mergedProps.series as SeriesItem[]) || [
-    { name: '产品A', data: [320, 280, 360, 400] },
-  ]
+  const boundGrid = buildBoundGrid()
+  const categories: string[] =
+    boundGrid?.categories ?? ((mergedProps.categories as string[]) || ['Q1', 'Q2', 'Q3', 'Q4'])
+  const series: SeriesItem[] =
+    boundGrid?.series ??
+    ((mergedProps.series as SeriesItem[]) || [{ name: '产品A', data: [320, 280, 360, 400] }])
 
   // 构建 bar3D 所需的 [xIdx, yIdx, value] 数据矩阵
   const data: Array<[number, number, number]> = []
@@ -186,7 +239,7 @@ onMounted(async () => {
   initTimer = window.setTimeout(applyChartOption, 50)
 })
 
-watch([() => JSON.stringify(props.comp.props)], () => {
+watch([() => JSON.stringify(props.comp.props), () => props.comp.dataConfig, rows], () => {
   applyChartOption()
 })
 

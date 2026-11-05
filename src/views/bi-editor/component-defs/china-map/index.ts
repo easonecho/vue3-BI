@@ -89,7 +89,13 @@ export const chinaMapDefinition: ComponentDefinition = {
       group: '标签',
       tip: '显示省份名',
     },
-    { key: 'labelColor', label: '标签颜色', type: 'colorpicker', default: '#e2e8f0', group: '标签' },
+    {
+      key: 'labelColor',
+      label: '标签颜色',
+      type: 'colorpicker',
+      default: '#e2e8f0',
+      group: '标签',
+    },
   ],
   extraDefaults: {
     data: [
@@ -130,7 +136,11 @@ export const chinaMapDefinition: ComponentDefinition = {
     ],
   },
   defaultStyle: {},
-  supportsDataBinding: false,
+  supportsDataBinding: true,
+  dataBindingSchema: [
+    { key: 'nameField', label: '地区名称字段', type: 'name' },
+    { key: 'valueField', label: '数值字段', type: 'value' },
+  ],
 }
 
 export default chinaMapDefinition

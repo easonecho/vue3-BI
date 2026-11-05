@@ -1,34 +1,16 @@
 <template>
   <div class="widget-scroll-table" :style="containerStyle">
     <div v-if="showHeader" class="st-header" :style="headerStyle">
-      <div
-        v-for="col in columns"
-        :key="col.key"
-        class="st-cell"
-        :style="cellStyle(col)"
-      >
+      <div v-for="col in columns" :key="col.key" class="st-cell" :style="cellStyle(col)">
         {{ col.title }}
       </div>
     </div>
-    <div
-      ref="bodyRef"
-      class="st-body"
-      @mouseenter="onBodyEnter"
-      @mouseleave="onBodyLeave"
-    >
-      <div
-        v-for="(row, idx) in renderRows"
-        :key="idx"
-        class="st-row"
-        :style="rowStyleVars(idx)"
-      >
-        <div
-          v-for="col in columns"
-          :key="col.key"
-          class="st-cell"
-          :style="cellStyle(col)"
-        >
-          <span :style="col.key === 'level' ? levelStyle(row[col.key]) : null">{{ row[col.key] }}</span>
+    <div ref="bodyRef" class="st-body" @mouseenter="onBodyEnter" @mouseleave="onBodyLeave">
+      <div v-for="(row, idx) in renderRows" :key="idx" class="st-row" :style="rowStyleVars(idx)">
+        <div v-for="col in columns" :key="col.key" class="st-cell" :style="cellStyle(col)">
+          <span :style="col.key === 'level' ? levelStyle(row[col.key]) : null">{{
+            row[col.key]
+          }}</span>
         </div>
       </div>
       <div v-if="renderRows.length === 0" class="st-empty">暂无数据</div>
@@ -38,6 +20,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 interface TableColumn {
@@ -48,12 +31,21 @@ interface TableColumn {
 
 const props = defineProps<{ comp: ComponentInstance }>()
 
+// 数据集绑定：表格组件自动展示数据集全部字段，无需手工映射
+const dataSourceRef = computed(() => props.comp.dataSource)
+const { rows: datasetRows, fields } = useDatasetBinding(dataSourceRef)
+const bound = computed(() => !!props.comp.dataSource?.datasetId && datasetRows.value.length > 0)
+
 const columns = computed<TableColumn[]>(() => {
+  if (bound.value && fields.value.length > 0) {
+    return fields.value.map((field) => ({ key: field, title: field }))
+  }
   const cols = props.comp.props?.columns
   return Array.isArray(cols) && cols.length > 0 ? cols : []
 })
 
 const dataRows = computed<any[]>(() => {
+  if (bound.value) return datasetRows.value
   const data = props.comp.props?.data
   return Array.isArray(data) ? data : []
 })
@@ -185,12 +177,9 @@ onUnmounted(() => {
   stopScroll()
 })
 
-watch(
-  [autoScroll, interval, step, dataRows, rowHeight],
-  () => {
-    startScroll()
-  },
-)
+watch([autoScroll, interval, step, dataRows, rowHeight], () => {
+  startScroll()
+})
 </script>
 
 <style scoped lang="less">

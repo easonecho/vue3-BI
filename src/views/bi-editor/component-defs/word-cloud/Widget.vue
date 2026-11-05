@@ -3,15 +3,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
 import { deriveDefaultPropsCached } from '../types'
 import { getDefinition } from '../index'
+import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 const props = defineProps<{ comp: ComponentInstance }>()
+const dataSourceRef = computed(() => props.comp.dataSource)
+const { rows } = useDatasetBinding(dataSourceRef)
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 let initTimer: number | undefined
 let debounceTimer: number | null = null
@@ -103,7 +106,7 @@ function layoutWords(
   for (let i = 0; i < sorted.length; i++) {
     const w = sorted[i]
     const fontSize =
-      opts.minFontSize + (opts.maxFontSize - opts.minFontSize) * (Number(w.value) - min) / range
+      opts.minFontSize + ((opts.maxFontSize - opts.minFontSize) * (Number(w.value) - min)) / range
     const textW = estimateTextWidth(w.name, fontSize)
     const textH = fontSize
     const angle = angles.length > 0 ? angles[Math.floor(Math.random() * angles.length)] : 0
@@ -168,13 +171,35 @@ function layoutWords(
   return result
 }
 
+/**
+ * 数据集绑定：把词名 / 权重字段映射为词云数据。
+ * 未配置字段或结果为空时返回 null，沿用静态示例数据。
+ */
+function buildBoundWords(): Array<{ name: string; value: number }> | null {
+  if (!props.comp.dataSource?.datasetId || rows.value.length === 0) return null
+  const cfg = (props.comp.dataConfig ?? {}) as Record<string, unknown>
+  const nameField = String(cfg.nameField ?? '')
+  const valueField = String(cfg.valueField ?? '')
+  if (!nameField || !valueField) return null
+
+  const words: Array<{ name: string; value: number }> = []
+  for (const row of rows.value) {
+    const name = String(row[nameField] ?? '').trim()
+    if (!name) continue
+    const value = Number(row[valueField] ?? 0)
+    words.push({ name, value: Number.isFinite(value) ? value : 0 })
+  }
+  return words.length > 0 ? words : null
+}
+
 function applyChartOption() {
   debouncedSetOption(() => {
     const baseOption = getBaseOption()
     const def = getDefinition(props.comp.type)
     const mergedProps = { ...deriveDefaultPropsCached(def), ...props?.comp?.props }
 
-    const words = Array.isArray(mergedProps.words) ? mergedProps.words : []
+    const boundWords = buildBoundWords()
+    const words = boundWords ?? (Array.isArray(mergedProps.words) ? mergedProps.words : [])
     const minFontSize = Number(mergedProps.minFontSize)
     const maxFontSize = Number(mergedProps.maxFontSize)
     const textColor = String(mergedProps.textColor)
@@ -238,12 +263,9 @@ onMounted(async () => {
   initTimer = window.setTimeout(applyChartOption, 50)
 })
 
-watch(
-  [() => JSON.stringify(props.comp.props)],
-  () => {
-    applyChartOption()
-  },
-)
+watch([() => JSON.stringify(props.comp.props), () => props.comp.dataConfig, rows], () => {
+  applyChartOption()
+})
 
 onUnmounted(() => {
   if (initTimer) clearTimeout(initTimer)

@@ -83,7 +83,13 @@ export const ganttChartDefinition: ComponentDefinition = {
     tasks: GANTT_DEFAULT_TASKS,
   },
   defaultStyle: {},
-  supportsDataBinding: false,
+  supportsDataBinding: true,
+  dataBindingSchema: [
+    { key: 'nameField', label: '任务名称字段', type: 'name' },
+    { key: 'startField', label: '开始时间字段', type: 'category' },
+    { key: 'endField', label: '结束时间字段', type: 'category' },
+    { key: 'progressField', label: '进度字段', type: 'value' },
+  ],
 }
 
 export default ganttChartDefinition

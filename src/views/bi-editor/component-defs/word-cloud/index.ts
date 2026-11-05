@@ -65,7 +65,14 @@ export const wordCloudDefinition: ComponentDefinition = {
       group: '颜色',
       tip: '辅文字色',
     },
-    { key: 'rotate', label: '允许旋转', type: 'switch', default: true, group: '布局', tip: '允许旋转' },
+    {
+      key: 'rotate',
+      label: '允许旋转',
+      type: 'switch',
+      default: true,
+      group: '布局',
+      tip: '允许旋转',
+    },
     {
       key: 'rotateAngles',
       label: '旋转角度',
@@ -117,7 +124,11 @@ export const wordCloudDefinition: ComponentDefinition = {
     ],
   },
   defaultStyle: {},
-  supportsDataBinding: false,
+  supportsDataBinding: true,
+  dataBindingSchema: [
+    { key: 'nameField', label: '词名字段', type: 'name' },
+    { key: 'valueField', label: '权重字段', type: 'value' },
+  ],
 }
 
 export default wordCloudDefinition
