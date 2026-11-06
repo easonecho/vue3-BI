@@ -13,7 +13,19 @@
  *   ```
  */
 import type { componentDefinitions } from '@/views/bi-editor/component-defs'
+import type { AggregateMetric } from '@/api/dataset'
 export type ComponentType = keyof typeof componentDefinitions
+
+/**
+ * 🔑 组件聚合规格快照 —— 保存看板时按 dataConfig 固化到 layout,
+ *   定时报表复用同一份规格取数, 保证与看板聚合口径一致; 编辑器运行时忽略该字段。
+ */
+export interface ComponentAggregateSpec {
+  groupBy: string[]
+  metrics: AggregateMetric[]
+  orderBy?: { field: string; direction?: 'asc' | 'desc' }
+  limit?: number
+}
 
 /** 组件分类 */
 export type ComponentCategory = 'basic' | 'chart' | 'data' | 'info'
@@ -48,6 +60,8 @@ export interface ComponentInstance {
   dataSource: { datasetId: number | null }
   /** 🔑 字段映射配置:不同图表类型所需字段槽位不同(如 bar: {categoryField, valueFields}) */
   dataConfig: Record<string, unknown>
+  /** 🔑 聚合规格快照: 保存时固化, 供定时报表按同一口径取数 (运行时忽略) */
+  aggregateSpec?: ComponentAggregateSpec
   /**
    * 🔑 分组 ID（扁平分组方案）：
    *   - 多个组件拥有相同的 groupId 即视为同一组

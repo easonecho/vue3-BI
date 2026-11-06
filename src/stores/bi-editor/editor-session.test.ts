@@ -187,6 +187,37 @@ describe('serializeLayout / applyLayout', () => {
     expect(h.components.value[0].x).toBe(10)
   })
 
+  it('序列化时按 dataConfig 固化聚合规格，供定时报表复用同一口径', () => {
+    const h = createHarness()
+    h.components.value = [
+      makeComponent('c1', {
+        props: { aggregate: 'sum' },
+        dataConfig: { categoryField: '月份', valueFields: ['销售额'] },
+      }),
+    ]
+
+    const layout = h.session.serializeLayout()
+    expect(layout.components[0].aggregateSpec).toEqual({
+      groupBy: ['月份'],
+      metrics: [{ field: '销售额', aggregate: 'sum', alias: '销售额' }],
+      orderBy: { field: '月份', direction: 'asc' },
+      limit: 2000,
+    })
+  })
+
+  it('序列化时丢弃加载残留的旧聚合规格，字段缺失则不写入', () => {
+    const h = createHarness()
+    h.components.value = [
+      makeComponent('c1', {
+        aggregateSpec: { groupBy: ['旧字段'], metrics: [{ field: '旧值', aggregate: 'sum' }] },
+        dataConfig: {},
+      }),
+    ]
+
+    const layout = h.session.serializeLayout()
+    expect(layout.components[0].aggregateSpec).toBeUndefined()
+  })
+
   it('应用布局时为老组件补默认字段，并重置选中 / 历史 / 视口', async () => {
     const h = createHarness()
     const legacy = {

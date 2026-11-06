@@ -1,5 +1,6 @@
 import { nextTick, type Ref } from 'vue'
 import type { ComponentInstance, CanvasState, DashboardLayout, GuideLine } from '@/views/bi-editor/types'
+import { resolveComponentAggregateSpec } from '@/views/bi-editor/component-defs/aggregate-spec'
 import { DEFAULT_ZOOM, DEFAULT_VIEWPORT_OFFSET } from '@/views/bi-editor/constants/canvas-constants'
 
 export interface ApplyEditorLayoutDeps {
@@ -11,6 +12,17 @@ export interface ApplyEditorLayoutDeps {
   isDirty: Ref<boolean>
   clearHistory: () => void
   resetViewport: () => void
+}
+
+/**
+ * 序列化单个组件: 按当前 dataConfig/props 重新固化聚合规格,
+ * 并丢弃加载时残留的旧规格, 避免字段改动后报表仍按旧口径取数。
+ */
+function serializeComponent(comp: ComponentInstance): ComponentInstance {
+  const rest = { ...comp }
+  delete rest.aggregateSpec
+  const aggregateSpec = resolveComponentAggregateSpec(rest)
+  return aggregateSpec ? { ...rest, aggregateSpec } : rest
 }
 
 /**
@@ -32,7 +44,7 @@ export function serializeEditorLayout(
       scrollX: DEFAULT_VIEWPORT_OFFSET.x,
       scrollY: DEFAULT_VIEWPORT_OFFSET.y,
     },
-    components: JSON.parse(JSON.stringify(components)),
+    components: JSON.parse(JSON.stringify(components.map(serializeComponent))),
     guides: JSON.parse(JSON.stringify(guides)),
   }
 }
