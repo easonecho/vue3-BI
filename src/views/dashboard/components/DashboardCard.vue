@@ -54,6 +54,9 @@
                 <el-dropdown-item command="share">
                   <el-icon><Share /></el-icon>&nbsp;分享
                 </el-dropdown-item>
+                <el-dropdown-item command="acl">
+                  <el-icon><Lock /></el-icon>&nbsp;权限
+                </el-dropdown-item>
                 <el-dropdown-item command="report">
                   <el-icon><Clock /></el-icon>&nbsp;定时报表
                 </el-dropdown-item>
@@ -115,6 +118,7 @@ import {
   Rank,
   Tickets,
   Connection,
+  Lock,
 } from '@element-plus/icons-vue'
 import type { Dashboard } from '@/api/types'
 

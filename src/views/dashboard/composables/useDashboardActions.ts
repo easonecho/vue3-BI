@@ -42,6 +42,10 @@ export function useDashboardActions(deps: DashboardActionsDeps) {
   const shareVisible = ref(false)
   const shareTarget = ref<Dashboard | null>(null)
 
+  // 看板级权限 (ACL)
+  const aclVisible = ref(false)
+  const aclTarget = ref<Dashboard | null>(null)
+
   // P2-3: 分组管理
   const groupDialogVisible = ref(false)
   const moveGroupVisible = ref(false)
@@ -88,6 +92,9 @@ export function useDashboardActions(deps: DashboardActionsDeps) {
     } else if (cmd === 'share') {
       shareTarget.value = item
       shareVisible.value = true
+    } else if (cmd === 'acl') {
+      aclTarget.value = item
+      aclVisible.value = true
     } else if (cmd === 'report') {
       reportTarget.value = item
       reportVisible.value = true
@@ -128,11 +135,15 @@ export function useDashboardActions(deps: DashboardActionsDeps) {
 
   async function handleCopy(item: Dashboard) {
     try {
-      await ElMessageBox.confirm(`确定复制看板「${item.name}」吗? 副本将作为草稿创建。`, '复制看板', {
-        type: 'info',
-        confirmButtonText: '复制',
-        cancelButtonText: '取消',
-      })
+      await ElMessageBox.confirm(
+        `确定复制看板「${item.name}」吗? 副本将作为草稿创建。`,
+        '复制看板',
+        {
+          type: 'info',
+          confirmButtonText: '复制',
+          cancelButtonText: '取消',
+        },
+      )
       await copyDashboard(item.id)
       ElMessage.success('复制成功')
       void reload()
@@ -199,6 +210,8 @@ export function useDashboardActions(deps: DashboardActionsDeps) {
     saveTplTarget,
     lineageVisible,
     lineageTarget,
+    aclVisible,
+    aclTarget,
     handleEdit,
     handlePreview,
     openCreateDialog,

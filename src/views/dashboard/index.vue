@@ -34,7 +34,12 @@
     />
 
     <!-- 分页 -->
-    <DashboardPagination v-model:page="page" :page-size="pageSize" :total="total" @change="loadList" />
+    <DashboardPagination
+      v-model:page="page"
+      :page-size="pageSize"
+      :total="total"
+      @change="loadList"
+    />
 
     <!-- 重命名对话框 -->
     <DashboardRenameDialog
@@ -49,6 +54,9 @@
 
     <!-- 分享看板对话框 (4.2 新增) -->
     <DashboardShareDialog v-model="shareVisible" :dashboard="shareTarget" />
+
+    <!-- 看板级权限 (ACL) -->
+    <DashboardAclDialog v-model="aclVisible" :dashboard="aclTarget" />
 
     <!-- P2-3: 分组管理对话框 -->
     <DashboardGroupDialog
@@ -98,6 +106,7 @@ import DashboardPagination from './components/DashboardPagination.vue'
 import DashboardRenameDialog from './components/DashboardRenameDialog.vue'
 import DashboardCreateDialog from './components/DashboardCreateDialog.vue'
 import DashboardShareDialog from './components/DashboardShareDialog.vue'
+import DashboardAclDialog from './components/DashboardAclDialog.vue'
 import DashboardGroupDialog from './components/DashboardGroupDialog.vue'
 import DashboardMoveGroupDialog from './components/DashboardMoveGroupDialog.vue'
 import DashboardSaveTemplateDialog from './components/DashboardSaveTemplateDialog.vue'
@@ -142,6 +151,8 @@ const {
   createVisible,
   shareVisible,
   shareTarget,
+  aclVisible,
+  aclTarget,
   groupDialogVisible,
   moveGroupVisible,
   moveGroupTarget,

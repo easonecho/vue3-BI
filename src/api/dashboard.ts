@@ -63,3 +63,27 @@ export function toggleFavorite(id: number) {
 export function moveDashboardToGroup(id: number, groupId: number | null) {
   return put<Dashboard>(`/api/dashboards/${id}`, { groupId })
 }
+
+/** 看板授权项 (按用户或角色) */
+export interface DashboardAclItem {
+  subjectType: 'user' | 'role'
+  subjectId: number
+  permission: 'view' | 'edit'
+}
+
+/** 看板授权记录 (含主键) */
+export interface DashboardAclRecord extends DashboardAclItem {
+  id: number
+  createBy?: string | null
+  createdAt?: string
+}
+
+/** 读取看板授权列表 */
+export function getDashboardAcl(id: number) {
+  return get<DashboardAclRecord[]>(`/api/dashboards/${id}/acl`)
+}
+
+/** 整体替换看板授权 (空数组表示清空, 回落到租户+数据范围控制) */
+export function updateDashboardAcl(id: number, items: DashboardAclItem[]) {
+  return put<DashboardAclRecord[]>(`/api/dashboards/${id}/acl`, { items })
+}

@@ -48,6 +48,8 @@ export interface ReportChartSnapshot {
   columns: string[]
   rows: Record<string, unknown>[]
   truncated: boolean
+  /** 快照是否为聚合结果: 当前后端按原始行取数, 恒为 false */
+  aggregated?: boolean
   error?: string
 }
 
