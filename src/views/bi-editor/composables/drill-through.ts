@@ -66,6 +66,52 @@ export function buildDetailFilters(ctx: DetailFilterContext): RowCondition[] {
   return dedupeFilters(filters)
 }
 
+/** 图表点击意图（ECharts 点击回调分流结果） */
+export type ChartClickIntent =
+  | { type: 'detail'; field: string; value: string }
+  | { type: 'drill'; field: string; value: string }
+  | { type: 'link'; field: string; value: string }
+  | { type: 'none' }
+
+export interface ChartClickIntentInput {
+  /** 组件配置的点击行为: auto=联动/下钻, detail=打开明细 */
+  clickAction?: string
+  /** 当前生效维度字段 */
+  field?: string
+  /** ECharts 点击项名称 (维度值) */
+  value?: unknown
+  /** 组件配置的下钻字段 */
+  drillFields?: string[]
+  /** 已下钻层数 */
+  drillDepth?: number
+}
+
+/**
+ * 解析图表点击意图：
+ *   - 无维度字段 / 空值 → none
+ *   - 配置「打开明细」→ detail（优先于下钻/联动）
+ *   - 配置了下钻字段且未到最后一层 → drill；已到最后一层 → none
+ *   - 其余 → link
+ */
+export function resolveChartClickIntent(input: ChartClickIntentInput): ChartClickIntent {
+  const field = input.field ?? ''
+  const value = input.value
+  if (!field || value === undefined || value === null || value === '') return { type: 'none' }
+
+  if (input.clickAction === 'detail') {
+    return { type: 'detail', field, value: String(value) }
+  }
+
+  const drillFields = input.drillFields ?? []
+  if (drillFields.length > 0) {
+    const depth = input.drillDepth ?? 0
+    if (depth < drillFields.length) return { type: 'drill', field, value: String(value) }
+    return { type: 'none' }
+  }
+
+  return { type: 'link', field, value: String(value) }
+}
+
 /** 把过滤条件转成可读标签，用于明细抽屉顶部提示 */
 export function summarizeDetailFilters(filters: RowCondition[]): string[] {
   return filters.map(({ field, operator, value }) => {

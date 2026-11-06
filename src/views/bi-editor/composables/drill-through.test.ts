@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildDetailFilters, summarizeDetailFilters } from './drill-through'
+import { buildDetailFilters, resolveChartClickIntent, summarizeDetailFilters } from './drill-through'
 
 describe('buildDetailFilters', () => {
   it('无任何过滤条件时返回空数组', () => {
@@ -78,6 +78,59 @@ describe('buildDetailFilters', () => {
       drillFilters: [{ field: 'region', value: '华东' }],
     })
     expect(filters).toEqual([{ field: 'region', operator: 'eq', value: '华东' }])
+  })
+})
+
+describe('resolveChartClickIntent', () => {
+  it('配置「打开明细」时优先返回 detail，并带点击项维度值', () => {
+    expect(
+      resolveChartClickIntent({
+        clickAction: 'detail',
+        field: 'region',
+        value: '华东',
+        drillFields: ['city'],
+      }),
+    ).toEqual({ type: 'detail', field: 'region', value: '华东' })
+  })
+
+  it('配置下钻字段且未到最后一层时返回 drill', () => {
+    expect(
+      resolveChartClickIntent({ field: 'region', value: '华东', drillFields: ['city'], drillDepth: 0 }),
+    ).toEqual({ type: 'drill', field: 'region', value: '华东' })
+  })
+
+  it('下钻已到最后一层时不下钻也不再联动', () => {
+    expect(
+      resolveChartClickIntent({
+        field: 'city',
+        value: '上海',
+        drillFields: ['city'],
+        drillDepth: 1,
+      }),
+    ).toEqual({ type: 'none' })
+  })
+
+  it('默认行为返回联动', () => {
+    expect(resolveChartClickIntent({ field: 'region', value: '华东' })).toEqual({
+      type: 'link',
+      field: 'region',
+      value: '华东',
+    })
+  })
+
+  it('缺维度字段或空值时返回 none', () => {
+    expect(resolveChartClickIntent({ value: '华东' })).toEqual({ type: 'none' })
+    expect(resolveChartClickIntent({ field: 'region' })).toEqual({ type: 'none' })
+    expect(resolveChartClickIntent({ field: 'region', value: '' })).toEqual({ type: 'none' })
+    expect(resolveChartClickIntent({ field: 'region', value: null })).toEqual({ type: 'none' })
+  })
+
+  it('数字 0 视为有效点击值', () => {
+    expect(resolveChartClickIntent({ field: 'month', value: 0 })).toEqual({
+      type: 'link',
+      field: 'month',
+      value: '0',
+    })
   })
 })
 

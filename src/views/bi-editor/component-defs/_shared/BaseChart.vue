@@ -29,16 +29,19 @@
       v-model:visible="detailVisible"
       :dataset-id="detailDatasetId"
       :filters="detailFilters"
-      :title="comp.name"
+      :title="detailTitle"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, shallowRef, computed, type ShallowRef } from 'vue'
+import { ref, onMounted, onBeforeUnmount, shallowRef, computed, watch, type ShallowRef } from 'vue'
 import { init, type ECharts, type ECOption } from './echarts-config'
 import { useLinkageStore } from '@/stores/linkage'
-import { buildDetailFilters } from '@/views/bi-editor/composables/drill-through'
+import {
+  buildDetailFilters,
+  resolveChartClickIntent,
+} from '@/views/bi-editor/composables/drill-through'
 import ChartDetailDrawer from './ChartDetailDrawer.vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
@@ -75,6 +78,12 @@ const drillFields = computed<string[]>(() => {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === 'string' && !!item)
     : []
+})
+
+/** 点击行为: auto=联动/下钻, detail=打开明细 */
+const clickAction = computed(() => {
+  const value = props.comp.props?.clickAction
+  return typeof value === 'string' ? value : 'auto'
 })
 
 const drillStack = computed(() => {
@@ -135,9 +144,11 @@ const detailDatasetId = computed(() => {
 })
 const detailAvailable = computed(() => detailDatasetId.value !== null)
 const detailVisible = ref(false)
+/** 点击图形元素时的维度值，作为明细的额外等值过滤 */
+const clickedDetail = ref<{ field: string; value: string } | null>(null)
 
 /**
- * 明细查询沿用全局筛选 / 钻取 / 全部联动筛选。
+ * 明细查询沿用全局筛选 / 钻取 / 全部联动筛选 + 点击项维度值。
  * 注意与图表自身查询不同：这里不能排除当前组件作为源的联动，
  * 否则点击柱子产生的筛选不会体现在明细中。
  */
@@ -146,33 +157,58 @@ const detailFilters = computed(() =>
     globalFilters: linkageStore.filterValues,
     linkFilters: linkageStore.linkFilters,
     drillFilters: linkageStore.getDrillStack(compId.value),
+    field: clickedDetail.value?.field,
+    value: clickedDetail.value?.value,
   }),
+)
+
+const detailTitle = computed(() =>
+  clickedDetail.value ? `${props.comp.name} · ${clickedDetail.value.value}` : props.comp.name,
 )
 
 function openDetail() {
   if (!detailAvailable.value) return
+  clickedDetail.value = null
   detailVisible.value = true
 }
 
-/** ECharts 数据项点击：配置 drillFields 时逐层下钻，否则联动其他图表 */
-function handleChartClick(params: any) {
+// 关闭抽屉后清除点击过滤，避免下次通过「明细」按钮打开时残留
+watch(detailVisible, (visible) => {
+  if (!visible) clickedDetail.value = null
+})
+
+/** ECharts 点击回调的最小参数集 */
+interface ChartClickParams {
+  componentType?: string
+  name?: unknown
+}
+
+/** ECharts 数据项点击：按配置打开明细 / 逐层下钻 / 联动其他图表 */
+function handleChartClick(params?: ChartClickParams) {
   if (!linkageStore.linkageEnabled) return
   if (!params || params.componentType !== 'series') return
-  const value = params.name
-  if (value === undefined || value === null || value === '') return
-  const field = effectiveDimensionField.value
-  if (!field) return
-  if (drillFields.value.length > 0) {
-    if (drillStack.value.length < drillFields.value.length) {
-      linkageStore.pushDrill(compId.value, field, String(value))
-    }
+  const intent = resolveChartClickIntent({
+    clickAction: clickAction.value,
+    field: effectiveDimensionField.value,
+    value: params.name,
+    drillFields: drillFields.value,
+    drillDepth: drillStack.value.length,
+  })
+  if (intent.type === 'none') return
+  if (intent.type === 'detail') {
+    clickedDetail.value = { field: intent.field, value: intent.value }
+    detailVisible.value = true
+    return
+  }
+  if (intent.type === 'drill') {
+    linkageStore.pushDrill(compId.value, intent.field, intent.value)
     return
   }
   linkageStore.toggleLinkFilter({
     sourceId: compId.value,
     sourceName: props.comp.name,
-    field,
-    value: String(value),
+    field: intent.field,
+    value: intent.value,
   })
 }
 

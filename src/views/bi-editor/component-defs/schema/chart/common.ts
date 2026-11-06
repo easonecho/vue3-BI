@@ -17,4 +17,16 @@ export const chartCommonSchema: PropField[] = [
   ...chartAnimationSchema,
   ...chartGridSchema,
   ...chartAnnotationSchema,
+  {
+    key: 'clickAction',
+    label: '点击行为',
+    type: 'select',
+    default: 'auto',
+    options: [
+      { label: '联动 / 下钻（默认）', value: 'auto' },
+      { label: '打开明细', value: 'detail' },
+    ],
+    group: '交互',
+    tip: '「打开明细」会按点击项的维度值查询原始数据行',
+  },
 ]
