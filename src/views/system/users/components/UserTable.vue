@@ -24,13 +24,13 @@
       <el-table-column prop="createdAt" label="创建时间" width="170" align="center" />
       <el-table-column label="操作" width="300" fixed="right" align="center">
         <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="emit('edit', row)">
+          <el-button v-permission="'system:user:edit'" link type="primary" size="small" @click="emit('edit', row)">
             编辑
           </el-button>
-          <el-button link type="primary" size="small" @click="emit('change-role', row)">
+          <el-button v-permission="'system:user:edit'" link type="primary" size="small" @click="emit('change-role', row)">
             改角色
           </el-button>
-          <el-button link type="warning" size="small" @click="emit('reset-password', row)">
+          <el-button v-permission="'system:user:edit'" link type="warning" size="small" @click="emit('reset-password', row)">
             重置密码
           </el-button>
           <el-popconfirm
@@ -41,7 +41,7 @@
             @confirm="emit('delete', row)"
           >
             <template #reference>
-              <el-button link type="danger" size="small">删除</el-button>
+              <el-button v-permission="'system:user:remove'" link type="danger" size="small">删除</el-button>
             </template>
           </el-popconfirm>
         </template>

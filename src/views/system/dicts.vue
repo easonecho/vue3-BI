@@ -5,7 +5,7 @@
         <el-input v-model="filters.keyword" placeholder="搜索类型/名称" clearable style="width: 240px" @keyup.enter="loadList" @clear="loadList" />
         <el-button type="primary" @click="loadList"><el-icon><Search /></el-icon>&nbsp;查询</el-button>
         <div class="spacer" />
-        <el-button type="success" @click="openCreate"><el-icon><Plus /></el-icon>&nbsp;新增字典</el-button>
+        <el-button v-permission="'system:dict:add'" type="success" @click="openCreate"><el-icon><Plus /></el-icon>&nbsp;新增字典</el-button>
       </div>
 
       <el-table v-loading="loading" :data="filteredList" style="margin-top: 16px" stripe border>
@@ -26,10 +26,10 @@
         <el-table-column label="操作" width="220" fixed="right" align="center">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openItems(row)">管理字典项</el-button>
-            <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
+            <el-button v-permission="'system:dict:edit'" link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
             <el-popconfirm title="确定删除该字典吗？（含字典项将一并删除）" confirm-button-type="danger" @confirm="handleDelete(row)">
               <template #reference>
-                <el-button link type="danger" size="small">删除</el-button>
+                <el-button v-permission="'system:dict:remove'" link type="danger" size="small">删除</el-button>
               </template>
             </el-popconfirm>
           </template>
@@ -66,7 +66,7 @@
     <el-dialog v-model="itemDialogVisible" :title="`管理字典项 - ${currentDict?.name || ''}`" width="720px" destroy-on-close>
       <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center">
         <span style="color: #6b7280; font-size: 13px">类型: <el-tag size="small">{{ currentDict?.type }}</el-tag></span>
-        <el-button type="primary" size="small" @click="openCreateItem"><el-icon><Plus /></el-icon>&nbsp;新增字典项</el-button>
+        <el-button v-permission="'system:dict:add'" type="primary" size="small" @click="openCreateItem"><el-icon><Plus /></el-icon>&nbsp;新增字典项</el-button>
       </div>
       <el-table v-loading="itemLoading" :data="itemList" border size="small">
         <el-table-column prop="id" label="ID" width="60" align="center" />
@@ -80,8 +80,8 @@
         </el-table-column>
         <el-table-column label="操作" width="140" align="center">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="openEditItem(row)">编辑</el-button>
-            <el-button link type="danger" size="small" @click="handleDeleteItem(row)">删除</el-button>
+            <el-button v-permission="'system:dict:edit'" link type="primary" size="small" @click="openEditItem(row)">编辑</el-button>
+            <el-button v-permission="'system:dict:remove'" link type="danger" size="small" @click="handleDeleteItem(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

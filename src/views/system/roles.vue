@@ -6,7 +6,7 @@
         <el-button type="primary" @click="handleSearch"><el-icon><Search /></el-icon>&nbsp;查询</el-button>
         <el-button @click="handleReset"><el-icon><Refresh /></el-icon>&nbsp;重置</el-button>
         <div class="spacer" />
-        <el-button type="success" @click="openCreateDialog"><el-icon><Plus /></el-icon>&nbsp;新增角色</el-button>
+        <el-button v-permission="'system:role:add'" type="success" @click="openCreateDialog"><el-icon><Plus /></el-icon>&nbsp;新增角色</el-button>
       </div>
       <el-table v-loading="loading" :data="list" style="margin-top: 16px" stripe border>
         <el-table-column prop="id" label="ID" width="70" align="center" />
@@ -28,11 +28,11 @@
         <el-table-column prop="createdAt" label="创建时间" width="170" align="center" />
         <el-table-column label="操作" width="260" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" :disabled="isBuiltin(row.id)" @click="openEditDialog(row)">编辑</el-button>
+            <el-button v-permission="'system:role:edit'" link type="primary" size="small" :disabled="isBuiltin(row.id)" @click="openEditDialog(row)">编辑</el-button>
             <el-button v-permission="'system:role:menu'" link type="warning" size="small" @click="openMenuDialog(row)">分配菜单</el-button>
             <el-popconfirm v-if="!isBuiltin(row.id)" title="确定删除该角色吗?" confirm-button-type="danger" @confirm="handleDelete(row)">
               <template #reference>
-                <el-button link type="danger" size="small">删除</el-button>
+                <el-button v-permission="'system:role:remove'" link type="danger" size="small">删除</el-button>
               </template>
             </el-popconfirm>
             <el-tooltip v-else content="内置角色不可删除" placement="top">

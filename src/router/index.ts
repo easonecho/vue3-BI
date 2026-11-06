@@ -68,7 +68,6 @@ const router = createRouter({
             title: '用户管理',
             requiresAuth: true,
             permissions: [
-              'system:user:view',
               'system:user:list',
               'system:user:add',
               'system:user:edit',
@@ -84,7 +83,6 @@ const router = createRouter({
             title: '角色管理',
             requiresAuth: true,
             permissions: [
-              'system:role:view',
               'system:role:list',
               'system:role:add',
               'system:role:edit',
@@ -101,7 +99,6 @@ const router = createRouter({
             title: '部门管理',
             requiresAuth: true,
             permissions: [
-              'system:dept:view',
               'system:dept:list',
               'system:dept:add',
               'system:dept:edit',
@@ -149,7 +146,7 @@ const router = createRouter({
             title: '菜单管理',
             requiresAuth: true,
             permissions: [
-              'system:menu:view',
+              'system:menu:list',
               'system:menu:add',
               'system:menu:edit',
               'system:menu:remove',
@@ -163,7 +160,7 @@ const router = createRouter({
           meta: {
             title: '操作日志',
             requiresAuth: true,
-            permissions: ['system:log:view', 'system:log:list', 'system:log:clean'],
+            permissions: ['system:log:list', 'system:log:remove', 'system:log:clean'],
           },
         },
         {
@@ -174,7 +171,6 @@ const router = createRouter({
             title: '数据字典',
             requiresAuth: true,
             permissions: [
-              'system:dict:view',
               'system:dict:list',
               'system:dict:add',
               'system:dict:edit',

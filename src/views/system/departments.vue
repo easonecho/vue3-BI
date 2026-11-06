@@ -32,7 +32,7 @@
           <el-icon><Refresh /></el-icon>&nbsp;重置
         </el-button>
         <div class="spacer" />
-        <el-button type="success" @click="openCreateDialog()">
+        <el-button v-permission="'system:dept:add'" type="success" @click="openCreateDialog()">
           <el-icon><Plus /></el-icon>&nbsp;新增部门
         </el-button>
       </div>
@@ -70,12 +70,12 @@
           </el-table-column>
           <el-table-column label="操作" width="240" fixed="right" align="center">
             <template #default="{ row }">
-              <el-button link type="primary" size="small" @click="openCreateDialog(row.id)">
+              <el-button v-permission="'system:dept:add'" link type="primary" size="small" @click="openCreateDialog(row.id)">
                 加子部门
               </el-button>
-              <el-button link type="primary" size="small" @click="openEditDialog(row)">编辑</el-button>
+              <el-button v-permission="'system:dept:edit'" link type="primary" size="small" @click="openEditDialog(row)">编辑</el-button>
               <el-popconfirm title="确定删除该部门吗?" confirm-button-type="danger" @confirm="handleDelete(row)">
-                <template #reference><el-button link type="danger" size="small">删除</el-button></template>
+                <template #reference><el-button v-permission="'system:dept:remove'" link type="danger" size="small">删除</el-button></template>
               </el-popconfirm>
             </template>
           </el-table-column>
@@ -123,12 +123,12 @@
           </el-table-column>
           <el-table-column label="操作" width="240" align="center">
             <template #default="{ row }">
-              <el-button link type="primary" size="small" @click="openCreateDialog(row.id)">
+              <el-button v-permission="'system:dept:add'" link type="primary" size="small" @click="openCreateDialog(row.id)">
                 加子部门
               </el-button>
-              <el-button link type="primary" size="small" @click="openEditDialog(row)">编辑</el-button>
+              <el-button v-permission="'system:dept:edit'" link type="primary" size="small" @click="openEditDialog(row)">编辑</el-button>
               <el-popconfirm title="确定删除该部门吗?" confirm-button-type="danger" @confirm="handleDelete(row)">
-                <template #reference><el-button link type="danger" size="small">删除</el-button></template>
+                <template #reference><el-button v-permission="'system:dept:remove'" link type="danger" size="small">删除</el-button></template>
               </el-popconfirm>
             </template>
           </el-table-column>

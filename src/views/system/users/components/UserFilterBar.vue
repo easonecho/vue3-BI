@@ -38,7 +38,7 @@
       <el-icon><Refresh /></el-icon>&nbsp;重置
     </el-button>
     <div class="spacer" />
-    <el-button type="success" @click="emit('create')">
+    <el-button v-permission="'system:user:add'" type="success" @click="emit('create')">
       <el-icon><Plus /></el-icon>&nbsp;新增用户
     </el-button>
   </div>
