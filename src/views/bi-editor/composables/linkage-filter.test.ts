@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { applyRowFilters, type RowFilterContext, type FilterPrimitive } from './linkage-filter'
+import {
+  applyRowFilters,
+  resolveLinkField,
+  type RowFilterContext,
+  type FilterPrimitive,
+} from './linkage-filter'
 
 type Row = Record<string, unknown>
 
@@ -154,6 +159,54 @@ describe('applyRowFilters 多条件组合 (AND)', () => {
       drillFilters: [{ field: 'city', value: '北京' }],
     })
     expect(out).toHaveLength(0)
+  })
+})
+
+describe('applyRowFilters 联动字段映射 (跨数据集)', () => {
+  const mappedRows: Row[] = [
+    { city_name: '上海', amount: 100 },
+    { city_name: '北京', amount: 200 },
+    { city_name: '广州', amount: 300 },
+  ]
+
+  it('resolveLinkField: 未映射 / 空映射时沿用源字段名', () => {
+    const filter = { sourceId: 'comp-a', field: 'city', value: '上海' }
+    expect(resolveLinkField(filter)).toBe('city')
+    expect(resolveLinkField(filter, {})).toBe('city')
+    expect(resolveLinkField(filter, { city: '   ' })).toBe('city')
+  })
+
+  it('resolveLinkField: 配置映射后返回当前组件字段名', () => {
+    const filter = { sourceId: 'comp-a', field: 'city', value: '上海' }
+    expect(resolveLinkField(filter, { city: 'city_name' })).toBe('city_name')
+    expect(resolveLinkField(filter, { city: ' city_name ' })).toBe('city_name')
+  })
+
+  it('配置映射后按目标字段过滤（跨数据集字段名不一致）', () => {
+    const out = applyRowFilters(mappedRows, {
+      componentId: 'comp-b',
+      linkFilters: [{ sourceId: 'comp-a', field: 'city', value: '上海' }],
+      linkFieldMap: { city: 'city_name' },
+    })
+    expect(out).toHaveLength(1)
+    expect(out[0].amount).toBe(100)
+  })
+
+  it('未配置映射且当前数据集无同名字段时忽略该条件（保持旧行为）', () => {
+    const out = applyRowFilters(mappedRows, {
+      componentId: 'comp-b',
+      linkFilters: [{ sourceId: 'comp-a', field: 'city', value: '上海' }],
+    })
+    expect(out).toEqual(mappedRows)
+  })
+
+  it('映射的目标字段不存在于数据行时忽略该条件', () => {
+    const out = applyRowFilters(mappedRows, {
+      componentId: 'comp-b',
+      linkFilters: [{ sourceId: 'comp-a', field: 'city', value: '上海' }],
+      linkFieldMap: { city: 'not_exist' },
+    })
+    expect(out).toEqual(mappedRows)
   })
 })
 

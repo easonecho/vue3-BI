@@ -24,12 +24,31 @@ export interface DrillFilter {
   value: string
 }
 
+/**
+ * 联动字段映射: 源图表字段名 → 当前组件字段名。
+ * 用于跨数据集 / 跨图表字段名不一致时建立联动关系；
+ * 未配置映射时仍按同名字段过滤，保持原有行为。
+ */
+export type LinkFieldMap = Record<string, string>
+
+/**
+ * 解析联动筛选在当前组件中的实际字段:
+ *   - 未配置映射或映射值为空 → 沿用源字段名（同名联动）
+ *   - 配置映射 → 使用当前组件的目标字段名
+ */
+export function resolveLinkField(filter: LinkFilter, fieldMap?: LinkFieldMap): string {
+  const mapped = fieldMap?.[filter.field]
+  return typeof mapped === 'string' && mapped.trim() ? mapped.trim() : filter.field
+}
+
 export interface RowFilterContext {
   globalFilters?: Record<string, FilterPrimitive>
   linkFilters?: LinkFilter[]
   drillFilters?: DrillFilter[]
   /** 当前组件 ID: 联动筛选时排除源组件自身 */
   componentId?: string
+  /** 联动字段映射: 跨数据集字段名不一致时使用 */
+  linkFieldMap?: LinkFieldMap
 }
 
 type Row = Record<string, unknown>
@@ -102,8 +121,9 @@ export function applyRowFilters(rows: Row[], ctx: RowFilterContext): Row[] {
       if (cellToString(row[filter.field]) !== filter.value) return false
     }
     for (const filter of linkFilters) {
-      if (!hasField(row, filter.field)) continue
-      if (cellToString(row[filter.field]) !== filter.value) return false
+      const field = resolveLinkField(filter, ctx.linkFieldMap)
+      if (!hasField(row, field)) continue
+      if (cellToString(row[field]) !== filter.value) return false
     }
     return true
   })

@@ -10,6 +10,7 @@ import { useLinkageStore } from '@/stores/linkage'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 import type { AggregateFn, DatasetQueryParams } from '@/api/dataset'
 import { AGGREGATE_FNS, buildAggregateFilters } from './aggregate-request'
+import type { LinkFieldMap } from './linkage-filter'
 
 export interface MetricAggregationOptions {
   /** 度量字段 (count 可为空) */
@@ -41,6 +42,7 @@ export function useMetricAggregation(
       linkageStore.linkFilters,
       comp.id ? linkageStore.getDrillStack(comp.id) : [],
       comp.id,
+      comp.props?.linkFieldMap as LinkFieldMap | undefined,
     )
 
     return {

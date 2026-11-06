@@ -5,7 +5,13 @@
  * 并生成 DatasetQueryParams。纯函数, 便于单测与复用。
  */
 import type { AggregateFn, DatasetQueryParams, RowCondition } from '@/api/dataset'
-import type { DrillFilter, FilterPrimitive, LinkFilter } from './linkage-filter'
+import {
+  resolveLinkField,
+  type DrillFilter,
+  type FilterPrimitive,
+  type LinkFieldMap,
+  type LinkFilter,
+} from './linkage-filter'
 
 export const AGGREGATE_FNS: readonly AggregateFn[] = [
   'sum',
@@ -30,7 +36,7 @@ export interface ChartAggregateOptions {
 /**
  * 将前端过滤条件转为聚合查询 filters (与 applyRowFilters 语义保持一致):
  * - 全局筛选器: 逗号分隔 → in; `_start`/`_end` → between/gte/lte
- * - 图表联动: 排除源组件自身
+ * - 图表联动: 排除源组件自身; 支持联动字段映射（跨数据集字段名不一致）
  * - 钻取: 已下钻层级的维度值等值过滤
  */
 export function buildAggregateFilters(
@@ -38,6 +44,7 @@ export function buildAggregateFilters(
   linkFilters: LinkFilter[],
   drillFilters: DrillFilter[],
   componentId?: string,
+  linkFieldMap?: LinkFieldMap,
 ): RowCondition[] {
   const filters: RowCondition[] = []
   const ranges = new Map<string, { start?: string; end?: string }>()
@@ -77,7 +84,11 @@ export function buildAggregateFilters(
 
   for (const filter of linkFilters ?? []) {
     if (filter.sourceId === componentId) continue
-    filters.push({ field: filter.field, operator: 'eq', value: filter.value })
+    filters.push({
+      field: resolveLinkField(filter, linkFieldMap),
+      operator: 'eq',
+      value: filter.value,
+    })
   }
   for (const filter of drillFilters ?? []) {
     filters.push({ field: filter.field, operator: 'eq', value: filter.value })

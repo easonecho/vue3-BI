@@ -65,6 +65,46 @@
         </div>
       </template>
 
+      <!-- 联动字段映射：跨数据集 / 字段名不一致时建立联动关系 -->
+      <template v-if="store.selectedComponent.dataSource.datasetId">
+        <div class="section-title" style="margin-top: 16px">联动字段映射</div>
+        <div class="linkage-tip">
+          其他图表点击联动时默认按同名字段过滤；源字段名与当前数据集不一致时，在此指定映射关系。
+        </div>
+        <div v-for="row in linkageRows" :key="row.id" class="linkage-row">
+          <el-select
+            v-model="row.source"
+            size="small"
+            filterable
+            allow-create
+            default-first-option
+            placeholder="源图表字段"
+            class="linkage-field"
+            @change="commitLinkageRows"
+          >
+            <el-option v-for="name in sourceFieldOptions" :key="name" :label="name" :value="name" />
+          </el-select>
+          <span class="linkage-arrow">→</span>
+          <el-select
+            v-model="row.target"
+            size="small"
+            filterable
+            clearable
+            placeholder="当前组件字段"
+            class="linkage-field"
+            @change="commitLinkageRows"
+          >
+            <el-option v-for="name in datasetFields" :key="name" :label="name" :value="name" />
+          </el-select>
+          <el-button link type="danger" size="small" @click="removeLinkageRow(row.id)"
+            >删除</el-button
+          >
+        </div>
+        <div class="form-item">
+          <el-button size="small" @click="addLinkageRow">添加映射</el-button>
+        </div>
+      </template>
+
       <!-- 数据预览 -->
       <template v-if="store.selectedComponent.dataSource.datasetId">
         <div class="section-title" style="margin-top: 16px">
@@ -191,7 +231,7 @@ function handleFieldMappingChange(key: string, value: string | string[] | null) 
   })
 }
 
-/** 更新组件 props（应用默认聚合用） */
+/** 更新组件 props（应用默认聚合 / 联动字段映射用） */
 function updateProp(key: string, value: unknown) {
   if (!store.selectedId) return
   const comp = store.selectedComponent
@@ -200,6 +240,84 @@ function updateProp(key: string, value: unknown) {
     props: { ...comp.props, [key]: value },
   })
 }
+
+// ====== 联动字段映射（跨数据集 / 字段名不一致） ======
+
+/** 图表点击联动时可能产生的维度字段槽位 */
+const DIMENSION_FIELD_KEYS = [
+  'categoryField',
+  'nameField',
+  'xField',
+  'dateField',
+  'treeField',
+  'labelField',
+]
+
+interface LinkageRow {
+  id: number
+  source: string
+  target: string
+}
+
+let linkageRowSeq = 0
+/** 本地编辑行：源字段可手输/选择，目标字段从当前数据集字段中选择 */
+const linkageRows = ref<LinkageRow[]>([])
+
+/** 其他组件已配置的维度字段（作为源字段候选，避免手输错字段名） */
+const sourceFieldOptions = computed<string[]>(() => {
+  const names = new Set<string>()
+  for (const comp of store.components) {
+    if (comp.id === store.selectedId) continue
+    const config = (comp.dataConfig ?? {}) as Record<string, unknown>
+    for (const key of DIMENSION_FIELD_KEYS) {
+      const value = config[key]
+      if (typeof value === 'string' && value) names.add(value)
+    }
+  }
+  return [...names]
+})
+
+/** 当前组件已配置的联动字段映射 */
+function readLinkFieldMap(): Record<string, string> {
+  const value = store.selectedComponent?.props?.linkFieldMap
+  if (!value || typeof value !== 'object') return {}
+  return value as Record<string, string>
+}
+
+/** 用组件 props 同步本地编辑行（未提交的空行仅存在于本地） */
+function syncLinkageRows() {
+  linkageRows.value = Object.entries(readLinkFieldMap()).map(([source, target]) => ({
+    id: ++linkageRowSeq,
+    source,
+    target: String(target ?? ''),
+  }))
+}
+
+/** 提交本地编辑行 → props.linkFieldMap；源字段或目标字段为空的行不生效 */
+function commitLinkageRows() {
+  const map: Record<string, string> = {}
+  for (const row of linkageRows.value) {
+    const source = row.source.trim()
+    const target = row.target.trim()
+    if (source && target) map[source] = target
+  }
+  updateProp('linkFieldMap', map)
+}
+
+function addLinkageRow() {
+  linkageRows.value.push({ id: ++linkageRowSeq, source: '', target: '' })
+}
+
+function removeLinkageRow(id: number) {
+  linkageRows.value = linkageRows.value.filter((row) => row.id !== id)
+  commitLinkageRows()
+}
+
+watch(
+  [() => store.selectedId, () => store.selectedComponent?.props?.linkFieldMap],
+  () => syncLinkageRows(),
+  { immediate: true, deep: true },
+)
 
 // ====== 语义层 (字段角色/默认聚合/显示格式) ======
 
@@ -321,6 +439,31 @@ watch(
 
 .semantic-tip :deep(.el-button) {
   padding: 0;
+  font-size: 12px;
+}
+
+.linkage-tip {
+  font-size: 12px;
+  color: var(--bi-text-muted, #6b7280);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.linkage-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.linkage-row .linkage-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.linkage-arrow {
+  flex: none;
+  color: var(--bi-text-muted, #6b7280);
   font-size: 12px;
 }
 

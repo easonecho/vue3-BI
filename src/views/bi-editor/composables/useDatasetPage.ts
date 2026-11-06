@@ -15,6 +15,7 @@ import { fetchPublicDatasetPage } from '@/api/share'
 import { getPublicDashboardContext } from '@/utils/public-dashboard-context'
 import { useLinkageStore } from '@/stores/linkage'
 import { buildAggregateFilters } from './aggregate-request'
+import type { LinkFieldMap } from './linkage-filter'
 import { refreshSignal } from './useDatasetBinding'
 import { requestDatasetPage } from './dataset-batch'
 
@@ -39,21 +40,22 @@ export function useDatasetPage(
   const loading = ref(false)
   const error = ref('')
 
+  const instanceProps = getCurrentInstance()?.props as Record<string, unknown> | undefined
   const componentId = (() => {
-    const comp = (getCurrentInstance()?.props as Record<string, unknown> | undefined)?.comp as
-      | { id?: string }
-      | undefined
+    const comp = instanceProps?.comp as { id?: string } | undefined
     return comp?.id ? String(comp.id) : undefined
   })()
 
   /** 与服务端聚合查询一致的筛选语义（字段使用展示名） */
   const filters = computed<RowCondition[]>(() => {
     if (controls.filters?.value) return controls.filters.value
+    const comp = instanceProps?.comp as { props?: Record<string, unknown> } | undefined
     return buildAggregateFilters(
       linkageStore.filterValues,
       linkageStore.linkFilters,
       componentId ? linkageStore.getDrillStack(componentId) : [],
       componentId,
+      comp?.props?.linkFieldMap as LinkFieldMap | undefined,
     )
   })
 

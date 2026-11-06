@@ -8,12 +8,20 @@
  */
 import type { RowCondition } from '@/api/dataset'
 import { buildAggregateFilters } from './aggregate-request'
-import type { DrillFilter, FilterPrimitive, LinkFilter } from './linkage-filter'
+import {
+  resolveLinkField,
+  type DrillFilter,
+  type FilterPrimitive,
+  type LinkFieldMap,
+  type LinkFilter,
+} from './linkage-filter'
 
 export interface DetailFilterContext {
   globalFilters?: Record<string, FilterPrimitive>
   linkFilters?: LinkFilter[]
   drillFilters?: DrillFilter[]
+  /** 联动字段映射：当前图表字段名与源图表不一致时使用 */
+  linkFieldMap?: LinkFieldMap
   /** 额外精确匹配条件（图表点击项的维度值） */
   field?: string
   value?: string | number | null
@@ -53,10 +61,20 @@ function dedupeFilters(filters: RowCondition[]): RowCondition[] {
  *   - 可选：点击项维度值精确匹配
  */
 export function buildDetailFilters(ctx: DetailFilterContext): RowCondition[] {
-  const filters = buildAggregateFilters(ctx.globalFilters ?? {}, [], ctx.drillFilters ?? [])
+  const filters = buildAggregateFilters(
+    ctx.globalFilters ?? {},
+    [],
+    ctx.drillFilters ?? [],
+    undefined,
+    ctx.linkFieldMap,
+  )
 
   for (const filter of ctx.linkFilters ?? []) {
-    filters.push({ field: filter.field, operator: 'eq', value: filter.value })
+    filters.push({
+      field: resolveLinkField(filter, ctx.linkFieldMap),
+      operator: 'eq',
+      value: filter.value,
+    })
   }
 
   if (ctx.field && ctx.value !== undefined && ctx.value !== null && ctx.value !== '') {

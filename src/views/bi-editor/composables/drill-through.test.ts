@@ -35,6 +35,14 @@ describe('buildDetailFilters', () => {
     ])
   })
 
+  it('配置联动字段映射后明细使用当前图表的字段名', () => {
+    const filters = buildDetailFilters({
+      linkFilters: [{ sourceId: 'bar-1', field: 'region', value: '华东' }],
+      linkFieldMap: { region: 'area_name' },
+    })
+    expect(filters).toEqual([{ field: 'area_name', operator: 'eq', value: '华东' }])
+  })
+
   it('钻取栈逐层等值过滤', () => {
     const filters = buildDetailFilters({
       drillFilters: [

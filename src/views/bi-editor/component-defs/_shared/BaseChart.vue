@@ -42,6 +42,7 @@ import {
   buildDetailFilters,
   resolveChartClickIntent,
 } from '@/views/bi-editor/composables/drill-through'
+import { resolveLinkField, type LinkFieldMap } from '@/views/bi-editor/composables/linkage-filter'
 import ChartDetailDrawer from './ChartDetailDrawer.vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
@@ -86,6 +87,12 @@ const clickAction = computed(() => {
   return typeof value === 'string' ? value : 'auto'
 })
 
+/** 联动字段映射: 源图表字段名 → 当前图表字段名（跨数据集联动） */
+const linkFieldMap = computed<LinkFieldMap | undefined>(() => {
+  const map = props.comp.props?.linkFieldMap
+  return map && typeof map === 'object' ? (map as LinkFieldMap) : undefined
+})
+
 const drillStack = computed(() => {
   void linkageStore.drillStates
   return linkageStore.getDrillStack(compId.value)
@@ -112,7 +119,10 @@ const appliedLinkFilter = computed(() => {
       .map(pickField)
       .filter(Boolean),
   )
-  return linkageStore.linkFilters.find((f) => f.sourceId !== compId.value && fields.has(f.field))
+  return linkageStore.linkFilters.find((f) => {
+    if (f.sourceId === compId.value) return false
+    return fields.has(resolveLinkField(f, linkFieldMap.value))
+  })
 })
 
 const isDrilling = computed(() => drillStack.value.length > 0)
@@ -122,7 +132,7 @@ const chipText = computed(() => {
     return `钻取: ${drillStack.value.map((item) => item.value).join(' / ')}`
   }
   if (appliedLinkFilter.value) {
-    return `联动: ${appliedLinkFilter.value.field} = ${appliedLinkFilter.value.value}`
+    return `联动: ${resolveLinkField(appliedLinkFilter.value, linkFieldMap.value)} = ${appliedLinkFilter.value.value}`
   }
   return ''
 })
@@ -157,6 +167,7 @@ const detailFilters = computed(() =>
     globalFilters: linkageStore.filterValues,
     linkFilters: linkageStore.linkFilters,
     drillFilters: linkageStore.getDrillStack(compId.value),
+    linkFieldMap: linkFieldMap.value,
     field: clickedDetail.value?.field,
     value: clickedDetail.value?.value,
   }),

@@ -12,6 +12,7 @@ import { deriveDefaultPropsCached } from '../component-defs/types'
 import type { ComponentInstance } from '../types'
 import type { DatasetQueryParams } from '@/api/dataset'
 import { buildAggregateFilters, buildAggregateRequest } from './aggregate-request'
+import type { LinkFieldMap } from './linkage-filter'
 
 export interface ChartAggregationOptions {
   /** 分组维度 (钻取时由图表返回当前层级字段); 桑基图可返回 [source, target] */
@@ -78,6 +79,7 @@ export function useChartAggregation(
       linkageStore.linkFilters,
       comp.id ? linkageStore.getDrillStack(comp.id) : [],
       comp.id,
+      mergedProps.linkFieldMap as LinkFieldMap | undefined,
     )
 
     const metrics = options.metrics()

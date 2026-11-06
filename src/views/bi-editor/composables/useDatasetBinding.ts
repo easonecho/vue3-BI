@@ -21,7 +21,7 @@ import { type DatasetQueryParams } from '@/api/dataset'
 import { executePublicDataset, queryPublicDataset } from '@/api/share'
 import { getPublicDashboardContext } from '@/utils/public-dashboard-context'
 import { useLinkageStore } from '@/stores/linkage'
-import { applyRowFilters } from './linkage-filter'
+import { applyRowFilters, type LinkFieldMap } from './linkage-filter'
 import { requestDatasetExecute, requestDatasetQuery } from './dataset-batch'
 
 /** 模块级缓存:cacheKey → { rows, fields, ts },同一数据集只取一次。缓存保存全量行,筛选后再采样 */
@@ -100,11 +100,19 @@ export function useDatasetBinding(
   const linkageStore = useLinkageStore()
   // 🔑 组件 ID 从当前 setup 实例的 props.comp 推断,避免修改所有 Widget 调用点。
   //    用于联动筛选时排除源组件自身;非组件场景(如右侧面板数据预览)为 undefined。
+  const instanceProps = getCurrentInstance()?.props as Record<string, unknown> | undefined
   const componentId = (() => {
-    const comp = (getCurrentInstance()?.props as Record<string, unknown> | undefined)?.comp as
-      { id?: string } | undefined
+    const comp = instanceProps?.comp as { id?: string } | undefined
     return comp?.id ? String(comp.id) : undefined
   })()
+
+  /** 🔑 联动字段映射: 跨数据集字段名不一致时, 把源字段名翻译为当前组件字段名
+   *  在 computed 内读取 instanceProps.comp, 保证组件对象被替换时仍能跟踪最新配置 */
+  const linkFieldMap = computed<LinkFieldMap | undefined>(() => {
+    const comp = instanceProps?.comp as { props?: Record<string, unknown> } | undefined
+    const map = comp?.props?.linkFieldMap
+    return map && typeof map === 'object' ? (map as LinkFieldMap) : undefined
+  })
 
   const rawRows = ref<Record<string, unknown>[]>([])
   const fields = ref<string[]>([])
@@ -126,6 +134,7 @@ export function useDatasetBinding(
           linkFilters: linkageStore.linkFilters,
           drillFilters: componentId ? linkageStore.getDrillStack(componentId) : [],
           componentId,
+          linkFieldMap: linkFieldMap.value,
         })
     return source
   })
