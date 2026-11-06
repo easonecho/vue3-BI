@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import type { ComponentInstance } from '../types'
-import { resolveComponentAggregateSpec } from './aggregate-spec'
+import {
+  resolveComponentAggregateSpec,
+  resolveComponentFieldMapping,
+  resolveComponentMetricMapping,
+} from './aggregate-spec'
 
 /** 构造最小可用组件 (只关心聚合规格所需的字段) */
 function comp(type: string, dataConfig: Record<string, unknown>, props: Record<string, unknown> = {}) {
@@ -108,5 +112,55 @@ describe('resolveComponentAggregateSpec', () => {
     ).toBeNull()
     expect(resolveComponentAggregateSpec(comp('bar-chart', { categoryField: '月份' }))).toBeNull()
     expect(resolveComponentAggregateSpec(comp('text', {}))).toBeNull()
+  })
+})
+
+describe('resolveComponentFieldMapping', () => {
+  it('钻取图表返回下钻字段, 供 Widget 覆盖 groupBy', () => {
+    expect(
+      resolveComponentFieldMapping(
+        comp('line-chart', {
+          categoryField: '月份',
+          valueFields: ['销售额'],
+          drillFields: ['省份', '城市'],
+        }),
+      ),
+    ).toMatchObject({
+      groupBy: ['月份'],
+      metrics: ['销售额'],
+      drillFields: ['省份', '城市'],
+    })
+  })
+
+  it('饼图同样携带下钻字段', () => {
+    expect(
+      resolveComponentFieldMapping(
+        comp('pie-chart', { nameField: '渠道', valueField: '金额', drillFields: ['区域'] }),
+      ),
+    ).toMatchObject({ groupBy: ['渠道'], metrics: ['金额'], drillFields: ['区域'] })
+  })
+
+  it('无可聚合字段时返回 null', () => {
+    expect(resolveComponentFieldMapping(comp('sankey-chart', { sourceField: '来源' }))).toBeNull()
+    expect(resolveComponentFieldMapping(comp('text', {}))).toBeNull()
+  })
+})
+
+describe('resolveComponentMetricMapping', () => {
+  it('缺度量字段且非 count 时不可聚合', () => {
+    expect(resolveComponentMetricMapping(comp('kpi-card', {}))).toBeNull()
+    expect(resolveComponentMetricMapping(comp('stat-card', { valueField: '销售额' }))).toEqual({
+      field: '销售额',
+      aggregate: 'sum',
+    })
+  })
+
+  it('count 允许空字段, 非法聚合返回 null', () => {
+    expect(
+      resolveComponentMetricMapping(comp('gauge', {}, { aggregate: 'count' })),
+    ).toEqual({ field: undefined, aggregate: 'count' })
+    expect(
+      resolveComponentMetricMapping(comp('gauge', { valueField: '值' }, { aggregate: 'none' })),
+    ).toBeNull()
   })
 })

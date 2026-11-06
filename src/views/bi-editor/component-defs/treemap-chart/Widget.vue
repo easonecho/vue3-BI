@@ -11,6 +11,7 @@ import { deriveDefaultPropsCached } from '../types'
 import { getDefinition } from '../index'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 import { useChartAggregation } from '../../composables/useChartAggregation'
+import { resolveComponentFieldMapping } from '../aggregate-spec'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 
 const props = defineProps<{ comp: ComponentInstance }>()
@@ -19,13 +20,14 @@ let initTimer: number | undefined
 
 /** 🔑 数据集绑定: 类目 + 度量在服务端 GROUP BY, 映射为 treemap 的 { name, value } */
 const dataSource = computed(() => props.comp.dataSource)
-const dataConfig = computed(() => props.comp.dataConfig ?? {})
-const categoryField = computed(() => String(dataConfig.value.categoryField || ''))
-const valueField = computed(() => String(dataConfig.value.valueField || ''))
+/** 🔑 字段映射与报表快照共用同一份规则 (component-defs/aggregate-spec) */
+const mapping = computed(() => resolveComponentFieldMapping(props.comp))
+const categoryField = computed(() => mapping.value?.groupBy[0] ?? '')
+const valueField = computed(() => mapping.value?.metrics[0] ?? '')
 const aggregateRequest = useChartAggregation(props.comp, {
-  groupBy: () => categoryField.value || undefined,
-  metrics: () => (valueField.value ? [valueField.value] : []),
-  limit: 2000,
+  groupBy: () => mapping.value?.groupBy,
+  metrics: () => mapping.value?.metrics ?? [],
+  limit: mapping.value?.limit,
 })
 const { rows: datasetRows } = useDatasetBinding(dataSource, true, aggregateRequest)
 

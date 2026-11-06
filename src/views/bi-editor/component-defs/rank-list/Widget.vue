@@ -20,21 +20,22 @@
 import { computed } from 'vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 import { useChartAggregation } from '../../composables/useChartAggregation'
+import { resolveComponentFieldMapping } from '../aggregate-spec'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 
 const props = defineProps<{ comp: ComponentInstance }>()
 
 /** 🔑 数据集绑定: 类目 + 度量在服务端 GROUP BY, 按度量倒序取前 N 项 */
 const dataSource = computed(() => props.comp.dataSource)
-const dataConfig = computed(() => props.comp.dataConfig ?? {})
-const categoryField = computed(() => String(dataConfig.value.categoryField || ''))
-const valueField = computed(() => String(dataConfig.value.valueField || ''))
+/** 🔑 字段映射与报表快照共用同一份规则 (component-defs/aggregate-spec) */
+const mapping = computed(() => resolveComponentFieldMapping(props.comp))
+const categoryField = computed(() => mapping.value?.groupBy[0] ?? '')
+const valueField = computed(() => mapping.value?.metrics[0] ?? '')
 const aggregateRequest = useChartAggregation(props.comp, {
-  groupBy: () => categoryField.value || undefined,
-  metrics: () => (valueField.value ? [valueField.value] : []),
-  orderBy: () =>
-    valueField.value ? { field: valueField.value, direction: 'desc' } : undefined,
-  limit: 500,
+  groupBy: () => mapping.value?.groupBy,
+  metrics: () => mapping.value?.metrics ?? [],
+  orderBy: () => mapping.value?.orderBy,
+  limit: mapping.value?.limit,
 })
 const { rows: datasetRows } = useDatasetBinding(dataSource, true, aggregateRequest)
 

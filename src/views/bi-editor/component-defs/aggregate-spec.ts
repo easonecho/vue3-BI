@@ -34,13 +34,20 @@ const RANK_LIST_LIMIT = 500
 
 const METRIC_TYPES = new Set(['kpi-card', 'stat-card', 'gauge'])
 
-type OrderBy = { field: string; direction: 'asc' | 'desc' }
+export type AggregateOrderBy = { field: string; direction: 'asc' | 'desc' }
 
-interface FieldMapping {
+export interface ComponentFieldMapping {
   groupBy: string[]
   metrics: string[]
-  orderBy?: OrderBy
+  orderBy?: AggregateOrderBy
   limit: number
+  /** 可钻取图表的下钻字段 (用于 widget 覆盖 groupBy) */
+  drillFields?: string[]
+}
+
+export interface ComponentMetricMapping {
+  field?: string
+  aggregate: AggregateFn
 }
 
 function str(value: unknown): string {
@@ -67,8 +74,13 @@ function resolveAggregate(comp: ComponentInstance): AggregateFn | null {
   return AGGREGATE_FNS.includes(aggregate) ? aggregate : null
 }
 
-/** 按组件类型映射分组/度量字段 (与 Widget.vue 保持一致) */
-function resolveFields(comp: ComponentInstance): FieldMapping | null {
+/**
+ * 按组件类型映射分组/度量字段 (与 Widget.vue 保持一致)。
+ * 这是 widgets 与报表快照共用的唯一映射来源: 组件改动字段口径时两边同步生效。
+ */
+export function resolveComponentFieldMapping(
+  comp: ComponentInstance,
+): ComponentFieldMapping | null {
   const dc = comp.dataConfig ?? {}
 
   switch (comp.type) {
@@ -83,6 +95,7 @@ function resolveFields(comp: ComponentInstance): FieldMapping | null {
             metrics,
             orderBy: { field: category, direction: 'asc' },
             limit: CHART_DEFAULT_LIMIT,
+            drillFields: strArray(dc.drillFields),
           }
         : null
     }
@@ -95,6 +108,7 @@ function resolveFields(comp: ComponentInstance): FieldMapping | null {
             metrics,
             orderBy: { field: category, direction: 'asc' },
             limit: CHART_DEFAULT_LIMIT,
+            drillFields: strArray(dc.drillFields),
           }
         : null
     }
@@ -108,6 +122,7 @@ function resolveFields(comp: ComponentInstance): FieldMapping | null {
             metrics: [value],
             orderBy: { field: value, direction: 'desc' },
             limit: CHART_DEFAULT_LIMIT,
+            drillFields: strArray(dc.drillFields),
           }
         : null
     }
@@ -152,27 +167,40 @@ function resolveFields(comp: ComponentInstance): FieldMapping | null {
 }
 
 /**
+ * 单指标组件 (KPI / 统计卡 / 仪表盘) 的度量映射。
+ * @returns null 表示聚合方式非法或缺少度量字段
+ */
+export function resolveComponentMetricMapping(
+  comp: ComponentInstance,
+): ComponentMetricMapping | null {
+  const aggregate = resolveAggregate(comp)
+  if (!aggregate) return null
+  const field = str(comp.dataConfig?.valueField)
+  if (!field && aggregate !== 'count') return null
+  return { field: field || undefined, aggregate }
+}
+
+/**
  * 生成组件的聚合规格快照。
  * @returns null 表示该组件不聚合 (报表按原始行取数)
  */
 export function resolveComponentAggregateSpec(
   comp: ComponentInstance,
 ): ComponentAggregateSpec | null {
-  const aggregate = resolveAggregate(comp)
-  if (!aggregate) return null
-
   // 单指标组件: 无分组, 直接 AGG(field)
   if (METRIC_TYPES.has(comp.type)) {
-    const field = str(comp.dataConfig?.valueField)
-    if (!field && aggregate !== 'count') return null
+    const metric = resolveComponentMetricMapping(comp)
+    if (!metric) return null
     return {
       groupBy: [],
-      metrics: [{ field: field || undefined, aggregate, alias: 'value' }],
+      metrics: [{ field: metric.field, aggregate: metric.aggregate, alias: 'value' }],
       limit: 1,
     }
   }
 
-  const mapping = resolveFields(comp)
+  const aggregate = resolveAggregate(comp)
+  if (!aggregate) return null
+  const mapping = resolveComponentFieldMapping(comp)
   if (!mapping) return null
 
   // Top-N: 按第一个度量排序 + LIMIT (与 resolveTopNPolicy 一致)

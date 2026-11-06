@@ -7,11 +7,12 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig, getXAxisData } from '../_shared/echarts-options'
-import { str, strArray, optionalStr, fontWeightOf, fontStyleOf, labelPositionOf } from '../_shared/props'
+import { fontWeightOf, fontStyleOf, labelPositionOf } from '../_shared/props'
 import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import { useChartAggregation } from '../../composables/useChartAggregation'
+import { resolveComponentFieldMapping } from '../aggregate-spec'
 import { useLinkageStore } from '@/stores/linkage'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
@@ -25,16 +26,19 @@ let pendingBuilder: (() => ECOption) | null = null
 
 const dataSourceRef = computed(() => props.comp.dataSource)
 
+/** 🔑 字段映射与报表快照共用同一份规则 (component-defs/aggregate-spec) */
+const mapping = computed(() => resolveComponentFieldMapping(props.comp))
+
 /** 🔑 类目字段 (钻取时切换为 drillFields[N-1]) */
 const categoryField = computed(() =>
   linkageStore.getDrillField(
     props.comp.id,
-    strArray(props.comp.dataConfig.drillFields),
-    str(props.comp.dataConfig.categoryField),
+    mapping.value?.drillFields ?? [],
+    mapping.value?.groupBy[0] ?? '',
   ),
 )
-const barField = computed(() => optionalStr(props.comp.dataConfig.barField))
-const lineField = computed(() => optionalStr(props.comp.dataConfig.lineField))
+const barField = computed(() => mapping.value?.metrics[0] ?? '')
+const lineField = computed(() => mapping.value?.metrics[1] ?? '')
 
 /** 🔑 聚合下推:按类目在服务端 GROUP BY 两个度量;未启用聚合时为 null → 原始行 */
 const aggregateRequest = useChartAggregation(props.comp, {

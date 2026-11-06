@@ -11,6 +11,7 @@ import { deriveDefaultPropsCached } from '../types'
 import { getDefinition } from '../index'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 import { useChartAggregation } from '../../composables/useChartAggregation'
+import { resolveComponentFieldMapping } from '../aggregate-spec'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 
 const props = defineProps<{ comp: ComponentInstance }>()
@@ -19,17 +20,15 @@ let initTimer: number | undefined
 
 /** 🔑 数据集绑定: 来源/目标双维度 GROUP BY, 汇总数值后映射为 nodes + links */
 const dataSource = computed(() => props.comp.dataSource)
-const dataConfig = computed(() => props.comp.dataConfig ?? {})
-const sourceField = computed(() => String(dataConfig.value.sourceField || ''))
-const targetField = computed(() => String(dataConfig.value.targetField || ''))
-const valueField = computed(() => String(dataConfig.value.valueField || ''))
+/** 🔑 字段映射与报表快照共用同一份规则 (component-defs/aggregate-spec) */
+const mapping = computed(() => resolveComponentFieldMapping(props.comp))
+const sourceField = computed(() => mapping.value?.groupBy[0] ?? '')
+const targetField = computed(() => mapping.value?.groupBy[1] ?? '')
+const valueField = computed(() => mapping.value?.metrics[0] ?? '')
 const aggregateRequest = useChartAggregation(props.comp, {
-  groupBy: () =>
-    sourceField.value && targetField.value
-      ? [sourceField.value, targetField.value]
-      : undefined,
-  metrics: () => (valueField.value ? [valueField.value] : []),
-  limit: 2000,
+  groupBy: () => mapping.value?.groupBy,
+  metrics: () => mapping.value?.metrics ?? [],
+  limit: mapping.value?.limit,
 })
 const { rows: datasetRows } = useDatasetBinding(dataSource, true, aggregateRequest)
 

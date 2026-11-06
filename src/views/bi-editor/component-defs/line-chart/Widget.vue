@@ -7,11 +7,12 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import type { ECOption } from '../_shared/echarts-config'
 import BaseChart from '../_shared/BaseChart.vue'
 import { getBaseOption, applyUserChartConfig, getXAxisData } from '../_shared/echarts-options'
-import { strArray, optionalStr, optionalStrArray, fontWeightOf, fontStyleOf, labelPositionOf } from '../_shared/props'
+import { fontWeightOf, fontStyleOf, labelPositionOf } from '../_shared/props'
 import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
 import { useDatasetBinding, useWorkerMappedData } from '../../composables/useDatasetBinding'
 import { useChartAggregation } from '../../composables/useChartAggregation'
+import { resolveComponentFieldMapping } from '../aggregate-spec'
 import { useLinkageStore } from '@/stores/linkage'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
@@ -26,11 +27,12 @@ let pendingBuilder: (() => ECOption) | null = null
 // 🔑 数据绑定:有 datasetId 时走动态取数 + 字段映射,无则走静态兜底
 const dataSourceRef = computed(() => props.comp.dataSource)
 
-// 🔑 Worker 数据集映射：大数据集（> 500 行）在 Worker 中计算，主线程零开销
-const categoryField = computed(() => optionalStr(props.comp.dataConfig.categoryField))
-const valueFields = computed(() => optionalStrArray(props.comp.dataConfig.valueFields))
+/** 🔑 字段映射与报表快照共用同一份规则 (component-defs/aggregate-spec) */
+const mapping = computed(() => resolveComponentFieldMapping(props.comp))
+const categoryField = computed(() => mapping.value?.groupBy[0] ?? '')
+const valueFields = computed(() => mapping.value?.metrics ?? [])
 /** 🔑 钻取:已下钻 N 层时切换为 drillFields[N-1] 作为类目字段 */
-const drillFields = computed<string[]>(() => strArray(props.comp.dataConfig.drillFields))
+const drillFields = computed<string[]>(() => mapping.value?.drillFields ?? [])
 const effectiveCategoryField = computed(() =>
   linkageStore.getDrillField(props.comp.id, drillFields.value, categoryField.value ?? ''),
 )

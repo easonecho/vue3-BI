@@ -26,15 +26,18 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import { useMetricAggregation } from '../../composables/useMetricAggregation'
+import { resolveComponentMetricMapping } from '../aggregate-spec'
 
 const props = defineProps<{ comp: ComponentInstance }>()
 
 /** 🔑 数据集绑定: 统计卡取一个全局聚合指标, 未绑定/未配置时回退静态值 */
 const dataSource = computed(() => props.comp.dataSource)
 const dataConfig = computed(() => props.comp.dataConfig ?? {})
+/** 🔑 度量/聚合方式与报表快照共用同一份规则 */
+const metric = computed(() => resolveComponentMetricMapping(props.comp))
 const metricRequest = useMetricAggregation(props.comp, {
-  field: () => String(dataConfig.value.valueField || '') || undefined,
-  aggregate: () => String(props.comp.props?.aggregate ?? 'sum'),
+  field: () => metric.value?.field,
+  aggregate: () => metric.value?.aggregate ?? 'none',
 })
 const { rows: datasetRows } = useDatasetBinding(dataSource, true, metricRequest)
 
