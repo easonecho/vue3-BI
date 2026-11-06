@@ -81,6 +81,22 @@ if (typeof localStorage !== 'undefined') {
 // ========== NProgress 配置 ==========
 NProgress.configure({ showSpinner: false, trickleSpeed: 200 })
 
+// ========== 错误提示去重 (防叠加) ==========
+// 同一文案 2 秒内只弹一次, 避免批量请求同时失败时 toast 叠满屏幕
+const TOAST_INTERVAL = 2000
+const toastSeen = new Map<string, ReturnType<typeof setTimeout>>()
+
+function showToast(message: string): void {
+  const key = message || '请求失败'
+  if (toastSeen.has(key)) return
+  // 到期后清理记录, 允许同一文案再次弹出
+  toastSeen.set(
+    key,
+    setTimeout(() => toastSeen.delete(key), TOAST_INTERVAL),
+  )
+  ElMessage.error(key)
+}
+
 // ========== TraceId 生成 ==========
 /** 生成 UUID v4 格式的 traceId */
 function generateTraceId(): string {
@@ -216,7 +232,7 @@ request.interceptors.response.use(
     if (res.code === 0) {
       return res as unknown as AxiosResponse<ApiResult>
     }
-    ElMessage.error(res.message || '请求失败')
+    showToast(res.message || '请求失败')
     return Promise.reject(new Error(res.message || 'Error'))
   },
   async (error) => {
@@ -267,7 +283,7 @@ request.interceptors.response.use(
             }
           }
           // refresh 失败或无 refresh token: 走登出流程
-          ElMessage.error('登录已过期，请重新登录')
+          showToast('登录已过期，请重新登录')
           removeToken()
           // 避免 pinia 循环依赖, 用事件通知应用层跳转登录页
           if (typeof window !== 'undefined') {
@@ -276,21 +292,21 @@ request.interceptors.response.use(
           break
         }
         case 403:
-          ElMessage.error('没有权限访问该资源')
+          showToast('没有权限访问该资源')
           break
         case 404:
-          ElMessage.error('请求的资源不存在')
+          showToast('请求的资源不存在')
           break
         case 500:
-          ElMessage.error('服务器内部错误')
+          showToast('服务器内部错误')
           break
         default:
-          ElMessage.error(response.data?.message || `请求错误 (${response.status})`)
+          showToast(response.data?.message || `请求错误 (${response.status})`)
       }
     } else if (error.message?.includes('timeout')) {
-      ElMessage.error('请求超时，请检查网络')
+      showToast('请求超时，请检查网络')
     } else {
-      ElMessage.error('网络异常，请检查网络连接')
+      showToast('网络异常，请检查网络连接')
     }
     return Promise.reject(error)
   },

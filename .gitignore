@@ -40,3 +40,10 @@ __screenshots__/
 
 # Docker Compose 密钥 (示例文件 .env.docker.example 保留在仓库)
 .env.docker
+
+# 环境变量与本地运行产物 (防止误提交)
+.env
+.env.local
+.env.*.local
+dump.rdb
+server_log.txt
