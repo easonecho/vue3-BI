@@ -8,6 +8,7 @@
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
+    "check:bundle": "node scripts/check-bundle-budget.mjs",
     "type-check": "vue-tsc --build",
     "test": "vitest run",
     "test:watch": "vitest",
