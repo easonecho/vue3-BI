@@ -11,23 +11,31 @@
       {{ formatTime(lastRefreshAt) }}
     </span>
     <el-tooltip content="手动刷新 (R)" placement="bottom">
-      <el-button text :loading="refreshing" @click="emit('refresh')">
+      <el-button text aria-label="刷新 (R)" :loading="refreshing" @click="emit('refresh')">
         <el-icon><Refresh /></el-icon>
       </el-button>
     </el-tooltip>
     <el-tooltip :content="pureMode ? '显示工具栏 (H)' : '纯净模式 (H)'" placement="bottom">
-      <el-button text @click="emit('toggle-pure')">
+      <el-button
+        text
+        :aria-label="pureMode ? '显示工具栏 (H)' : '纯净模式 (H)'"
+        @click="emit('toggle-pure')"
+      >
         <el-icon><component :is="pureMode ? Menu : Hide" /></el-icon>
       </el-button>
     </el-tooltip>
     <el-tooltip :content="isFullscreen ? '退出全屏 (F/Esc)' : '全屏 (F)'" placement="bottom">
-      <el-button text @click="emit('toggle-fullscreen')">
+      <el-button
+        text
+        :aria-label="isFullscreen ? '退出全屏 (F/Esc)' : '全屏 (F)'"
+        @click="emit('toggle-fullscreen')"
+      >
         <el-icon><component :is="isFullscreen ? CloseBold : FullScreen" /></el-icon>
       </el-button>
     </el-tooltip>
     <!-- 查看者导出：PNG / PDF（导出目标仅画布本身，不含工具栏） -->
     <el-dropdown trigger="click" :disabled="exporting" @command="handleExport">
-      <el-button text :loading="exporting" :disabled="exporting">
+      <el-button text aria-label="导出" :loading="exporting" :disabled="exporting">
         <el-icon><Download /></el-icon>
         <span class="export-label">导出</span>
       </el-button>

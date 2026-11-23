@@ -1,6 +1,14 @@
 <template>
   <div class="dashboard-card" :style="{ animationDelay: `${index * 0.04}s` }">
-    <div class="card-thumb" @click="emit('preview', item.id)">
+    <div
+      class="card-thumb"
+      role="button"
+      tabindex="0"
+      :aria-label="`预览看板 ${item.name}`"
+      @click="emit('preview', item.id)"
+      @keydown.enter.self.prevent="emit('preview', item.id)"
+      @keydown.space.self.prevent="emit('preview', item.id)"
+    >
       <img
         v-if="item.thumbnail && item.thumbnail.startsWith('data:')"
         :src="item.thumbnail"
@@ -27,16 +35,21 @@
         </div>
         <div class="footer-right">
           <el-tooltip :content="favorited ? '取消收藏' : '收藏'" placement="top">
-            <el-icon
+            <button
+              type="button"
               class="favorite-btn"
               :class="{ active: favorited }"
+              :aria-label="favorited ? '取消收藏' : '收藏'"
+              :aria-pressed="favorited"
               @click.stop="emit('toggle-favorite', item)"
             >
-              <component :is="favorited ? StarFilled : Star" />
-            </el-icon>
+              <el-icon><component :is="favorited ? StarFilled : Star" /></el-icon>
+            </button>
           </el-tooltip>
           <el-dropdown trigger="click" @command="(cmd: string) => emit('command', cmd, item)">
-            <el-icon class="more-btn"><MoreFilled /></el-icon>
+            <button type="button" class="more-btn" aria-label="更多操作" aria-haspopup="menu">
+              <el-icon><MoreFilled /></el-icon>
+            </button>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="rename">
@@ -178,6 +191,16 @@ const emit = defineEmits<{
   align-items: center;
   justify-content: center;
 
+  /* 键盘聚焦时显示焦点环与操作按钮 */
+  &:focus-visible {
+    outline: 2px solid var(--bi-accent);
+    outline-offset: -2px;
+  }
+
+  &:focus-within .thumb-overlay {
+    opacity: 1;
+  }
+
   img {
     width: 100%;
     height: 100%;
@@ -251,8 +274,26 @@ const emit = defineEmits<{
   min-width: 0;
 }
 
-.favorite-btn {
+/* 图标按钮：重置原生按钮样式，保留图标外观并支持键盘聚焦 */
+.favorite-btn,
+.more-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  line-height: 1;
   cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--bi-accent);
+    outline-offset: 2px;
+  }
+}
+
+.favorite-btn {
   color: var(--bi-text-muted);
   font-size: 17px;
   transition: color 0.15s ease;
@@ -267,7 +308,6 @@ const emit = defineEmits<{
 }
 
 .more-btn {
-  cursor: pointer;
   color: var(--bi-text-secondary);
   font-size: 18px;
   flex-shrink: 0;
