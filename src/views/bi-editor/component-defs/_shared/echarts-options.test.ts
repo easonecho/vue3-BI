@@ -175,6 +175,30 @@ describe('applyUserChartConfig 图表注释', () => {
   })
 })
 
+describe('applyUserChartConfig 条件着色', () => {
+  function merge(props: PropBag, series: Array<Record<string, unknown>>) {
+    return applyUserChartConfig({}, props, { series } as unknown as ECOption, { hasAxes: true })
+  }
+
+  it('开启后按阈值覆盖命中数据点的颜色', () => {
+    const merged = merge(
+      {
+        conditionalColorShow: true,
+        conditionalColorRules: [{ operator: 'gte', value: 80, color: '#ef4444' }],
+      } as PropBag,
+      [{ name: '销售额', type: 'bar', data: [10, 90] }],
+    )
+    const series = merged.series as Array<Record<string, unknown>>
+    expect(series[0].data).toEqual([10, { value: 90, itemStyle: { color: '#ef4444' } }])
+  })
+
+  it('未开启时保持原数据', () => {
+    const merged = merge({} as PropBag, [{ name: '销售额', type: 'bar', data: [10, 90] }])
+    const series = merged.series as Array<Record<string, unknown>>
+    expect(series[0].data).toEqual([10, 90])
+  })
+})
+
 describe('buildAnalysisTooltipHtml', () => {
   const analyses = [
     { percent: [25, 75], mom: [null, 100], yoy: [null, -50] },

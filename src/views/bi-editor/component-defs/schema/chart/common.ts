@@ -1,6 +1,7 @@
 import type { PropField } from '../props'
 import { chartAnnotationSchema } from './annotation'
 import { chartAnimationSchema } from './animation'
+import { chartConditionalFormatSchema } from './conditional-format'
 import { chartGridSchema } from './grid'
 import { chartLegendSchema } from './legend'
 import { chartTitleSchema } from './title'
@@ -17,6 +18,7 @@ export const chartCommonSchema: PropField[] = [
   ...chartAnimationSchema,
   ...chartGridSchema,
   ...chartAnnotationSchema,
+  ...chartConditionalFormatSchema,
   {
     key: 'clickAction',
     label: '点击行为',

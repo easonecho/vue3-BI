@@ -25,6 +25,7 @@ import {
   type SeriesAnalysis,
 } from './chart-analysis'
 import { applyChartAnnotation } from './chart-annotation'
+import { applyChartConditionalFormat } from './chart-conditional-format'
 
 // ================= 公共默认配置 =================
 
@@ -408,6 +409,11 @@ export function applyUserChartConfig(
   })
   // 🔑 分析指标（占比 / 同环比）：包装 tooltip formatter，不修改 series 数据
   applyAnalysisTooltip(merged, p)
+  // 🔑 条件着色（预警色）：按阈值覆盖数据点颜色，放在最后以覆盖 seriesStyles / 主题色
+  applyChartConditionalFormat(merged, {
+    show: p.conditionalColorShow,
+    rules: p.conditionalColorRules,
+  })
   return merged
 }
 
