@@ -299,4 +299,14 @@ const emit = defineEmits<{
     height: 140px;
   }
 }
+
+/* 无 hover 能力的触屏：操作按钮常驻，避免依赖悬停 */
+@media (hover: none) {
+  .thumb-overlay {
+    opacity: 1;
+    align-items: flex-end;
+    padding-bottom: 10px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.55), transparent 55%);
+  }
+}
 </style>

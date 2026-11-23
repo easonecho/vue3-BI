@@ -180,4 +180,11 @@ onMounted(init)
 .dashboard-list {
   padding: 16px;
 }
+
+/* ========== 移动端适配 ========== */
+@media (max-width: 768px) {
+  .dashboard-list {
+    padding: 12px;
+  }
+}
 </style>

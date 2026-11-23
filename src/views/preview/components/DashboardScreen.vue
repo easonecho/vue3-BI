@@ -1,18 +1,27 @@
 <template>
-  <div ref="wrapperRef" class="dashboard-screen-wrapper">
+  <div
+    ref="wrapperRef"
+    class="dashboard-screen-wrapper"
+    :class="{ 'is-scrollable': verticallyScrollable }"
+  >
     <!-- 设计稿画布层：按设计稿原始尺寸渲染，用 scale 自适应屏幕 -->
-    <div class="dashboard-screen-inner" :style="innerStyle">
-      <div class="dashboard-canvas" :style="canvasStyle">
-        <div
-          v-for="comp in visibleSortedComponents"
-          :key="comp.id"
-          class="dashboard-comp"
-          :style="getCompStyle(comp)"
-        >
-          <ComponentRenderer :component="comp" />
+    <div class="dashboard-screen-stage" :style="stageStyle">
+      <div class="dashboard-screen-inner" :style="innerStyle">
+        <div class="dashboard-canvas" :style="canvasStyle">
+          <div
+            v-for="comp in visibleSortedComponents"
+            :key="comp.id"
+            class="dashboard-comp"
+            :style="getCompStyle(comp)"
+          >
+            <ComponentRenderer :component="comp" />
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- 竖屏提示：大屏画布在手机竖屏下过小，引导横屏查看 -->
+    <div class="rotate-hint">横屏查看效果更佳</div>
   </div>
 </template>
 
@@ -21,6 +30,10 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import ComponentRenderer from '@/views/bi-editor/components/canvas/ComponentRenderer.vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
+import {
+  computeDashboardScale,
+  isDashboardVerticallyScrollable,
+} from '@/views/preview/utils/dashboard-fit'
 
 const store = useBiEditorStore()
 const wrapperRef = ref<HTMLElement | null>(null)
@@ -29,21 +42,35 @@ const wrapperRef = ref<HTMLElement | null>(null)
 const designWidth = computed(() => store.canvas.width || 1920)
 const designHeight = computed(() => store.canvas.height || 1080)
 
-// 🔑 自适应缩放：监听容器尺寸，取 min(scaleX, scaleY) 保证画布完整显示不裁剪
+// 🔑 自适应缩放：监听容器尺寸；宽屏完整显示，竖屏窄屏适配宽度
 const wrapperSize = ref({ w: 0, h: 0 })
 let resizeObserver: ResizeObserver | null = null
 
-const scale = computed(() => {
-  const { w, h } = wrapperSize.value
-  if (!w || !h) return 1
-  return Math.min(w / designWidth.value, h / designHeight.value)
-})
+const scale = computed(() =>
+  computeDashboardScale({
+    viewportWidth: wrapperSize.value.w,
+    viewportHeight: wrapperSize.value.h,
+    designWidth: designWidth.value,
+    designHeight: designHeight.value,
+  }),
+)
+
+/** 缩放后画布高于视口时（竖屏长画布）允许纵向滚动，避免内容被裁剪 */
+const verticallyScrollable = computed(() =>
+  isDashboardVerticallyScrollable(designHeight.value, scale.value, wrapperSize.value.h),
+)
+
+/** 舞台层占据缩放后的真实尺寸，让纵向滚动与居中基于缩放结果 */
+const stageStyle = computed(() => ({
+  width: `${designWidth.value * scale.value}px`,
+  height: `${designHeight.value * scale.value}px`,
+}))
 
 const innerStyle = computed(() => ({
   width: `${designWidth.value}px`,
   height: `${designHeight.value}px`,
   transform: `scale(${scale.value})`,
-  transformOrigin: 'center center',
+  transformOrigin: 'top left',
 }))
 
 const canvasStyle = computed(() => {
@@ -98,6 +125,9 @@ onUnmounted(() => {
 .dashboard-screen-wrapper {
   width: 100%;
   height: 100%;
+  /* 作为纵向 flex 子项（分享页带标题栏）时占满剩余空间 */
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -118,10 +148,17 @@ onUnmounted(() => {
   }
 }
 
-/* 缩放层：固定设计稿尺寸，由 transform: scale 自适应 */
-.dashboard-screen-inner {
+/* 舞台层：占据缩放后的真实尺寸，参与居中/纵向滚动 */
+.dashboard-screen-stage {
   flex-shrink: 0;
   position: relative;
+}
+
+/* 缩放层：固定设计稿尺寸，由 transform: scale 自适应 */
+.dashboard-screen-inner {
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 
 /* 画布本体：设计稿尺寸，组件绝对定位，克制阴影 */
@@ -135,5 +172,41 @@ onUnmounted(() => {
 
 .dashboard-comp {
   position: absolute;
+}
+
+/* 竖屏长画布：允许纵向滚动，画布顶部对齐 */
+.dashboard-screen-wrapper.is-scrollable {
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* 预留滚动条槽位，避免出现/消失引起宽度与缩放反复抖动 */
+  scrollbar-gutter: stable;
+  align-items: flex-start;
+  padding: 12px 0;
+  box-sizing: border-box;
+}
+
+/* 横屏提示：仅手机竖屏显示 */
+.rotate-hint {
+  display: none;
+}
+
+@media (max-width: 768px) and (orientation: portrait) {
+  .rotate-hint {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--bi-glass-bg);
+    border: 1px solid var(--bi-glass-border);
+    color: var(--bi-text-secondary);
+    font-size: 12px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 5;
+  }
 }
 </style>

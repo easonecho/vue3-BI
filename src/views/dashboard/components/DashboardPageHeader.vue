@@ -84,4 +84,22 @@ defineProps<{
     }
   }
 }
+
+/* ========== 移动端适配：统计卡片均分整行 ========== */
+@media (max-width: 768px) {
+  .page-header {
+    gap: 12px;
+  }
+
+  .header-stats {
+    width: 100%;
+    gap: 8px;
+
+    .stat-chip {
+      flex: 1;
+      min-width: 0;
+      padding: 6px 8px;
+    }
+  }
+}
 </style>

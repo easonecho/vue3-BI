@@ -53,7 +53,8 @@
           </el-dropdown>
         </div>
       </div>
-      <CanvasArea readonly />
+      <!-- 🔑 复用预览页画布：等比缩放自适应，移动端按宽度适配并可纵向滚动 -->
+      <DashboardScreen />
     </template>
 
     <!-- 错误提示 -->
@@ -71,7 +72,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowDown, Lock, Key } from '@element-plus/icons-vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import { useLinkageStore } from '@/stores/linkage'
-import CanvasArea from '@/views/bi-editor/components/canvas/CanvasArea.vue'
+import DashboardScreen from '@/views/preview/components/DashboardScreen.vue'
 import { getPublicDashboard, verifyPublicDashboard, isPasswordRequired } from '@/api/share'
 import type { PublicDashboard } from '@/api/share'
 import {
@@ -198,6 +199,7 @@ function goHome() {
 .share-page {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--bi-bg, #111827);
@@ -215,16 +217,25 @@ function goHome() {
   flex-shrink: 0;
 
   .share-title {
+    flex: 1;
+    min-width: 0;
+
     h2 {
       margin: 0;
       font-size: 18px;
       font-weight: 600;
       color: var(--bi-text-primary, #f3f4f6);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     p {
       margin: 4px 0 0 0;
       font-size: 13px;
       color: var(--bi-text-secondary, #9ca3af);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 

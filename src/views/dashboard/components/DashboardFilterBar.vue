@@ -129,6 +129,11 @@ const { t } = useI18n()
     :deep(.el-button + .el-button) {
       margin-left: 0;
     }
+
+    /* 操作按钮等分换行，避免窄屏溢出 */
+    :deep(.el-button) {
+      flex: 1 1 auto;
+    }
   }
 }
 </style>

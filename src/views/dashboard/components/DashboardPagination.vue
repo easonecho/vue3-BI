@@ -27,4 +27,17 @@ const page = defineModel<number>('page', { required: true })
   justify-content: center;
   margin-top: 24px;
 }
+
+/* ========== 移动端适配：隐藏总数文案，避免分页溢出 ========== */
+@media (max-width: 520px) {
+  .pagination :deep(.el-pagination__total) {
+    display: none;
+  }
+
+  .pagination :deep(.el-pagination) {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+  }
+}
 </style>
