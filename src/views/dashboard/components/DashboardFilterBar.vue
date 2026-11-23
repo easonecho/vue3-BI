@@ -41,6 +41,12 @@
         <el-option label="未分组" :value="'ungrouped'" />
         <el-option v-for="g in groups" :key="g.id" :label="g.name" :value="g.id" />
       </el-select>
+      <!-- 列表排序 -->
+      <el-select v-model="sortBy" style="width: 150px" @change="emit('search')">
+        <el-option label="最近创建" value="createdAt" />
+        <el-option label="最近更新" value="updatedAt" />
+        <el-option label="名称升序" value="name" />
+      </el-select>
       <el-button type="primary" @click="emit('search')">
         <el-icon><Search /></el-icon>&nbsp;查询
       </el-button>
@@ -67,6 +73,7 @@
 import { useI18n } from 'vue-i18n'
 import { Plus, Search, Refresh, Star, StarFilled, FolderOpened } from '@element-plus/icons-vue'
 import type { DashboardGroup } from '@/api/types'
+import type { DashboardSortBy } from '@/api/dashboard'
 
 defineProps<{
   groups: DashboardGroup[]
@@ -85,6 +92,7 @@ const status = defineModel<number | undefined>('status')
 const isPublic = defineModel<boolean | undefined>('isPublic')
 const onlyFavorites = defineModel<boolean>('onlyFavorites', { required: true })
 const groupFilter = defineModel<number | 'ungrouped' | undefined>('groupFilter')
+const sortBy = defineModel<DashboardSortBy>('sortBy', { required: true })
 
 const { t } = useI18n()
 </script>

@@ -14,6 +14,7 @@
       v-model:is-public="filters.isPublic"
       v-model:only-favorites="filters.onlyFavorites"
       v-model:group-filter="groupFilter"
+      v-model:sort-by="sortBy"
       :groups="groups"
       @search="handleSearch"
       @reset="handleReset"
@@ -128,6 +129,7 @@ const {
   draftCount,
   filters,
   groupFilter,
+  sortBy,
   groups,
   groupsLoading,
   loadList,

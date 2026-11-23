@@ -1,5 +1,10 @@
 import { computed, reactive, ref } from 'vue'
-import { getDashboardList, toggleFavorite, type DashboardListQuery } from '@/api/dashboard'
+import {
+  getDashboardList,
+  toggleFavorite,
+  type DashboardListQuery,
+  type DashboardSortBy,
+} from '@/api/dashboard'
 import { getDashboardGroupList } from '@/api/dashboard-group'
 import type { Dashboard, DashboardGroup } from '@/api/types'
 
@@ -34,6 +39,8 @@ export function useDashboardList() {
     onlyFavorites: false,
   })
   const groupFilter = ref<number | 'ungrouped' | undefined>(undefined)
+  // 排序方式：默认最近创建
+  const sortBy = ref<DashboardSortBy>('createdAt')
 
   // P2-3: 分组
   const groups = ref<DashboardGroup[]>([])
@@ -49,6 +56,7 @@ export function useDashboardList() {
         status: filters.status,
         isPublic: filters.isPublic,
         onlyFavorites: filters.onlyFavorites || undefined,
+        sortBy: sortBy.value,
       }
       if (groupFilter.value === 'ungrouped') {
         params.ungrouped = true
@@ -76,6 +84,7 @@ export function useDashboardList() {
     filters.isPublic = undefined
     filters.onlyFavorites = false
     groupFilter.value = undefined
+    sortBy.value = 'createdAt'
     page.value = 1
     void loadList()
   }
@@ -144,6 +153,7 @@ export function useDashboardList() {
     draftCount,
     filters,
     groupFilter,
+    sortBy,
     groups,
     groupsLoading,
     loadList,

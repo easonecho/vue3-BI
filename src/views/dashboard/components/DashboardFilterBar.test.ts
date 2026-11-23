@@ -52,6 +52,7 @@ function mountFilterBar(overrides: { onlyFavorites?: boolean } = {}) {
       isPublic: undefined,
       onlyFavorites: overrides.onlyFavorites ?? false,
       groupFilter: undefined,
+      sortBy: 'createdAt',
       groups,
     },
     global: { stubs },
@@ -86,11 +87,13 @@ describe('DashboardFilterBar 双向绑定', () => {
     selects[0].vm.$emit('update:modelValue', 1)
     selects[1].vm.$emit('update:modelValue', false)
     selects[2].vm.$emit('update:modelValue', 'ungrouped')
+    selects[3].vm.$emit('update:modelValue', 'updatedAt')
 
     expect(wrapper.emitted('update:keyword')?.[0]).toEqual(['销售'])
     expect(wrapper.emitted('update:status')?.[0]).toEqual([1])
     expect(wrapper.emitted('update:isPublic')?.[0]).toEqual([false])
     expect(wrapper.emitted('update:groupFilter')?.[0]).toEqual(['ungrouped'])
+    expect(wrapper.emitted('update:sortBy')?.[0]).toEqual(['updatedAt'])
   })
 
   it('仅看收藏时按钮使用 warning 类型', () => {

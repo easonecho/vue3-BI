@@ -15,6 +15,9 @@ export interface CreateDashboardParams {
   groupId?: number | null
 }
 
+/** 看板列表排序字段：日期倒序 / 名称正序 */
+export type DashboardSortBy = 'createdAt' | 'updatedAt' | 'name'
+
 /** 仪表板列表查询参数 (P2-3: 支持分组筛选) */
 export interface DashboardListQuery extends PageQuery {
   status?: number
@@ -22,6 +25,7 @@ export interface DashboardListQuery extends PageQuery {
   onlyFavorites?: boolean
   groupId?: number
   ungrouped?: boolean
+  sortBy?: DashboardSortBy
 }
 
 /** 获取仪表板列表 */

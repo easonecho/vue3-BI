@@ -89,6 +89,7 @@ describe('useDashboardList 查询参数', () => {
       isPublic: false,
       onlyFavorites: true,
       groupId: 3,
+      sortBy: 'createdAt',
     })
     expect(api.list.value).toHaveLength(1)
     expect(api.total.value).toBe(1)
@@ -109,6 +110,20 @@ describe('useDashboardList 查询参数', () => {
     await api.loadList()
     expect(listMock.mock.lastCall?.[0]).not.toHaveProperty('ungrouped')
     expect(listMock.mock.lastCall?.[0]).not.toHaveProperty('groupId')
+  })
+
+  it('切换排序后携带 sortBy 并回到第一页', async () => {
+    const api = useDashboardList()
+    api.page.value = 3
+    api.sortBy.value = 'updatedAt'
+
+    api.handleSearch()
+    await flush()
+
+    expect(api.page.value).toBe(1)
+    expect(listMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: 1, sortBy: 'updatedAt' }),
+    )
   })
 
   it('空关键字与未收藏状态转 undefined', async () => {
@@ -157,6 +172,7 @@ describe('useDashboardList 统计与筛选动作', () => {
     api.filters.isPublic = false
     api.filters.onlyFavorites = true
     api.groupFilter.value = 2
+    api.sortBy.value = 'name'
     api.page.value = 4
 
     api.handleReset()
@@ -167,6 +183,7 @@ describe('useDashboardList 统计与筛选动作', () => {
     expect(api.filters.isPublic).toBeUndefined()
     expect(api.filters.onlyFavorites).toBe(false)
     expect(api.groupFilter.value).toBeUndefined()
+    expect(api.sortBy.value).toBe('createdAt')
     expect(api.page.value).toBe(1)
     expect(listMock).toHaveBeenLastCalledWith(
       expect.objectContaining({ page: 1, keyword: undefined, status: undefined }),
