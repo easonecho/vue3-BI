@@ -7,6 +7,9 @@
       :draft-count="draftCount"
     />
 
+    <!-- 最近访问 -->
+    <DashboardRecent :items="recentDashboards" @open="handlePreview" />
+
     <!-- 顶部筛选栏 -->
     <DashboardFilterBar
       v-model:keyword="filters.keyword"
@@ -98,9 +101,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import DashboardPageHeader from './components/DashboardPageHeader.vue'
+import DashboardRecent from './components/DashboardRecent.vue'
 import DashboardFilterBar from './components/DashboardFilterBar.vue'
 import DashboardGrid from './components/DashboardGrid.vue'
 import DashboardPagination from './components/DashboardPagination.vue'
@@ -116,8 +120,10 @@ import DashboardVersionDialog from './components/DashboardVersionDialog.vue'
 import DataLineage from '@/views/system/datasets/components/DataLineage.vue'
 import { useDashboardList } from './composables/useDashboardList'
 import { useDashboardActions } from './composables/useDashboardActions'
+import { readRecentDashboards, type RecentDashboard } from '@/utils/recent-dashboards'
 
 const router = useRouter()
+const recentDashboards = ref<RecentDashboard[]>([])
 
 const {
   list,
@@ -175,7 +181,10 @@ const {
   loadGroups,
 })
 
-onMounted(init)
+onMounted(() => {
+  recentDashboards.value = readRecentDashboards()
+  void init()
+})
 </script>
 
 <style scoped lang="less">

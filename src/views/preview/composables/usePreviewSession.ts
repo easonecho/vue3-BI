@@ -2,6 +2,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import { useLinkageStore } from '@/stores/linkage'
+import { recordRecentDashboard } from '@/utils/recent-dashboards'
 
 export interface UsePreviewSessionOptions {
   /** 模板加载成功后生成缩略图 */
@@ -63,6 +64,8 @@ export function usePreviewSession(options: UsePreviewSessionOptions = {}) {
         options.onTemplateLoaded?.(id)
       } else {
         await store.loadDashboard(id)
+        // 记录最近访问，供看板列表页快捷入口使用
+        recordRecentDashboard({ id, name: store.dashboardName })
       }
       lastRefreshAt.value = new Date()
     } catch {
