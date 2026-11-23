@@ -61,7 +61,6 @@ import {
 } from 'element-plus'
 import './styles/element-plus'
 import 'element-plus/theme-chalk/dark/css-vars.css'
-import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 
 import App from './App.vue'
@@ -75,8 +74,6 @@ import { loadExternalPlugins } from './plugins/plugin-loader'
 import { installClientObservability, reportClientError } from './utils/observability'
 import './styles/global.less'
 import './styles/theme.css'
-
-NProgress.configure({ showSpinner: false })
 
 const app = createApp(App)
 

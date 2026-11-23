@@ -1,10 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import NProgress from 'nprogress'
+import { doneProgress, resetProgress, startProgress } from '@/utils/progress'
 import { useUserStore } from '@/stores/user'
 import { useMenuStore } from '@/stores/menu'
-
-NProgress.configure({ showSpinner: false })
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -333,6 +332,8 @@ const router = createRouter({
  */
 const CHUNK_RELOAD_KEY = 'bi_chunk_reload_at'
 router.onError((error) => {
+  // 路由异常时 afterEach 可能不会触发，兜底收尾避免进度条卡住
+  resetProgress()
   const message = error instanceof Error ? error.message : String(error)
   const isChunkError =
     /Failed to fetch dynamically imported module|Loading chunk|Importing a module script failed|Unable to preload CSS|error loading dynamically imported module/i.test(
@@ -354,9 +355,11 @@ router.onError((error) => {
  * 🔑 全局前置守卫：路由拦截
  * 1. 未登录跳登录页
  * 2. 已登录但权限不足跳 403
+ * 返回 true 放行，返回路由地址则重定向
  */
-router.beforeEach(async (to) => {
-  NProgress.start()
+async function resolveNavigation(
+  to: RouteLocationNormalized,
+): Promise<true | RouteLocationRaw> {
   const userStore = useUserStore()
   // 🔑 access token 仅存内存: 页面刷新后先用 HttpOnly refresh Cookie 静默恢复会话
   await userStore.ensureSession()
@@ -397,10 +400,19 @@ router.beforeEach(async (to) => {
   }
 
   return true
+}
+
+router.beforeEach(async (to) => {
+  startProgress()
+  const result = await resolveNavigation(to)
+  // 🔑 守卫返回重定向时 Vue Router 不会再触发本次导航的 afterEach，主动收尾；
+  // 重定向后的新导航会重新开始计数
+  if (result !== true) doneProgress()
+  return result
 })
 
 router.afterEach((to) => {
-  NProgress.done()
+  doneProgress()
   const baseTitle = import.meta.env.VITE_APP_TITLE || 'BI 低代码平台'
   const pageTitle = to.meta.title as string | undefined
   document.title = pageTitle ? `${pageTitle} - ${baseTitle}` : baseTitle

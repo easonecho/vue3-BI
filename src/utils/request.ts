@@ -5,7 +5,7 @@
  */
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
-import NProgress from 'nprogress'
+import { doneProgress, startProgress } from '@/utils/progress'
 
 /**
  * 🔑 拦截器内部使用的重试标记（挂在 axios config 上，跨拦截器传递）。
@@ -77,9 +77,6 @@ if (typeof localStorage !== 'undefined') {
   localStorage.removeItem('bi_token')
   localStorage.removeItem('bi_refresh_token')
 }
-
-// ========== NProgress 配置 ==========
-NProgress.configure({ showSpinner: false, trickleSpeed: 200 })
 
 // ========== 错误提示去重 (防叠加) ==========
 // 同一文案 2 秒内只弹一次, 避免批量请求同时失败时 toast 叠满屏幕
@@ -185,8 +182,8 @@ const request: AxiosInstance = axios.create({
 
 request.interceptors.request.use(
   (config) => {
-    // 启动进度条
-    NProgress.start()
+    // 启动进度条（并发请求统一计数）
+    startProgress()
 
     // 生成并注入 traceId
     config.headers['X-Trace-Id'] = generateTraceId()
@@ -215,7 +212,7 @@ request.interceptors.request.use(
     return config
   },
   (error) => {
-    NProgress.done()
+    doneProgress()
     return Promise.reject(error)
   },
 )
@@ -223,7 +220,7 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response: AxiosResponse<ApiResult>) => {
     removePending(response.config)
-    NProgress.done()
+    doneProgress()
 
     const res = response.data
     if (response.config.responseType === 'blob') {
@@ -238,14 +235,14 @@ request.interceptors.response.use(
   async (error) => {
     // 取消的请求不提示错误
     if (axios.isCancel(error)) {
-      NProgress.done()
+      doneProgress()
       return Promise.reject(error)
     }
 
     if (error.config) {
       removePending(error.config)
     }
-    NProgress.done()
+    doneProgress()
 
     // 刷新请求自身的 401: 交给 handleTokenRefresh 处理, 避免重复弹出登出提示
     if (retryMeta(error.config).__skipAuthRefresh) {
