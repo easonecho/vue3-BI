@@ -21,6 +21,16 @@
       </el-breadcrumb>
     </div>
     <div class="header-right">
+      <button
+        type="button"
+        class="search-trigger"
+        aria-label="全局搜索 (Ctrl+K)"
+        @click="emit('open-search')"
+      >
+        <el-icon><Search /></el-icon>
+        <span v-if="!isMobile" class="search-trigger-text">搜索</span>
+        <kbd v-if="!isMobile">Ctrl K</kbd>
+      </button>
       <div v-if="!isMobile" class="clock-area">
         <el-icon class="clock-icon"><Clock /></el-icon>
         <span class="clock-text">{{ clockText }}</span>
@@ -57,7 +67,15 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { Expand, Clock, ArrowDown, EditPen, Monitor, SwitchButton } from '@element-plus/icons-vue'
+import {
+  Expand,
+  Clock,
+  ArrowDown,
+  EditPen,
+  Monitor,
+  Search,
+  SwitchButton,
+} from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
 import LangSwitcher from '@/components/LangSwitcher.vue'
@@ -72,6 +90,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'toggle-aside'): void
+  (e: 'open-search'): void
   (e: 'user-command', cmd: string): void
 }>()
 
@@ -95,6 +114,43 @@ const userStore = useUserStore()
   display: flex;
   align-items: center;
   gap: 12px;
+
+  .search-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--bi-border-color);
+    border-radius: 6px;
+    background: var(--bi-component-bg);
+    color: var(--bi-text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease;
+
+    &:hover {
+      color: var(--bi-text-primary);
+      border-color: var(--bi-border-accent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--bi-accent);
+      outline-offset: 2px;
+    }
+
+    kbd {
+      padding: 0 4px;
+      border: 1px solid var(--bi-border-color);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 11px;
+      line-height: 16px;
+      color: var(--bi-text-muted);
+    }
+  }
 
   .clock-area {
     display: flex;

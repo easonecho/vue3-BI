@@ -134,6 +134,20 @@ describe('LayoutHeader 面包屑与交互', () => {
     expect(wrapper.emitted('toggle-aside')).toHaveLength(1)
   })
 
+  it('点击全局搜索按钮抛出 open-search，移动端仅保留图标', async () => {
+    const wrapper = mountHeader()
+    const trigger = wrapper.find('.search-trigger')
+
+    expect(trigger.attributes('aria-label')).toBe('全局搜索 (Ctrl+K)')
+    expect(wrapper.find('.search-trigger-text').exists()).toBe(true)
+
+    await trigger.trigger('click')
+    expect(wrapper.emitted('open-search')).toHaveLength(1)
+
+    const mobile = mountHeader({ isMobile: true })
+    expect(mobile.find('.search-trigger-text').exists()).toBe(false)
+  })
+
   it('用户下拉命令透传为 user-command', () => {
     const wrapper = mountHeader()
 

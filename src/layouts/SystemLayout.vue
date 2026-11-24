@@ -19,6 +19,7 @@
         :breadcrumbs="breadcrumbs"
         :clock-text="clockText"
         @toggle-aside="toggleAside"
+        @open-search="searchVisible = true"
         @user-command="handleUserCmd"
       />
 
@@ -30,16 +31,20 @@
         </router-view>
       </main>
     </div>
+
+    <!-- 全局搜索：Ctrl/Cmd + K 唤起 -->
+    <GlobalSearchDialog v-model="searchVisible" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useMenuStore } from '@/stores/menu'
 import SidebarMenu from './components/SidebarMenu.vue'
 import LayoutHeader from './components/LayoutHeader.vue'
+import GlobalSearchDialog from './components/GlobalSearchDialog.vue'
 import { useSystemLayout } from './composables/useSystemLayout'
 import type { MenuTreeNode } from '@/api/menu'
 
@@ -69,8 +74,25 @@ const {
   push: (path) => router.push(path),
 })
 
-onMounted(attach)
-onBeforeUnmount(detach)
+const searchVisible = ref(false)
+
+/** Ctrl/Cmd + K 打开全局搜索 */
+function handleGlobalSearchShortcut(event: KeyboardEvent) {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+    event.preventDefault()
+    searchVisible.value = true
+  }
+}
+
+onMounted(() => {
+  attach()
+  window.addEventListener('keydown', handleGlobalSearchShortcut)
+})
+
+onBeforeUnmount(() => {
+  detach()
+  window.removeEventListener('keydown', handleGlobalSearchShortcut)
+})
 </script>
 
 <style scoped lang="less">

@@ -42,13 +42,21 @@ const SidebarStub = defineComponent({
 const HeaderStub = defineComponent({
   name: 'LayoutHeader',
   props: ['isMobile', 'asideVisible', 'breadcrumbs', 'clockText'],
-  emits: ['toggle-aside', 'user-command'],
+  emits: ['toggle-aside', 'open-search', 'user-command'],
   template: '<header class="header-stub" />',
+})
+
+const SearchStub = defineComponent({
+  name: 'GlobalSearchDialog',
+  props: ['modelValue'],
+  emits: ['update:modelValue'],
+  template: '<div class="global-search-stub" :data-open="modelValue" />',
 })
 
 const stubs = {
   SidebarMenu: SidebarStub,
   LayoutHeader: HeaderStub,
+  GlobalSearchDialog: SearchStub,
   'router-view': { template: '<div class="router-view-stub" />' },
 }
 
@@ -153,6 +161,25 @@ describe('SystemLayout 组合', () => {
     expect(wrapper.findComponent(HeaderStub).props('isMobile')).toBe(false)
     expect(wrapper.findComponent(SidebarStub).props('asideVisible')).toBe(false)
     expect(wrapper.find('.layout-mask').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('头部按钮与 Ctrl+K 均可打开全局搜索', async () => {
+    const wrapper = mountLayout()
+    const search = wrapper.findComponent(SearchStub)
+
+    expect(search.props('modelValue')).toBe(false)
+
+    wrapper.findComponent(HeaderStub).vm.$emit('open-search')
+    await wrapper.vm.$nextTick()
+    expect(search.props('modelValue')).toBe(true)
+
+    search.vm.$emit('update:modelValue', false)
+    await wrapper.vm.$nextTick()
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))
+    await wrapper.vm.$nextTick()
+    expect(search.props('modelValue')).toBe(true)
     wrapper.unmount()
   })
 
