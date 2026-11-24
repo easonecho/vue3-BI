@@ -136,13 +136,32 @@ function removePending(config: AxiosRequestConfig): void {
   }
 }
 
+/** 排队等待 token 刷新的请求回调 */
+interface RefreshWaiter {
+  resolve: () => void
+  reject: (reason: unknown) => void
+}
+
 /**
  * access token 静默刷新并发锁:
  * - 多个并发请求同时遇到 401 时, 只发起一次 refresh;
  * - 其余请求等 promise 结束后重试, 避免多发刷新导致服务端错乱。
  */
 let isRefreshing = false
-let refreshQueue: Array<() => void> = []
+let refreshQueue: RefreshWaiter[] = []
+
+/**
+ * 结算排队中的请求: 刷新成功时用新 token 重放, 刷新失败时必须显式 reject,
+ * 否则这些 Promise 会永久挂起 (组件 loading 无法复位)。
+ */
+function settleRefreshWaiters(error: unknown | null): void {
+  const waiters = refreshQueue
+  refreshQueue = []
+  waiters.forEach((waiter) => {
+    if (error) waiter.reject(error)
+    else waiter.resolve()
+  })
+}
 
 async function handleTokenRefresh(): Promise<boolean> {
   // 没有 CSRF Cookie 说明未登录或 Cookie 会话已失效, 无需发起刷新
@@ -160,8 +179,7 @@ async function handleTokenRefresh(): Promise<boolean> {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('bi-auth:refreshed'))
       }
-      refreshQueue.forEach((fn) => fn())
-      refreshQueue = []
+      settleRefreshWaiters(null)
       return true
     }
     return false
@@ -268,13 +286,18 @@ request.interceptors.response.use(
                 originalConfig.headers.Authorization = `Bearer ${getToken()}`
                 return request(originalConfig)
               }
+              // 刷新失败: 排队请求不能再等, 统一失败避免 Promise 永久挂起
+              settleRefreshWaiters(error)
             } else {
               // 已有刷新在进行: 排队等它完成后再重放
               retryMeta(originalConfig).__retried = true
-              return new Promise<AxiosResponse<ApiResult>>((resolve) => {
-                refreshQueue.push(() => {
-                  originalConfig.headers.Authorization = `Bearer ${getToken()}`
-                  resolve(request(originalConfig))
+              return new Promise<AxiosResponse<ApiResult>>((resolve, reject) => {
+                refreshQueue.push({
+                  resolve: () => {
+                    originalConfig.headers.Authorization = `Bearer ${getToken()}`
+                    resolve(request(originalConfig))
+                  },
+                  reject,
                 })
               })
             }
