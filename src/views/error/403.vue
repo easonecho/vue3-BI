@@ -1,9 +1,9 @@
 <template>
   <div class="error-page">
-    <el-result icon="warning" title="暂无权限" sub-title="抱歉，您没有权限访问此页面">
+    <el-result icon="warning" :title="t('error.title403')" :sub-title="t('error.desc403')">
       <template #extra>
-        <el-button type="primary" @click="goBack">返回上一页</el-button>
-        <el-button @click="goLogin">返回登录</el-button>
+        <el-button type="primary" @click="goBack">{{ t('error.backPrev') }}</el-button>
+        <el-button @click="goLogin">{{ t('error.backLogin') }}</el-button>
       </template>
     </el-result>
   </div>
@@ -11,8 +11,10 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
+const { t } = useI18n()
 
 function goBack(): void {
   if (window.history.length > 1) {

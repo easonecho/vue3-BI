@@ -7,14 +7,46 @@
         <div class="login-header">
           <div class="logo-mark">
             <svg viewBox="0 0 40 40" class="logo-svg">
-              <rect x="6" y="6" width="12" height="12" rx="2" fill="var(--bi-accent)" opacity="0.9" />
-              <rect x="22" y="6" width="12" height="12" rx="2" fill="var(--bi-accent)" opacity="0.45" />
-              <rect x="6" y="22" width="12" height="12" rx="2" fill="var(--bi-accent)" opacity="0.55" />
-              <rect x="22" y="22" width="12" height="12" rx="2" fill="var(--bi-accent)" opacity="0.25" />
+              <rect
+                x="6"
+                y="6"
+                width="12"
+                height="12"
+                rx="2"
+                fill="var(--bi-accent)"
+                opacity="0.9"
+              />
+              <rect
+                x="22"
+                y="6"
+                width="12"
+                height="12"
+                rx="2"
+                fill="var(--bi-accent)"
+                opacity="0.45"
+              />
+              <rect
+                x="6"
+                y="22"
+                width="12"
+                height="12"
+                rx="2"
+                fill="var(--bi-accent)"
+                opacity="0.55"
+              />
+              <rect
+                x="22"
+                y="22"
+                width="12"
+                height="12"
+                rx="2"
+                fill="var(--bi-accent)"
+                opacity="0.25"
+              />
             </svg>
           </div>
-          <h1 class="login-title">BI 低代码平台</h1>
-          <p class="login-subtitle">数据可视化 · 看板搭建</p>
+          <h1 class="login-title">{{ t('auth.appTitle') }}</h1>
+          <p class="login-subtitle">{{ t('auth.loginSubtitle') }}</p>
         </div>
 
         <!-- 表单 -->
@@ -26,28 +58,28 @@
           class="login-form"
           @submit.prevent="handleLogin"
         >
-          <el-form-item label="用户名" prop="username">
+          <el-form-item :label="t('auth.username')" prop="username">
             <el-input
               v-model="form.username"
-              placeholder="请输入用户名"
+              :placeholder="t('auth.usernamePlaceholder')"
               :prefix-icon="User"
               size="large"
             />
           </el-form-item>
-          <el-form-item label="租户编码" prop="tenantCode">
+          <el-form-item :label="t('auth.tenantCode')" prop="tenantCode">
             <el-input
               v-model="form.tenantCode"
-              placeholder="单租户可留空，默认为 default"
+              :placeholder="t('auth.tenantCodePlaceholder')"
               :prefix-icon="OfficeBuilding"
               size="large"
             />
           </el-form-item>
-          <el-form-item label="密码" prop="password">
+          <el-form-item :label="t('auth.password')" prop="password">
             <el-input
               v-model="form.password"
               type="password"
               show-password
-              placeholder="请输入密码"
+              :placeholder="t('auth.passwordPlaceholder')"
               :prefix-icon="Lock"
               size="large"
               @keyup.enter="handleLogin"
@@ -61,15 +93,18 @@
               class="login-btn"
               @click="handleLogin"
             >
-              <span v-if="!loading">登 录</span>
-              <span v-else>认证中...</span>
+              <span v-if="!loading">{{ t('auth.loginBtn') }}</span>
+              <span v-else>{{ t('auth.loggingIn') }}</span>
             </el-button>
           </el-form-item>
         </el-form>
 
         <div class="login-tip">
           <el-icon><InfoFilled /></el-icon>
-          <span>测试账号 <span class="account">admin / admin123</span> · <span class="account">user / user123</span></span>
+          <span
+            >{{ t('auth.testAccounts') }} <span class="account">admin / admin123</span> ·
+            <span class="account">user / user123</span></span
+          >
         </div>
       </div>
     </div>
@@ -82,8 +117,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { User, Lock, InfoFilled, OfficeBuilding } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
@@ -92,6 +128,7 @@ import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const { t } = useI18n()
 
 const formRef = ref<FormInstance>()
 const loading = ref(false)
@@ -102,10 +139,11 @@ const form = reactive({
   tenantCode: '',
 })
 
-const rules: FormRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-}
+// 校验文案随语言切换实时更新
+const rules = computed<FormRules>(() => ({
+  username: [{ required: true, message: t('auth.usernameRequired'), trigger: 'blur' }],
+  password: [{ required: true, message: t('auth.passwordRequired'), trigger: 'blur' }],
+}))
 
 async function handleLogin() {
   if (!formRef.value) return
@@ -118,7 +156,8 @@ async function handleLogin() {
         form.password,
         form.tenantCode.trim() || undefined,
       )
-      ElMessage.success(`登录成功，欢迎 ${result.user.nickname || result.user.username}`)
+      const name = result.user.nickname || result.user.username
+      ElMessage.success(t('auth.loginSuccessWithName', { name }))
       const redirect = (route.query.redirect as string) || '/dashboard'
       router.push(redirect)
     } catch {

@@ -1,9 +1,9 @@
 <template>
   <div class="error-page">
-    <el-result icon="info" title="页面不存在" sub-title="抱歉，您访问的页面不存在">
+    <el-result icon="info" :title="t('error.title404')" :sub-title="t('error.desc404')">
       <template #extra>
-        <el-button type="primary" @click="goBack">返回上一页</el-button>
-        <el-button @click="goHome">返回首页</el-button>
+        <el-button type="primary" @click="goBack">{{ t('error.backPrev') }}</el-button>
+        <el-button @click="goHome">{{ t('error.backHome') }}</el-button>
       </template>
     </el-result>
   </div>
@@ -11,8 +11,10 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
+const { t } = useI18n()
 
 function goBack(): void {
   if (window.history.length > 1) {
