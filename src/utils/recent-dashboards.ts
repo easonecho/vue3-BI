@@ -54,6 +54,32 @@ export function readRecentDashboards(): RecentDashboard[] {
   }
 }
 
+function writeRecent(list: RecentDashboard[]): RecentDashboard[] {
+  const storage = getStorage()
+  try {
+    storage?.setItem(RECENT_DASHBOARDS_KEY, JSON.stringify(list))
+  } catch {
+    // 存储配额不足时忽略，保证访问流程不被中断
+  }
+  return list
+}
+
+/** 删除看板后同步移除最近访问记录 */
+export function removeRecentDashboard(id: number): RecentDashboard[] {
+  return writeRecent(readRecentDashboards().filter((item) => item.id !== id))
+}
+
+/** 重命名看板后同步最近访问名称，空名称忽略 */
+export function renameRecentDashboard(id: number, name: string): RecentDashboard[] {
+  const nextName = name.trim()
+  if (!nextName) return readRecentDashboards()
+  return writeRecent(
+    readRecentDashboards().map((item) =>
+      item.id === id ? { ...item, name: nextName } : item,
+    ),
+  )
+}
+
 /** 记录一次访问：去重后置顶，返回最新列表 */
 export function recordRecentDashboard(
   item: { id: number; name: string },
@@ -67,14 +93,7 @@ export function recordRecentDashboard(
     0,
     RECENT_DASHBOARDS_LIMIT,
   )
-
-  const storage = getStorage()
-  try {
-    storage?.setItem(RECENT_DASHBOARDS_KEY, JSON.stringify(next))
-  } catch {
-    // 存储配额不足时忽略，保证访问流程不被中断
-  }
-  return next
+  return writeRecent(next)
 }
 
 /** 相对时间：刚刚 / N 分钟前 / N 小时前 / N 天前 / 日期 */

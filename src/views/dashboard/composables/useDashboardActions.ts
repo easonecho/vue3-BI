@@ -3,6 +3,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { Router } from 'vue-router'
 import { copyDashboard, deleteDashboard, updateDashboard } from '@/api/dashboard'
 import type { Dashboard } from '@/api/types'
+import { removeRecentDashboard, renameRecentDashboard } from '@/utils/recent-dashboards'
 
 export interface DashboardActionsDeps {
   router: Router
@@ -10,6 +11,8 @@ export interface DashboardActionsDeps {
   /** 删除成功后由列表层执行页码回退与刷新 */
   onDeleted: () => void | Promise<void>
   loadGroups: () => void | Promise<void>
+  /** 最近访问记录变化后通知列表刷新 */
+  onRecentChanged?: () => void
 }
 
 /**
@@ -19,7 +22,7 @@ export interface DashboardActionsDeps {
  * 分组管理、移动分组、存为模板、分享、定时报表、版本管理弹窗。
  */
 export function useDashboardActions(deps: DashboardActionsDeps) {
-  const { router, reload, onDeleted, loadGroups } = deps
+  const { router, reload, onDeleted, loadGroups, onRecentChanged } = deps
 
   // 定时报表订阅
   const reportVisible = ref(false)
@@ -123,6 +126,8 @@ export function useDashboardActions(deps: DashboardActionsDeps) {
     renaming.value = true
     try {
       await updateDashboard(renameTarget.value.id, { name })
+      renameRecentDashboard(renameTarget.value.id, name)
+      onRecentChanged?.()
       ElMessage.success('重命名成功')
       renameVisible.value = false
       void reload()
@@ -184,6 +189,8 @@ export function useDashboardActions(deps: DashboardActionsDeps) {
         cancelButtonText: '取消',
       })
       await deleteDashboard(item.id)
+      removeRecentDashboard(item.id)
+      onRecentChanged?.()
       ElMessage.success('删除成功')
       void onDeleted()
     } catch {

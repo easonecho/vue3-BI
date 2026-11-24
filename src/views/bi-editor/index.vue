@@ -2,7 +2,7 @@
   <div class="bi-editor">
     <HeaderToolbar />
     <div class="editor-body">
-      <LeftPanel @drag-start="handleDragStart" @add-component="handleAddComponent" />
+      <LeftPanel @add-component="handleAddComponent" />
       <CanvasArea @select-component="handleSelectComponent" />
       <RightPanel />
     </div>
@@ -18,6 +18,7 @@ import LeftPanel from './components/LeftPanel.vue'
 import CanvasArea from './components/canvas/CanvasArea.vue'
 import RightPanel from './components/RightPanel.vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
+import { recordRecentDashboard } from '@/utils/recent-dashboards'
 import { useKeyboardShortcuts } from './composables/useCanvas'
 import type { ComponentMeta } from './types'
 
@@ -25,9 +26,6 @@ const route = useRoute()
 const store = useBiEditorStore()
 
 useKeyboardShortcuts()
-
-// 拖拽起点由 dataTransfer 携带组件元信息，这里无需额外处理
-function handleDragStart(_event: DragEvent, _meta: ComponentMeta) {}
 
 function handleAddComponent(meta: ComponentMeta) {
   const centerX = store.canvas.width / 2 - meta.defaultWidth / 2
@@ -107,6 +105,7 @@ async function initFromRoute() {
       else store.newTemplate()
     } else if (id) {
       await store.loadDashboard(Number(id))
+      recordRecentDashboard({ id: Number(id), name: store.dashboardName })
     } else {
       store.newDashboard()
     }

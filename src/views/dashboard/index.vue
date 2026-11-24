@@ -179,6 +179,9 @@ const {
   reload: loadList,
   onDeleted: handleDeleted,
   loadGroups,
+  onRecentChanged: () => {
+    recentDashboards.value = readRecentDashboards()
+  },
 })
 
 onMounted(() => {

@@ -5,6 +5,8 @@ import {
   formatRecentTime,
   readRecentDashboards,
   recordRecentDashboard,
+  removeRecentDashboard,
+  renameRecentDashboard,
 } from './recent-dashboards'
 
 describe('recent-dashboards', () => {
@@ -49,6 +51,21 @@ describe('recent-dashboards', () => {
       JSON.stringify([{ id: '1', name: '字符串 ID' }, { id: 2, name: '正常看板', visitedAt: 1 }]),
     )
     expect(readRecentDashboards()).toEqual([{ id: 2, name: '正常看板', visitedAt: 1 }])
+  })
+
+  it('删除看板后移除最近访问记录', () => {
+    recordRecentDashboard({ id: 1, name: '销售看板' }, 1000)
+    recordRecentDashboard({ id: 2, name: '库存看板' }, 2000)
+
+    expect(removeRecentDashboard(1).map((item) => item.id)).toEqual([2])
+    expect(readRecentDashboards()).toHaveLength(1)
+  })
+
+  it('重命名看板后同步最近访问名称，空名称忽略', () => {
+    recordRecentDashboard({ id: 1, name: '旧名称' }, 1000)
+
+    expect(renameRecentDashboard(1, '新名称')[0].name).toBe('新名称')
+    expect(renameRecentDashboard(1, '   ')[0].name).toBe('新名称')
   })
 
   it('存储写入异常不影响返回结果', () => {
