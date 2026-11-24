@@ -6,7 +6,13 @@ import { useDashboardList } from './useDashboardList'
 const { listMock, groupsMock, favoriteMock, messageMock } = vi.hoisted(() => ({
   listMock:
     vi.fn<
-      (params: DashboardListQuery) => Promise<{ data: { list: Dashboard[]; total: number } }>
+      (params: DashboardListQuery) => Promise<{
+        data: {
+          list: Dashboard[]
+          total: number
+          counts?: { published: number; draft: number }
+        }
+      }>
     >(),
   groupsMock: vi.fn<() => Promise<{ data: DashboardGroup[] }>>(),
   favoriteMock: vi.fn<(id: number) => Promise<{ data: { isFavorited: boolean } }>>(),
@@ -153,6 +159,21 @@ describe('useDashboardList 统计与筛选动作', () => {
 
     expect(api.publishedCount.value).toBe(2)
     expect(api.draftCount.value).toBe(1)
+  })
+
+  it('优先使用服务端全量统计而非当前页', async () => {
+    listMock.mockResolvedValue({
+      data: {
+        list: [makeDashboard({ status: 1 })],
+        total: 50,
+        counts: { published: 42, draft: 8 },
+      },
+    })
+    const api = useDashboardList()
+    await api.loadList()
+
+    expect(api.publishedCount.value).toBe(42)
+    expect(api.draftCount.value).toBe(8)
   })
 
   it('handleSearch 回到第一页并重新加载', async () => {

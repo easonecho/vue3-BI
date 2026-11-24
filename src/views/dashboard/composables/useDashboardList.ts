@@ -2,6 +2,7 @@ import { computed, reactive, ref } from 'vue'
 import {
   getDashboardList,
   toggleFavorite,
+  type DashboardListCounts,
   type DashboardListQuery,
   type DashboardSortBy,
 } from '@/api/dashboard'
@@ -27,9 +28,14 @@ export function useDashboardList() {
   const pageSize = ref(12)
   const total = ref(0)
 
-  // 统计
-  const publishedCount = computed(() => list.value.filter((d) => d.status === 1).length)
-  const draftCount = computed(() => list.value.filter((d) => d.status === 0).length)
+  // 统计：优先使用服务端全量统计，旧接口无该字段时回落到当前页统计
+  const counts = ref<DashboardListCounts | null>(null)
+  const publishedCount = computed(
+    () => counts.value?.published ?? list.value.filter((d) => d.status === 1).length,
+  )
+  const draftCount = computed(
+    () => counts.value?.draft ?? list.value.filter((d) => d.status === 0).length,
+  )
 
   // 筛选条件
   const filters = reactive<DashboardFilters>({
@@ -66,6 +72,7 @@ export function useDashboardList() {
       const res = await getDashboardList(params)
       list.value = res.data.list
       total.value = res.data.total
+      counts.value = res.data.counts ?? null
     } catch {
       // 错误提示由 request 拦截器统一处理
     } finally {

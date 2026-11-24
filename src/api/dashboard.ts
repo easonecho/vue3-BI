@@ -28,9 +28,19 @@ export interface DashboardListQuery extends PageQuery {
   sortBy?: DashboardSortBy
 }
 
+/** 列表附带的状态统计（按当前筛选条件全量统计） */
+export interface DashboardListCounts {
+  published: number
+  draft: number
+}
+
+export interface DashboardListData extends PaginateData<Dashboard> {
+  counts?: DashboardListCounts
+}
+
 /** 获取仪表板列表 */
 export function getDashboardList(params: DashboardListQuery) {
-  return get<PaginateData<Dashboard>>('/api/dashboards', params as Record<string, unknown>)
+  return get<DashboardListData>('/api/dashboards', params as Record<string, unknown>)
 }
 
 /** 获取仪表板详情 */
