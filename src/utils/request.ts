@@ -349,6 +349,12 @@ export function del<T = unknown>(
   return request.delete(url, { params, ...config }) as unknown as Promise<ApiResult<T>>
 }
 
+/**
+ * 导出下载超时: 后端最多导出 5 万行 (xlsx 生成较慢), 且 Nginx 代理超时为 120s,
+ * 这里与网关保持一致, 避免大导出在默认 15s 时被前端提前中断。
+ */
+const EXPORT_TIMEOUT = 120000
+
 /** 下载响应中的导出元信息 (后端通过响应头返回行数与截断状态) */
 export interface DownloadResult {
   blob: Blob
@@ -364,7 +370,7 @@ function headerNumber(value: unknown): number | undefined {
 
 /** 下载并保留后端响应头 (用于提示「已截断，请缩小筛选范围」) */
 export function downloadWithMeta(url: string, data?: unknown): Promise<DownloadResult> {
-  return request.post(url, data, { responseType: 'blob' }).then((res) => {
+  return request.post(url, data, { responseType: 'blob', timeout: EXPORT_TIMEOUT }).then((res) => {
     const response = res as unknown as AxiosResponse<Blob>
     const headers = (response.headers || {}) as Record<string, unknown>
     return {
