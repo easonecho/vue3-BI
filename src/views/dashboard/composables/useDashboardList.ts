@@ -51,8 +51,11 @@ export function useDashboardList() {
   // P2-3: 分组
   const groups = ref<DashboardGroup[]>([])
   const groupsLoading = ref(false)
+  let loadSeq = 0
 
   async function loadList() {
+    // 🔑 请求序号：筛选快速切换时丢弃过期响应，避免旧结果覆盖新结果
+    const seq = ++loadSeq
     loading.value = true
     try {
       const params: DashboardListQuery = {
@@ -70,13 +73,14 @@ export function useDashboardList() {
         params.groupId = groupFilter.value
       }
       const res = await getDashboardList(params)
+      if (seq !== loadSeq) return
       list.value = res.data.list
       total.value = res.data.total
       counts.value = res.data.counts ?? null
     } catch {
       // 错误提示由 request 拦截器统一处理
     } finally {
-      loading.value = false
+      if (seq === loadSeq) loading.value = false
     }
   }
 

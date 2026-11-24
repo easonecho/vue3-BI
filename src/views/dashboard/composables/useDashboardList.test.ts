@@ -161,6 +161,34 @@ describe('useDashboardList 统计与筛选动作', () => {
     expect(api.draftCount.value).toBe(1)
   })
 
+  it('筛选快速切换时丢弃过期响应', async () => {
+    type ListResult = {
+      data: { list: Dashboard[]; total: number; counts?: { published: number; draft: number } }
+    }
+    let resolveFirst!: (value: ListResult) => void
+    let resolveSecond!: (value: ListResult) => void
+    listMock
+      .mockImplementationOnce(
+        () => new Promise<ListResult>((resolve) => (resolveFirst = resolve)),
+      )
+      .mockImplementationOnce(
+        () => new Promise<ListResult>((resolve) => (resolveSecond = resolve)),
+      )
+
+    const api = useDashboardList()
+    const first = api.loadList()
+    const second = api.loadList()
+
+    resolveSecond({ data: { list: [makeDashboard({ id: 2, name: '新结果' })], total: 1 } })
+    await second
+    resolveFirst({ data: { list: [makeDashboard({ id: 1, name: '旧结果' })], total: 1 } })
+    await first
+
+    expect(api.list.value.map((item) => item.id)).toEqual([2])
+    expect(api.total.value).toBe(1)
+    expect(api.loading.value).toBe(false)
+  })
+
   it('优先使用服务端全量统计而非当前页', async () => {
     listMock.mockResolvedValue({
       data: {
