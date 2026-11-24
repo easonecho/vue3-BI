@@ -19,6 +19,8 @@ export function usePreviewToolbar({ rootRef, onRefresh }: UsePreviewToolbarOptio
 
   let hideTimer: ReturnType<typeof setTimeout> | null = null
   let autoRefreshTimer: ReturnType<typeof setInterval> | null = null
+  /** 最近一次自动刷新时间，用于页面重新可见时判断是否补刷 */
+  let lastAutoRefreshAt = 0
 
   function scheduleHideToolbar() {
     if (hideTimer) clearTimeout(hideTimer)
@@ -69,9 +71,23 @@ export function usePreviewToolbar({ rootRef, onRefresh }: UsePreviewToolbarOptio
       autoRefreshTimer = null
     }
     if (autoRefreshInterval.value > 0) {
+      lastAutoRefreshAt = Date.now()
       autoRefreshTimer = setInterval(() => {
+        // 🔑 页面隐藏时跳过刷新，避免后台标签页持续请求数据
+        if (document.hidden) return
+        lastAutoRefreshAt = Date.now()
         onRefresh(true)
       }, autoRefreshInterval.value * 1000)
+    }
+  }
+
+  /** 页面重新可见时，若已超过刷新间隔则立即补刷一次 */
+  function handleVisibilityChange() {
+    if (document.hidden || autoRefreshInterval.value <= 0) return
+    const intervalMs = autoRefreshInterval.value * 1000
+    if (lastAutoRefreshAt > 0 && Date.now() - lastAutoRefreshAt >= intervalMs) {
+      lastAutoRefreshAt = Date.now()
+      onRefresh(true)
     }
   }
 
@@ -103,16 +119,18 @@ export function usePreviewToolbar({ rootRef, onRefresh }: UsePreviewToolbarOptio
 
   onMounted(() => {
     document.addEventListener('fullscreenchange', handleFullscreenChange)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('keydown', handleKeydown)
   })
 
   onUnmounted(() => {
     document.removeEventListener('fullscreenchange', handleFullscreenChange)
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
     window.removeEventListener('keydown', handleKeydown)
     if (autoRefreshTimer) clearInterval(autoRefreshTimer)
     if (hideTimer) clearTimeout(hideTimer)
     if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {})
+      document.exitFullscreen().catch(() => undefined)
     }
   })
 
