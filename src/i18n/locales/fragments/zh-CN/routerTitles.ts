@@ -1,0 +1,35 @@
+/**
+ * 路由页面标题（document.title 使用）
+ */
+export default {
+  routerTitles: {
+    login: '登录',
+    share: '看板分享',
+    embed: '看板嵌入',
+    dashboard: '看板管理',
+    dashboardTemplates: '模板库',
+    material: '素材管理',
+    users: '用户管理',
+    roles: '角色管理',
+    departments: '部门管理',
+    datasources: '数据源管理',
+    datasets: '数据集管理',
+    menus: '菜单管理',
+    logs: '操作日志',
+    dicts: '数据字典',
+    configs: '系统配置',
+    tenants: '租户管理',
+    positions: '岗位管理',
+    scheduledTasks: '定时任务',
+    monitor: '系统监控',
+    usage: '使用分析',
+    screen: '数据大屏',
+    biEditor: 'BI 报表编辑器',
+    templateEditor: '模板编辑器',
+    preview: '看板预览',
+    templatePreview: '模板预览',
+    apiDemo: '接口调用演示',
+    forbidden: '暂无权限',
+    notFound: '页面不存在',
+  },
+}

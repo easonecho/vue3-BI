@@ -3,6 +3,7 @@
  */
 export default {
   appMessages: {
+    versionUpdated: '检测到页面版本更新，正在刷新加载最新资源…',
     request: {
       failed: '请求失败',
       statusError: '请求错误 ({status})',

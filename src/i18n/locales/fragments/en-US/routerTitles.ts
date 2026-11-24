@@ -1,0 +1,35 @@
+/**
+ * Route page titles (used for document.title)
+ */
+export default {
+  routerTitles: {
+    login: 'Login',
+    share: 'Dashboard Share',
+    embed: 'Dashboard Embed',
+    dashboard: 'Dashboards',
+    dashboardTemplates: 'Template Library',
+    material: 'Material Management',
+    users: 'User Management',
+    roles: 'Role Management',
+    departments: 'Department Management',
+    datasources: 'Data Sources',
+    datasets: 'Datasets',
+    menus: 'Menu Management',
+    logs: 'Operation Logs',
+    dicts: 'Dictionaries',
+    configs: 'System Settings',
+    tenants: 'Tenant Management',
+    positions: 'Position Management',
+    scheduledTasks: 'Scheduled Tasks',
+    monitor: 'System Monitor',
+    usage: 'Usage Analytics',
+    screen: 'Data Screen',
+    biEditor: 'BI Report Editor',
+    templateEditor: 'Template Editor',
+    preview: 'Dashboard Preview',
+    templatePreview: 'Template Preview',
+    apiDemo: 'API Demo',
+    forbidden: 'No Permission',
+    notFound: 'Page Not Found',
+  },
+}

@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
+import { watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { doneProgress, resetProgress, startProgress } from '@/utils/progress'
+import i18n from '@/i18n'
 import { useUserStore } from '@/stores/user'
 import { useMenuStore } from '@/stores/menu'
 
@@ -16,20 +18,20 @@ const router = createRouter({
       path: '/login',
       name: 'Login',
       component: () => import('@/views/login/index.vue'),
-      meta: { title: '登录', public: true },
+      meta: { title: '登录', titleKey: 'routerTitles.login', public: true },
     },
     {
       path: '/share/:token',
       name: 'PublicShare',
       component: () => import('@/views/share/index.vue'),
-      meta: { title: '看板分享', public: true },
+      meta: { title: '看板分享', titleKey: 'routerTitles.share', public: true },
     },
     {
       // 🔑 嵌入模式: 由第三方系统 iframe 引用, 无登录态, 隐藏标题栏
       path: '/embed/:token',
       name: 'PublicEmbed',
       component: () => import('@/views/share/index.vue'),
-      meta: { title: '看板嵌入', public: true, embed: true },
+      meta: { title: '看板嵌入', titleKey: 'routerTitles.embed', public: true, embed: true },
     },
     // ========== 主布局 (看板管理 + 各项一级管理菜单) ==========
     {
@@ -41,13 +43,17 @@ const router = createRouter({
           path: 'dashboard',
           name: 'Dashboard',
           component: () => import('@/views/dashboard/index.vue'),
-          meta: { title: '看板管理', requiresAuth: true },
+          meta: { title: '看板管理', titleKey: 'routerTitles.dashboard', requiresAuth: true },
         },
         {
           path: 'dashboard-templates',
           name: 'DashboardTemplates',
           component: () => import('@/views/dashboard-templates/index.vue'),
-          meta: { title: '模板库', requiresAuth: true },
+          meta: {
+            title: '模板库',
+            titleKey: 'routerTitles.dashboardTemplates',
+            requiresAuth: true,
+          },
         },
         {
           path: 'material',
@@ -55,6 +61,7 @@ const router = createRouter({
           component: () => import('@/views/material/index.vue'),
           meta: {
             title: '素材管理',
+            titleKey: 'routerTitles.material',
             requiresAuth: true,
             permissions: ['material:view', 'material:upload', 'material:delete'],
           },
@@ -65,6 +72,7 @@ const router = createRouter({
           component: () => import('@/views/system/users/index.vue'),
           meta: {
             title: '用户管理',
+            titleKey: 'routerTitles.users',
             requiresAuth: true,
             permissions: [
               'system:user:list',
@@ -80,6 +88,7 @@ const router = createRouter({
           component: () => import('@/views/system/roles.vue'),
           meta: {
             title: '角色管理',
+            titleKey: 'routerTitles.roles',
             requiresAuth: true,
             permissions: [
               'system:role:list',
@@ -96,6 +105,7 @@ const router = createRouter({
           component: () => import('@/views/system/departments.vue'),
           meta: {
             title: '部门管理',
+            titleKey: 'routerTitles.departments',
             requiresAuth: true,
             permissions: [
               'system:dept:list',
@@ -111,6 +121,7 @@ const router = createRouter({
           component: () => import('@/views/system/datasources.vue'),
           meta: {
             title: '数据源管理',
+            titleKey: 'routerTitles.datasources',
             requiresAuth: true,
             permissions: [
               'system:datasource:view',
@@ -127,6 +138,7 @@ const router = createRouter({
           component: () => import('@/views/system/datasets/index.vue'),
           meta: {
             title: '数据集管理',
+            titleKey: 'routerTitles.datasets',
             requiresAuth: true,
             permissions: [
               'system:dataset:view',
@@ -143,6 +155,7 @@ const router = createRouter({
           component: () => import('@/views/system/menus.vue'),
           meta: {
             title: '菜单管理',
+            titleKey: 'routerTitles.menus',
             requiresAuth: true,
             permissions: [
               'system:menu:list',
@@ -158,6 +171,7 @@ const router = createRouter({
           component: () => import('@/views/system/logs.vue'),
           meta: {
             title: '操作日志',
+            titleKey: 'routerTitles.logs',
             requiresAuth: true,
             permissions: ['system:log:list', 'system:log:remove', 'system:log:clean'],
           },
@@ -168,6 +182,7 @@ const router = createRouter({
           component: () => import('@/views/system/dicts.vue'),
           meta: {
             title: '数据字典',
+            titleKey: 'routerTitles.dicts',
             requiresAuth: true,
             permissions: [
               'system:dict:list',
@@ -183,6 +198,7 @@ const router = createRouter({
           component: () => import('@/views/system/configs.vue'),
           meta: {
             title: '系统配置',
+            titleKey: 'routerTitles.configs',
             requiresAuth: true,
             permissions: [
               'system:config:view',
@@ -198,6 +214,7 @@ const router = createRouter({
           component: () => import('@/views/system/tenants.vue'),
           meta: {
             title: '租户管理',
+            titleKey: 'routerTitles.tenants',
             requiresAuth: true,
             permissions: [
               'system:tenant:view',
@@ -213,6 +230,7 @@ const router = createRouter({
           component: () => import('@/views/system/positions.vue'),
           meta: {
             title: '岗位管理',
+            titleKey: 'routerTitles.positions',
             requiresAuth: true,
             permissions: [
               'system:position:view',
@@ -228,6 +246,7 @@ const router = createRouter({
           component: () => import('@/views/system/scheduled-tasks.vue'),
           meta: {
             title: '定时任务',
+            titleKey: 'routerTitles.scheduledTasks',
             requiresAuth: true,
             permissions: [
               'system:task:view',
@@ -244,6 +263,7 @@ const router = createRouter({
           component: () => import('@/views/system/monitor.vue'),
           meta: {
             title: '系统监控',
+            titleKey: 'routerTitles.monitor',
             requiresAuth: true,
             permissions: ['system:monitor:view', 'monitor:view', 'monitor:kick'],
           },
@@ -254,6 +274,7 @@ const router = createRouter({
           component: () => import('@/views/system/usage.vue'),
           meta: {
             title: '使用分析',
+            titleKey: 'routerTitles.usage',
             requiresAuth: true,
             permissions: ['system:usage:view'],
           },
@@ -264,7 +285,7 @@ const router = createRouter({
       path: '/screen/:id?',
       name: 'Screen',
       component: () => import('@/views/screen/index.vue'),
-      meta: { title: '数据大屏', requiresAuth: true },
+      meta: { title: '数据大屏', titleKey: 'routerTitles.screen', requiresAuth: true },
     },
     {
       // 🔑 :id? 可选参数:无 id 进入新建空白看板,有 id 加载已有看板
@@ -273,6 +294,7 @@ const router = createRouter({
       component: () => import('@/views/bi-editor/index.vue'),
       meta: {
         title: 'BI 报表编辑器',
+        titleKey: 'routerTitles.biEditor',
         requiresAuth: true,
       },
     },
@@ -283,6 +305,7 @@ const router = createRouter({
       component: () => import('@/views/bi-editor/index.vue'),
       meta: {
         title: '模板编辑器',
+        titleKey: 'routerTitles.templateEditor',
         requiresAuth: true,
       },
     },
@@ -290,31 +313,31 @@ const router = createRouter({
       path: '/preview/:id',
       name: 'Preview',
       component: () => import('@/views/preview/index.vue'),
-      meta: { title: '看板预览', requiresAuth: true },
+      meta: { title: '看板预览', titleKey: 'routerTitles.preview', requiresAuth: true },
     },
     {
       path: '/preview-template/:id',
       name: 'PreviewTemplate',
       component: () => import('@/views/preview/index.vue'),
-      meta: { title: '模板预览', requiresAuth: true },
+      meta: { title: '模板预览', titleKey: 'routerTitles.templatePreview', requiresAuth: true },
     },
     {
       path: '/api-demo',
       name: 'ApiDemo',
       component: () => import('@/views/api-demo/index.vue'),
-      meta: { title: '接口调用演示', requiresAuth: true },
+      meta: { title: '接口调用演示', titleKey: 'routerTitles.apiDemo', requiresAuth: true },
     },
     {
       path: '/403',
       name: 'Forbidden',
       component: () => import('@/views/error/403.vue'),
-      meta: { title: '暂无权限', public: true },
+      meta: { title: '暂无权限', titleKey: 'routerTitles.forbidden', public: true },
     },
     {
       path: '/404',
       name: 'NotFound',
       component: () => import('@/views/error/404.vue'),
-      meta: { title: '页面不存在', public: true },
+      meta: { title: '页面不存在', titleKey: 'routerTitles.notFound', public: true },
     },
     {
       path: '/:pathMatch(.*)*',
@@ -343,7 +366,7 @@ router.onError((error) => {
     const lastReloadAt = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) || 0)
     if (Date.now() - lastReloadAt > 60_000) {
       sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()))
-      ElMessage.warning('检测到页面版本更新，正在刷新加载最新资源…')
+      ElMessage.warning(i18n.global.t('appMessages.versionUpdated'))
       window.location.reload()
       return
     }
@@ -357,9 +380,7 @@ router.onError((error) => {
  * 2. 已登录但权限不足跳 403
  * 返回 true 放行，返回路由地址则重定向
  */
-async function resolveNavigation(
-  to: RouteLocationNormalized,
-): Promise<true | RouteLocationRaw> {
+async function resolveNavigation(to: RouteLocationNormalized): Promise<true | RouteLocationRaw> {
   const userStore = useUserStore()
   // 🔑 access token 仅存内存: 页面刷新后先用 HttpOnly refresh Cookie 静默恢复会话
   await userStore.ensureSession()
@@ -413,9 +434,20 @@ router.beforeEach(async (to) => {
 
 router.afterEach((to) => {
   doneProgress()
-  const baseTitle = import.meta.env.VITE_APP_TITLE || 'BI 低代码平台'
-  const pageTitle = to.meta.title as string | undefined
-  document.title = pageTitle ? `${pageTitle} - ${baseTitle}` : baseTitle
+  applyPageTitle(to)
 })
+
+/** 根据路由 meta.titleKey 生成页面标题, 语言切换后也能同步刷新 */
+function applyPageTitle(to: RouteLocationNormalized): void {
+  const baseTitle = import.meta.env.VITE_APP_TITLE || i18n.global.t('auth.appTitle')
+  const titleKey = to.meta.titleKey as string | undefined
+  const pageTitle = titleKey ? i18n.global.t(titleKey) : (to.meta.title as string | undefined)
+  document.title = pageTitle ? `${pageTitle} - ${baseTitle}` : baseTitle
+}
+
+watch(
+  () => i18n.global.locale.value,
+  () => applyPageTitle(router.currentRoute.value),
+)
 
 export default router

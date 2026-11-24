@@ -3,6 +3,7 @@
  */
 export default {
   appMessages: {
+    versionUpdated: 'A new version is available. Reloading the latest resources…',
     request: {
       failed: 'Request failed',
       statusError: 'Request error ({status})',
