@@ -1,12 +1,15 @@
 <template>
   <div class="group-bound-box" :style="boxStyle">
     <!-- 组标识小标签（左上角） -->
-    <div class="group-bound-label">分组 ({{ gb.memberIds.length }})</div>
+    <div class="group-bound-label">
+      {{ t('editorUi.canvas.groupLabel', { count: gb.memberIds.length }) }}
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 interface GroupBound {
   groupId: string
@@ -30,6 +33,7 @@ interface Props {
   dragPreview: DragPreview | null
 }
 const props = defineProps<Props>()
+const { t } = useI18n()
 
 /**
  * 🔑 GroupBox 样式 computed：

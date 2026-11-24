@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="全局搜索"
+    :title="t('layout.globalSearch')"
     width="min(560px, 92vw)"
     append-to-body
     class="global-search-dialog"
@@ -11,7 +11,7 @@
     <el-input
       ref="inputRef"
       :model-value="keyword"
-      placeholder="搜索看板名称或描述"
+      :placeholder="t('layout.globalSearchPlaceholder')"
       clearable
       @input="setKeyword"
       @keydown.down.prevent="moveActive(1)"
@@ -24,7 +24,7 @@
     </el-input>
 
     <div class="search-body">
-      <div v-if="loading" class="search-hint">搜索中…</div>
+      <div v-if="loading" class="search-hint">{{ t('layout.searching') }}</div>
       <ul v-else-if="results.length" class="search-list">
         <li v-for="(item, index) in results" :key="item.id">
           <button
@@ -38,23 +38,24 @@
               <span class="item-name">{{ item.name }}</span>
               <span v-if="item.description" class="item-desc">{{ item.description }}</span>
             </span>
-            <span v-if="item.recent" class="item-tag">最近</span>
+            <span v-if="item.recent" class="item-tag">{{ t('layout.recent') }}</span>
           </button>
         </li>
       </ul>
       <div v-else class="search-hint">
-        {{ hasQuery ? '未找到匹配的看板' : '暂无最近访问的看板' }}
+        {{ hasQuery ? t('layout.noMatch') : t('layout.noRecent') }}
       </div>
     </div>
 
     <template #footer>
-      <span class="search-foot">↑↓ 选择 · Enter 打开 · Esc 关闭</span>
+      <span class="search-foot">{{ t('layout.searchFoot') }}</span>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { onBeforeUnmount, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { Search } from '@element-plus/icons-vue'
 import { getDashboardList } from '@/api/dashboard'
@@ -63,6 +64,7 @@ import { useGlobalSearch } from '../composables/useGlobalSearch'
 
 const visible = defineModel<boolean>({ required: true })
 
+const { t } = useI18n()
 const router = useRouter()
 const inputRef = ref<{ focus: () => void } | null>(null)
 

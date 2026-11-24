@@ -15,6 +15,10 @@ import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 // 🔑 模块级注册柱状图（运行一次,echarts/core 内部去重）
 use([BarChart])
 
@@ -85,10 +89,11 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const categories = mappedData.value?.categories
-    ?? (Array.isArray(mergedProps.categories) ? mergedProps.categories : [])
-  const seriesData = mappedData.value?.series
-    ?? (Array.isArray(mergedProps.series) ? mergedProps.series : [])
+  const categories =
+    mappedData.value?.categories ??
+    (Array.isArray(mergedProps.categories) ? mergedProps.categories : [])
+  const seriesData =
+    mappedData.value?.series ?? (Array.isArray(mergedProps.series) ? mergedProps.series : [])
   const barWidth = Number(mergedProps.barWidth)
   const upColor = String(mergedProps.upColor)
   const downColor = String(mergedProps.downColor)
@@ -129,8 +134,7 @@ function getChartSpecificOption(): {
       barWidth,
       barMaxWidth: 30,
       // 🔑 系列级别颜色（仅图例展示用,实际柱体颜色由 itemStyle.color 决定）
-      color:
-        style?.color || ECHARTS_DEFAULT_PALETTE[idx % ECHARTS_DEFAULT_PALETTE.length],
+      color: style?.color || ECHARTS_DEFAULT_PALETTE[idx % ECHARTS_DEFAULT_PALETTE.length],
       label: {
         show: showLabel,
         position: labelPositionOf(seriesLabelPosition),
@@ -174,7 +178,7 @@ function applyChartOption() {
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: true,
       xAxisData: getXAxisData(specificOption),
-      fallbackTitle: '成交量图',
+      fallbackTitle: t('editorMaterial.meta.volumeChart'),
     })
   })
 }
@@ -185,11 +189,7 @@ onMounted(async () => {
 
 watch(
   // 🔑 性能优化：签名式 watch 替代 deep watch
-  [
-    () => JSON.stringify(props.comp.props),
-    () => JSON.stringify(props.comp.dataConfig),
-    rows,
-  ],
+  [() => JSON.stringify(props.comp.props), () => JSON.stringify(props.comp.dataConfig), rows],
   () => {
     applyChartOption()
   },

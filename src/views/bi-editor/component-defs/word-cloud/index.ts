@@ -1,10 +1,16 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const wordCloudDefinition: ComponentDefinition = {
   type: 'word-cloud',
   meta: {
-    name: '词云',
+    get name() {
+      return t('editorMaterial.meta.wordCloud')
+    },
     category: 'chart',
     icon: 'Histogram',
     defaultWidth: 400,
@@ -12,89 +18,169 @@ export const wordCloudDefinition: ComponentDefinition = {
   },
   widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
-    { key: 'titleShow', label: '显示标题', type: 'switch', default: false, group: '标题' },
+    {
+      key: 'titleShow',
+      get label() {
+        return t('editorMaterial.ui.showTitle')
+      },
+      type: 'switch',
+      default: false,
+      get group() {
+        return t('editorMaterial.ui.title')
+      },
+    },
     {
       key: 'titleText',
-      label: '标题文本',
+      get label() {
+        return t('editorMaterial.ui.titleText')
+      },
       type: 'input',
-      default: '词云',
-      group: '标题',
+      default: t('editorMaterial.meta.wordCloud'),
+      get group() {
+        return t('editorMaterial.ui.title')
+      },
       visibleWhen: { field: 'titleShow', truthy: true },
     },
     {
       key: 'minFontSize',
-      label: '最小字号',
+      get label() {
+        return t('editorMaterial.ui.minFontSize')
+      },
       type: 'slider',
       min: 10,
       max: 30,
       default: 12,
-      group: '字体',
-      tip: '最小词字号',
+      get group() {
+        return t('editorMaterial.ui.font')
+      },
+      get tip() {
+        return t('editorMaterial.ui.minWordFontSize')
+      },
     },
     {
       key: 'maxFontSize',
-      label: '最大字号',
+      get label() {
+        return t('editorMaterial.ui.maxFontSize')
+      },
       type: 'slider',
       min: 30,
       max: 80,
       default: 48,
-      group: '字体',
-      tip: '最大词字号',
+      get group() {
+        return t('editorMaterial.ui.font')
+      },
+      get tip() {
+        return t('editorMaterial.ui.maxWordFontSize')
+      },
     },
     {
       key: 'textColor',
-      label: '主文字色',
+      get label() {
+        return t('editorMaterial.ui.primaryTextColor')
+      },
       type: 'colorpicker',
       default: '#22d3ee',
-      group: '颜色',
-      tip: '主文字色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
+      get tip() {
+        return t('editorMaterial.ui.primaryTextColor')
+      },
     },
     {
       key: 'textColor2',
-      label: '次文字色',
+      get label() {
+        return t('editorMaterial.ui.secondaryTextColor')
+      },
       type: 'colorpicker',
       default: '#67e8f9',
-      group: '颜色',
-      tip: '次文字色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
+      get tip() {
+        return t('editorMaterial.ui.secondaryTextColor')
+      },
     },
     {
       key: 'textColor3',
-      label: '辅文字色',
+      get label() {
+        return t('editorMaterial.ui.auxiliaryTextColor')
+      },
       type: 'colorpicker',
       default: '#a5f3fc',
-      group: '颜色',
-      tip: '辅文字色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
+      get tip() {
+        return t('editorMaterial.ui.auxiliaryTextColor')
+      },
     },
     {
       key: 'rotate',
-      label: '允许旋转',
+      get label() {
+        return t('editorMaterial.ui.allowRotation')
+      },
       type: 'switch',
       default: true,
-      group: '布局',
-      tip: '允许旋转',
+      get group() {
+        return t('editorMaterial.ui.layout')
+      },
+      get tip() {
+        return t('editorMaterial.ui.allowRotation')
+      },
     },
     {
       key: 'rotateAngles',
-      label: '旋转角度',
+      get label() {
+        return t('editorMaterial.ui.rotationAngle')
+      },
       type: 'select',
       options: [
-        { label: '0/90度', value: '0,90' },
-        { label: '0/45/90度', value: '0,45,90,135' },
-        { label: '仅0度', value: '0' },
-        { label: '仅90度', value: '90' },
+        {
+          get label() {
+            return t('editorMaterial.ui.090Degrees')
+          },
+          value: '0,90',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.04590Degrees')
+          },
+          value: '0,45,90,135',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.0DegreesOnly')
+          },
+          value: '0',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.90DegreesOnly')
+          },
+          value: '90',
+        },
       ],
       default: '0,90',
-      group: '布局',
+      get group() {
+        return t('editorMaterial.ui.layout')
+      },
     },
     {
       key: 'gridSize',
-      label: '词间距',
+      get label() {
+        return t('editorMaterial.ui.wordGap')
+      },
       type: 'slider',
       min: 4,
       max: 20,
       default: 8,
-      group: '布局',
-      tip: '词间距(px)',
+      get group() {
+        return t('editorMaterial.ui.layout')
+      },
+      get tip() {
+        return t('editorMaterial.ui.wordGapPx')
+      },
     },
   ],
   extraDefaults: {
@@ -126,8 +212,20 @@ export const wordCloudDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'nameField', label: '词名字段', type: 'name' },
-    { key: 'valueField', label: '权重字段', type: 'value' },
+    {
+      key: 'nameField',
+      get label() {
+        return t('editorMaterial.ui.wordField')
+      },
+      type: 'name',
+    },
+    {
+      key: 'valueField',
+      get label() {
+        return t('editorMaterial.ui.weightField')
+      },
+      type: 'value',
+    },
   ],
 }
 

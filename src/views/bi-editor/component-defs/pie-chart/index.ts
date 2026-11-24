@@ -1,6 +1,16 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import { chartCommonSchema, baseSeriesStylesNoAxesColumns, buildSeriesLabelSchema, aggregatePropField, topNPropFields } from '../types' // 饼图没有 X/Y 轴，只引入通用 Schema（title/legend/tooltip/animation）
+import {
+  chartCommonSchema,
+  baseSeriesStylesNoAxesColumns,
+  buildSeriesLabelSchema,
+  aggregatePropField,
+  topNPropFields,
+} from '../types' // 饼图没有 X/Y 轴，只引入通用 Schema（title/legend/tooltip/animation）
+
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 饼图默认真实数据（[{name, value}, ...]） */
 export const PIE_DEFAULT_DATA = [
@@ -14,7 +24,9 @@ export const PIE_DEFAULT_DATA = [
 export const pieChartDefinition: ComponentDefinition = {
   type: 'pie-chart',
   meta: {
-    name: '饼图',
+    get name() {
+      return t('editorMaterial.meta.pieChart')
+    },
     category: 'chart',
     icon: 'PieChart',
     defaultWidth: 300,
@@ -27,32 +39,66 @@ export const pieChartDefinition: ComponentDefinition = {
     ...topNPropFields,
     {
       key: 'radius',
-      label: '外半径 (%)',
+      get label() {
+        return t('editorMaterial.ui.outerRadius')
+      },
       type: 'slider',
       min: 20,
       max: 80,
       default: 55,
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
-    { key: 'rose', label: '玫瑰图', type: 'switch', default: false, group: '样式' },
-    { key: 'donut', label: '环形图', type: 'switch', default: true, group: '样式' },
+    {
+      key: 'rose',
+      get label() {
+        return t('editorMaterial.ui.roseChart')
+      },
+      type: 'switch',
+      default: false,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'donut',
+      get label() {
+        return t('editorMaterial.ui.donut')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
     {
       key: 'innerRadius',
-      label: '内半径 (%)',
+      get label() {
+        return t('editorMaterial.ui.innerRadius')
+      },
       type: 'slider',
       min: 5,
       max: 70,
       default: 35,
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
       visibleWhen: { field: 'donut', truthy: true },
     },
     {
       key: 'seriesStyles',
-      label: '数据项样式',
+      get label() {
+        return t('editorMaterial.ui.itemStyles')
+      },
       type: 'table',
       default: [],
-      group: '数据系列',
-      tip: '根据饼图数据项名称单独配置颜色、是否显示标签等（按 name 匹配）',
+      get group() {
+        return t('editorMaterial.ui.dataSeries')
+      },
+      get tip() {
+        return t('editorMaterial.ui.configureColorAndLabelVisibilityPerPieItemByName')
+      },
       // 🔑 无坐标轴通用列：name/color/labelShow（饼图目前没有特殊列，直接用基础）
       columns: [...baseSeriesStylesNoAxesColumns],
     },
@@ -65,9 +111,28 @@ export const pieChartDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'nameField', label: '名称字段', type: 'name' },
-    { key: 'valueField', label: '数值字段', type: 'value' },
-    { key: 'drillFields', label: '钻取字段', type: 'category', multiple: true },
+    {
+      key: 'nameField',
+      get label() {
+        return t('editorMaterial.ui.nameField')
+      },
+      type: 'name',
+    },
+    {
+      key: 'valueField',
+      get label() {
+        return t('editorMaterial.ui.valueField')
+      },
+      type: 'value',
+    },
+    {
+      key: 'drillFields',
+      get label() {
+        return t('editorMaterial.ui.drillField')
+      },
+      type: 'category',
+      multiple: true,
+    },
   ],
 }
 

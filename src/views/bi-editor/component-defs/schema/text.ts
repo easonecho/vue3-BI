@@ -1,41 +1,111 @@
 import type { PropField } from './props'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 基础文本 Schema（可被其他文本类组件复用） */
 export const textBaseSchema: PropField[] = [
-  { key: 'text', label: '文本内容', type: 'textarea', default: '文本内容' },
-  { key: 'fontSize', label: '字号', type: 'slider', min: 10, max: 72, default: 14, group: '字体' },
+  {
+    key: 'text',
+    get label() {
+      return t('editorMaterial.ui.textContent')
+    },
+    type: 'textarea',
+    default: t('editorMaterial.ui.textContent'),
+  },
+  {
+    key: 'fontSize',
+    get label() {
+      return t('editorMaterial.ui.fontSize')
+    },
+    type: 'slider',
+    min: 10,
+    max: 72,
+    default: 14,
+    get group() {
+      return t('editorMaterial.ui.font')
+    },
+  },
   {
     key: 'fontWeight',
-    label: '字重',
+    get label() {
+      return t('editorMaterial.ui.fontWeight')
+    },
     type: 'select',
     options: [
-      { label: '常规', value: 'normal' },
-      { label: '粗体', value: 'bold' },
+      {
+        get label() {
+          return t('editorMaterial.ui.normal')
+        },
+        value: 'normal',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.bold')
+        },
+        value: 'bold',
+      },
     ],
     default: 'normal',
-    group: '字体',
+    get group() {
+      return t('editorMaterial.ui.font')
+    },
   },
-  { key: 'color', label: '颜色', type: 'colorpicker', default: '#333333', group: '字体' },
+  {
+    key: 'color',
+    get label() {
+      return t('editorMaterial.ui.color')
+    },
+    type: 'colorpicker',
+    default: '#333333',
+    get group() {
+      return t('editorMaterial.ui.font')
+    },
+  },
   {
     key: 'textAlign',
-    label: '对齐',
+    get label() {
+      return t('editorMaterial.ui.align')
+    },
     type: 'select',
     options: [
-      { label: '左对齐', value: 'left' },
-      { label: '居中', value: 'center' },
-      { label: '右对齐', value: 'right' },
+      {
+        get label() {
+          return t('editorMaterial.ui.leftAlign')
+        },
+        value: 'left',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.center')
+        },
+        value: 'center',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.rightAlign')
+        },
+        value: 'right',
+      },
     ],
     default: 'left',
-    group: '字体',
+    get group() {
+      return t('editorMaterial.ui.font')
+    },
   },
   {
     key: 'lineHeight',
-    label: '行高',
+    get label() {
+      return t('editorMaterial.ui.rowHeight')
+    },
     type: 'slider',
     min: 1,
     max: 3,
     step: 0.1,
     default: 1.5,
-    group: '字体',
+    get group() {
+      return t('editorMaterial.ui.font')
+    },
   },
 ]

@@ -1,87 +1,168 @@
 import type { PropField } from '../props'
-import { DEFAULT_FONT_FAMILY, FONT_FAMILY_OPTIONS, FONT_STYLE_OPTIONS, FONT_WEIGHT_OPTIONS } from '../options'
+import {
+  DEFAULT_FONT_FAMILY,
+  FONT_FAMILY_OPTIONS,
+  FONT_STYLE_OPTIONS,
+  FONT_WEIGHT_OPTIONS,
+} from '../options'
+
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 图表标题配置 Schema（chartCommonSchema 的「标题」分组） */
 export const chartTitleSchema: PropField[] = [
   // ============ 标题 ============
-  { key: 'titleShow', label: '显示标题', type: 'switch', default: true, group: '标题' },
+  {
+    key: 'titleShow',
+    get label() {
+      return t('editorMaterial.ui.showTitle')
+    },
+    type: 'switch',
+    default: true,
+    get group() {
+      return t('editorMaterial.ui.title')
+    },
+  },
   {
     key: 'titleText',
-    label: '标题文本',
+    get label() {
+      return t('editorMaterial.ui.titleText')
+    },
     type: 'input',
     default: '',
-    group: '标题',
+    get group() {
+      return t('editorMaterial.ui.title')
+    },
     visibleWhen: { field: 'titleShow', truthy: true },
   },
   {
     key: 'titleLeft',
-    label: '水平位置',
+    get label() {
+      return t('editorMaterial.ui.horizontalPosition')
+    },
     type: 'select',
     options: [
-      { label: '左对齐', value: 'left' },
-      { label: '居中', value: 'center' },
-      { label: '右对齐', value: 'right' },
+      {
+        get label() {
+          return t('editorMaterial.ui.leftAlign')
+        },
+        value: 'left',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.center')
+        },
+        value: 'center',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.rightAlign')
+        },
+        value: 'right',
+      },
     ],
     default: 'center',
-    group: '标题',
+    get group() {
+      return t('editorMaterial.ui.title')
+    },
     visibleWhen: { field: 'titleShow', truthy: true },
   },
   {
     key: 'titleTop',
-    label: '垂直位置',
+    get label() {
+      return t('editorMaterial.ui.verticalPosition')
+    },
     type: 'select',
     options: [
-      { label: '顶部', value: 'top' },
-      { label: '居中', value: 'middle' },
-      { label: '底部', value: 'bottom' },
+      {
+        get label() {
+          return t('editorMaterial.ui.top')
+        },
+        value: 'top',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.center')
+        },
+        value: 'middle',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.bottom')
+        },
+        value: 'bottom',
+      },
     ],
     default: 'top',
-    group: '标题',
+    get group() {
+      return t('editorMaterial.ui.title')
+    },
     visibleWhen: { field: 'titleShow', truthy: true },
   },
   {
     key: 'titleFontSize',
-    label: '字号',
+    get label() {
+      return t('editorMaterial.ui.fontSize')
+    },
     type: 'slider',
     min: 10,
     max: 48,
     default: 14,
-    group: '标题',
+    get group() {
+      return t('editorMaterial.ui.title')
+    },
     visibleWhen: { field: 'titleShow', truthy: true },
   },
   {
     key: 'titleFontFamily',
-    label: '字体',
+    get label() {
+      return t('editorMaterial.ui.font')
+    },
     type: 'select',
     options: [...FONT_FAMILY_OPTIONS],
     default: DEFAULT_FONT_FAMILY,
-    group: '标题',
+    get group() {
+      return t('editorMaterial.ui.title')
+    },
     visibleWhen: { field: 'titleShow', truthy: true },
   },
   {
     key: 'titleFontWeight',
-    label: '字重',
+    get label() {
+      return t('editorMaterial.ui.fontWeight')
+    },
     type: 'select',
     options: [...FONT_WEIGHT_OPTIONS],
     default: 'bold',
-    group: '标题',
+    get group() {
+      return t('editorMaterial.ui.title')
+    },
     visibleWhen: { field: 'titleShow', truthy: true },
   },
   {
     key: 'titleFontStyle',
-    label: '样式（斜体）',
+    get label() {
+      return t('editorMaterial.ui.styleItalic')
+    },
     type: 'select',
     options: [...FONT_STYLE_OPTIONS],
     default: 'normal',
-    group: '标题',
+    get group() {
+      return t('editorMaterial.ui.title')
+    },
     visibleWhen: { field: 'titleShow', truthy: true },
   },
   {
     key: 'titleColor',
-    label: '文字颜色',
+    get label() {
+      return t('editorMaterial.ui.textColor')
+    },
     type: 'colorpicker',
     default: '#1f2937',
-    group: '标题',
+    get group() {
+      return t('editorMaterial.ui.title')
+    },
     visibleWhen: { field: 'titleShow', truthy: true },
   },
 ]

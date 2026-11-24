@@ -1,4 +1,5 @@
 import type { Ref } from 'vue'
+import i18n from '@/i18n'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
 export interface ClipboardDeps {
@@ -119,7 +120,7 @@ export function createClipboard(deps: ClipboardDeps): ClipboardApi {
       const copy: ComponentInstance = {
         ...src,
         id: `comp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        name: `${src.name} (副本)`,
+        name: i18n.global.t('appMessages.editor.copySuffix', { name: src.name }),
         x: src.x + 20 + idx * 10,
         y: src.y + 20 + idx * 10,
         zIndex: maxZ + 1 + idx,

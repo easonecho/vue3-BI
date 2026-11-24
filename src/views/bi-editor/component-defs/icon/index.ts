@@ -1,10 +1,16 @@
 import type { ComponentDefinition } from '../types'
 import Widget from './Widget.vue'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const iconDefinition: ComponentDefinition = {
   type: 'icon',
   meta: {
-    name: '图标',
+    get name() {
+      return t('editorMaterial.meta.icon')
+    },
     category: 'basic',
     icon: 'Star',
     defaultWidth: 80,
@@ -14,15 +20,55 @@ export const iconDefinition: ComponentDefinition = {
   propsSchema: [
     {
       key: 'iconName',
-      label: '图标名',
+      get label() {
+        return t('editorMaterial.ui.iconName')
+      },
       type: 'input',
       default: 'Star',
-      group: '内容',
-      tip: 'Element Plus 图标名（如 Star、Bell、Setting）',
+      get group() {
+        return t('editorMaterial.ui.content')
+      },
+      get tip() {
+        return t('editorMaterial.ui.elementPlusIconNameEGStarBellSetting')
+      },
     },
-    { key: 'size', label: '大小', type: 'number', min: 12, max: 200, default: 32, group: '样式' },
-    { key: 'color', label: '颜色', type: 'colorpicker', default: '#606266', group: '样式' },
-    { key: 'rotate', label: '旋转角度', type: 'number', min: 0, max: 360, default: 0, group: '样式' },
+    {
+      key: 'size',
+      get label() {
+        return t('editorMaterial.ui.size2')
+      },
+      type: 'number',
+      min: 12,
+      max: 200,
+      default: 32,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'color',
+      get label() {
+        return t('editorMaterial.ui.color')
+      },
+      type: 'colorpicker',
+      default: '#606266',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'rotate',
+      get label() {
+        return t('editorMaterial.ui.rotationAngle')
+      },
+      type: 'number',
+      min: 0,
+      max: 360,
+      default: 0,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
   ],
   defaultStyle: {},
   supportsDataBinding: false,

@@ -2,7 +2,7 @@
   <div class="widget-image" :style="containerStyle">
     <img v-if="imageSrc" :src="imageSrc" :alt="alt" class="widget-image__img" />
     <div v-else class="widget-image__placeholder">
-      <span>图片</span>
+      <span>{{ t('editorMaterial.meta.image') }}</span>
     </div>
   </div>
 </template>
@@ -10,6 +10,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
+
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{ comp: ComponentInstance }>()
 

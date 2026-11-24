@@ -13,7 +13,9 @@
         <div class="widget-timeline__content">
           <div class="widget-timeline__time" :style="timeStyle">{{ ev.time }}</div>
           <div class="widget-timeline__ev-title" :style="evTitleStyle">{{ ev.title }}</div>
-          <div v-if="ev.content" class="widget-timeline__ev-content" :style="contentStyle">{{ ev.content }}</div>
+          <div v-if="ev.content" class="widget-timeline__ev-content" :style="contentStyle">
+            {{ ev.content }}
+          </div>
         </div>
       </div>
     </div>
@@ -24,9 +26,13 @@
 import { computed } from 'vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 
-const title = computed(() => props.comp.props?.title ?? '事件时间轴')
+const title = computed(() => props.comp.props?.title ?? t('editorMaterial.ui.eventTimeline'))
 const showTitle = computed(() => props.comp.props?.showTitle ?? true)
 const direction = computed(() => props.comp.props?.direction ?? 'vertical')
 const alternate = computed(() => props.comp.props?.alternate ?? true)

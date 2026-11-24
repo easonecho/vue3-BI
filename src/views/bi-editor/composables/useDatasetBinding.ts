@@ -23,6 +23,7 @@ import { getPublicDashboardContext } from '@/utils/public-dashboard-context'
 import { useLinkageStore } from '@/stores/linkage'
 import { applyRowFilters, type LinkFieldMap } from './linkage-filter'
 import { requestDatasetExecute, requestDatasetQuery } from './dataset-batch'
+import i18n from '@/i18n'
 
 /** 模块级缓存:cacheKey → { rows, fields, ts },同一数据集只取一次。缓存保存全量行,筛选后再采样 */
 const datasetCache = new Map<
@@ -229,7 +230,7 @@ export function useDatasetBinding(
       serverFiltered.value = !!spec
     } catch (e) {
       console.error('[useDatasetBinding] 取数失败:', e)
-      error.value = e instanceof Error ? e.message : '数据加载失败'
+      error.value = e instanceof Error ? e.message : i18n.global.t('editorUi.dataset.loadFailed')
       rawRows.value = []
       fields.value = []
       serverFiltered.value = false

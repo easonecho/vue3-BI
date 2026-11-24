@@ -1,26 +1,21 @@
 <template>
   <div class="base-chart-wrap">
     <div ref="chartRef" class="base-chart" :style="{ width: '100%', height: '100%' }" />
-    <div
-      v-if="detailAvailable || chipText"
-      class="chart-actions"
-      @mousedown.stop
-      @click.stop
-    >
+    <div v-if="detailAvailable || chipText" class="chart-actions" @mousedown.stop @click.stop>
       <button
         v-if="detailAvailable"
         class="chart-action-btn"
         type="button"
-        title="查看当前筛选条件下的原始数据明细"
+        :title="t('editorMaterial.ui.viewRawDetail')"
         @click="openDetail"
       >
-        明细
+        {{ t('editorMaterial.ui.detail') }}
       </button>
       <transition name="chart-chip-fade">
         <div v-if="chipText" class="chart-chip">
           <span class="chart-chip__text">{{ chipText }}</span>
           <button class="chart-chip__btn" type="button" @click.stop="handleChipAction">
-            {{ isDrilling ? '返回' : '×' }}
+            {{ isDrilling ? t('editorMaterial.ui.back') : '×' }}
           </button>
         </div>
       </transition>
@@ -45,6 +40,10 @@ import {
 import { resolveLinkField, type LinkFieldMap } from '@/views/bi-editor/composables/linkage-filter'
 import ChartDetailDrawer from './ChartDetailDrawer.vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
+
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{ comp: ComponentInstance }>()
 
@@ -129,10 +128,10 @@ const isDrilling = computed(() => drillStack.value.length > 0)
 
 const chipText = computed(() => {
   if (isDrilling.value) {
-    return `钻取: ${drillStack.value.map((item) => item.value).join(' / ')}`
+    return `${t('editorMaterial.ui.drillPrefix')}: ${drillStack.value.map((item) => item.value).join(' / ')}`
   }
   if (appliedLinkFilter.value) {
-    return `联动: ${resolveLinkField(appliedLinkFilter.value, linkFieldMap.value)} = ${appliedLinkFilter.value.value}`
+    return `${t('editorMaterial.ui.linkPrefix')}: ${resolveLinkField(appliedLinkFilter.value, linkFieldMap.value)} = ${appliedLinkFilter.value.value}`
   }
   return ''
 })
@@ -371,13 +370,7 @@ onBeforeUnmount(() => {
  *     - series：切换图表类型时数组项会完全重写
  *     - legend：在分页 / 自定义 / 关闭场景下会从数组 → 空对象或单对象，需整体替换
  */
-const REPLACE_MERGE_KEYS: string[] = [
-  'dataZoom',
-  'series',
-  'xAxis',
-  'yAxis',
-  'legend',
-]
+const REPLACE_MERGE_KEYS: string[] = ['dataZoom', 'series', 'xAxis', 'yAxis', 'legend']
 
 /** 供子类获取 chart 实例 */
 defineExpose({
@@ -447,7 +440,9 @@ defineExpose({
   line-height: 18px;
   cursor: pointer;
   opacity: 0.72;
-  transition: opacity 0.18s ease, background 0.18s ease;
+  transition:
+    opacity 0.18s ease,
+    background 0.18s ease;
 
   &:hover {
     opacity: 1;
@@ -499,7 +494,9 @@ defineExpose({
 
 .chart-chip-fade-enter-active,
 .chart-chip-fade-leave-active {
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
 }
 
 .chart-chip-fade-enter-from,

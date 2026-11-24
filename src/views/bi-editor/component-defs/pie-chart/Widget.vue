@@ -16,6 +16,10 @@ import { resolveComponentFieldMapping } from '../aggregate-spec'
 import { useLinkageStore } from '@/stores/linkage'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 const linkageStore = useLinkageStore()
@@ -85,8 +89,9 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const pieData = mappedData.value
-    ?? (Array.isArray(mergedProps.pieData)
+  const pieData =
+    mappedData.value ??
+    (Array.isArray(mergedProps.pieData)
       ? mergedProps.pieData.map((item: { name: string; value: number }) => ({
           name: item.name,
           value: item.value,
@@ -131,7 +136,7 @@ function getChartSpecificOption(): {
   const specificOption: ECOption = {
     series: [
       {
-        name: '饼图',
+        name: t('editorMaterial.meta.pieChart'),
         type: 'pie',
         radius: radiusArr,
         roseType,
@@ -196,7 +201,7 @@ function applyChartOption() {
     const { specificOption, mergedProps } = getChartSpecificOption()
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: false,
-      fallbackTitle: '饼图',
+      fallbackTitle: t('editorMaterial.meta.pieChart'),
     })
   })
 }
@@ -209,11 +214,7 @@ watch(
   // 🔑 性能优化：签名式 watch 替代 deep watch。
   //   原 deep:true 遍历 comp.props + comp.dataConfig + rows 全部元素（rows 可能 1000+ 行）。
   //   改为 JSON.stringify 签名对比小对象 + rows 浅 ref watch（仅引用变更触发）。
-  [
-    () => JSON.stringify(props.comp.props),
-    () => JSON.stringify(props.comp.dataConfig),
-    rows,
-  ],
+  [() => JSON.stringify(props.comp.props), () => JSON.stringify(props.comp.dataConfig), rows],
   () => {
     applyChartOption()
   },
@@ -225,5 +226,4 @@ onUnmounted(() => {
   if (debounceTimer !== null) cancelAnimationFrame(debounceTimer)
   pendingBuilder = null
 })
-
 </script>

@@ -17,6 +17,7 @@ import type { useBiEditorStore } from '@/stores/bi-editor'
 import type { GuideLine } from '@/views/bi-editor/types'
 import ContextMenu from '@/views/bi-editor/components/canvas/ContextMenu.vue'
 import type { ContextMenuGroups } from '@/views/bi-editor/components/canvas/ContextMenu.vue'
+import i18n from '@/i18n'
 
 type BiEditorStore = ReturnType<typeof useBiEditorStore>
 
@@ -32,6 +33,7 @@ interface CanvasContextMenuOptions {
  */
 export function useCanvasContextMenu(options: CanvasContextMenuOptions) {
   const { store, hitTestGuide } = options
+  const t = i18n.global.t
 
   const contextMenuRef = ref<InstanceType<typeof ContextMenu> | null>(null)
 
@@ -61,7 +63,7 @@ export function useCanvasContextMenu(options: CanvasContextMenuOptions) {
       // —— 第一组：剪贴板操作
       [
         {
-          label: '剪切',
+          label: t('editorUi.canvas.cut'),
           icon: Scissor,
           shortcut: 'Ctrl+X',
           // 🔑 剪切 = 复制 + 标记删除（粘贴时执行 remove）。此处保守实现为：先复制（剪切的实际删除延后由 paste 完成；目前暂实现为"复制并删除"，等价于剪切）
@@ -71,28 +73,28 @@ export function useCanvasContextMenu(options: CanvasContextMenuOptions) {
           },
         },
         {
-          label: '复制',
+          label: t('editorUi.canvas.copy'),
           icon: DocumentCopy,
           shortcut: 'Ctrl+C',
           disabled: !canDelete,
           action: () => store.copyToClipboard(),
         },
         {
-          label: '粘贴',
+          label: t('editorUi.canvas.paste'),
           icon: Document,
           shortcut: 'Ctrl+V',
           action: () => store.pasteFromClipboard(),
         },
         { divider: true },
         {
-          label: '复制此组件',
+          label: t('editorUi.canvas.duplicateThis'),
           icon: CopyDocument,
           shortcut: 'Ctrl+D',
           disabled: !store.selectedId,
           action: () => store.duplicateComponent(store.selectedId!),
         },
         {
-          label: '删除',
+          label: t('editorUi.canvas.delete'),
           icon: Delete,
           shortcut: 'Delete',
           disabled: !canDelete || isLocked,
@@ -103,28 +105,28 @@ export function useCanvasContextMenu(options: CanvasContextMenuOptions) {
       // —— 第二组：层级 / 分组
       [
         {
-          label: '图层置顶',
+          label: t('editorUi.canvas.bringToFront'),
           icon: Top,
           shortcut: 'Ctrl+Shift+]',
           disabled: !store.selectedId || !store.canBringToFront,
           action: () => store.selectedId && store.bringToFront(store.selectedId),
         },
         {
-          label: '图层上移',
+          label: t('editorUi.canvas.moveUp'),
           icon: Promotion,
           shortcut: 'Ctrl+]',
           disabled: !store.selectedId || !store.canMoveUp,
           action: () => store.selectedId && store.moveUp(store.selectedId),
         },
         {
-          label: '图层下移',
+          label: t('editorUi.canvas.moveDown'),
           icon: Upload,
           shortcut: 'Ctrl+[',
           disabled: !store.selectedId || !store.canMoveDown,
           action: () => store.selectedId && store.moveDown(store.selectedId),
         },
         {
-          label: '图层置底',
+          label: t('editorUi.canvas.sendToBack'),
           icon: Bottom,
           shortcut: 'Ctrl+Shift+[',
           disabled: !store.selectedId || !store.canSendToBack,
@@ -132,13 +134,13 @@ export function useCanvasContextMenu(options: CanvasContextMenuOptions) {
         },
         { divider: true },
         {
-          label: '组合',
+          label: t('editorUi.canvas.group'),
           icon: Setting,
           disabled: !store.canGroup,
           action: () => store.groupSelection(),
         },
         {
-          label: '取消组合',
+          label: t('editorUi.canvas.ungroup'),
           icon: Setting,
           disabled: !isGrouped && !store.canUngroup,
           action: () => store.ungroupSelection(),
@@ -147,13 +149,17 @@ export function useCanvasContextMenu(options: CanvasContextMenuOptions) {
       // —— 第三组：显示 / 锁定
       [
         {
-          label: sc?.visible ? '隐藏组件' : '显示组件',
+          label: sc?.visible
+            ? t('editorUi.canvas.hideComponent')
+            : t('editorUi.canvas.showComponent'),
           icon: Hide,
           disabled: !store.selectedId,
           action: () => store.selectedId && store.toggleVisibility(store.selectedId),
         },
         {
-          label: isLocked ? '解锁组件' : '锁定组件',
+          label: isLocked
+            ? t('editorUi.canvas.unlockComponent')
+            : t('editorUi.canvas.lockComponent'),
           icon: Lock,
           disabled: !store.selectedId,
           action: () => store.selectedId && store.toggleLock(store.selectedId),
@@ -169,15 +175,15 @@ export function useCanvasContextMenu(options: CanvasContextMenuOptions) {
     const groups: ContextMenuGroups = [
       [
         {
-          label: '删除此辅助线',
+          label: t('editorUi.canvas.deleteGuide'),
           icon: Delete,
-          shortcut: '双击辅助线',
+          shortcut: t('editorUi.canvas.deleteGuideShortcut'),
           danger: true,
           action: () => store.removeGuide(g.id),
         },
         { divider: true },
         {
-          label: '清空所有辅助线',
+          label: t('editorUi.canvas.clearAllGuides'),
           icon: Delete,
           disabled: store.guides.length === 0,
           danger: true,
@@ -200,14 +206,14 @@ export function useCanvasContextMenu(options: CanvasContextMenuOptions) {
     const groups: ContextMenuGroups = [
       [
         {
-          label: '粘贴',
+          label: t('editorUi.canvas.paste'),
           icon: Document,
           shortcut: 'Ctrl+V',
           action: () => store.pasteFromClipboard(),
         },
         { divider: true },
         {
-          label: '全选组件',
+          label: t('editorUi.canvas.selectAll'),
           icon: DocumentCopy,
           shortcut: 'Ctrl+A',
           disabled: store.components.length === 0,
@@ -226,32 +232,32 @@ export function useCanvasContextMenu(options: CanvasContextMenuOptions) {
           },
         },
         {
-          label: '取消选择',
+          label: t('editorUi.canvas.deselect'),
           disabled: !store.selectedId && store.selectedIds.length === 0,
           action: () => store.clearSelection(),
         },
       ],
       [
         {
-          label: '撤销',
+          label: t('editorUi.canvas.undo'),
           shortcut: 'Ctrl+Z',
           disabled: !store.canUndo,
           action: () => store.undo(),
         },
         {
-          label: '重做',
+          label: t('editorUi.canvas.redo'),
           shortcut: 'Ctrl+Y',
           disabled: !store.canRedo,
           action: () => store.redo(),
         },
         { divider: true },
         {
-          label: '缩放为 100%',
+          label: t('editorUi.canvas.zoom100'),
           shortcut: 'Ctrl+0',
           action: () => store.setZoom(1),
         },
         {
-          label: '重置视口',
+          label: t('editorUi.canvas.resetViewport'),
           action: () => store.resetViewport(),
         },
       ],

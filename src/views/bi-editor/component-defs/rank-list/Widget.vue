@@ -23,6 +23,10 @@ import { useChartAggregation } from '../../composables/useChartAggregation'
 import { resolveComponentFieldMapping } from '../aggregate-spec'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 
 /** 🔑 数据集绑定: 类目 + 度量在服务端 GROUP BY, 按度量倒序取前 N 项 */
@@ -39,7 +43,7 @@ const aggregateRequest = useChartAggregation(props.comp, {
 })
 const { rows: datasetRows } = useDatasetBinding(dataSource, true, aggregateRequest)
 
-const title = computed(() => props.comp.props?.title ?? '排行榜')
+const title = computed(() => props.comp.props?.title ?? t('editorMaterial.meta.rankList'))
 const showTitle = computed(() => props.comp.props?.showTitle ?? true)
 const top = computed(() => props.comp.props?.top ?? 5)
 const barColor = computed(() => props.comp.props?.barColor ?? '#22d3ee')

@@ -1,10 +1,16 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const chinaMapDefinition: ComponentDefinition = {
   type: 'china-map',
   meta: {
-    name: '中国地图',
+    get name() {
+      return t('editorMaterial.meta.chinaMap')
+    },
     category: 'chart',
     icon: 'Location',
     defaultWidth: 500,
@@ -12,89 +18,153 @@ export const chinaMapDefinition: ComponentDefinition = {
   },
   widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
-    { key: 'titleShow', label: '显示标题', type: 'switch', default: false, group: '标题' },
+    {
+      key: 'titleShow',
+      get label() {
+        return t('editorMaterial.ui.showTitle')
+      },
+      type: 'switch',
+      default: false,
+      get group() {
+        return t('editorMaterial.ui.title')
+      },
+    },
     {
       key: 'titleText',
-      label: '标题文本',
+      get label() {
+        return t('editorMaterial.ui.titleText')
+      },
       type: 'input',
-      default: '中国地图',
-      group: '标题',
+      default: t('editorMaterial.meta.chinaMap'),
+      get group() {
+        return t('editorMaterial.ui.title')
+      },
       visibleWhen: { field: 'titleShow', truthy: true },
     },
     {
       key: 'mapColor',
-      label: '区域颜色',
+      get label() {
+        return t('editorMaterial.ui.regionColor')
+      },
       type: 'colorpicker',
       default: '#1e293b',
-      group: '区域',
-      tip: '地图区域默认色',
+      get group() {
+        return t('editorMaterial.ui.region')
+      },
+      get tip() {
+        return t('editorMaterial.ui.defaultMapRegionColor')
+      },
     },
     {
       key: 'mapBorderColor',
-      label: '省界颜色',
+      get label() {
+        return t('editorMaterial.ui.provinceBorderColor')
+      },
       type: 'colorpicker',
       default: '#475569',
-      group: '区域',
-      tip: '省界颜色',
+      get group() {
+        return t('editorMaterial.ui.region')
+      },
+      get tip() {
+        return t('editorMaterial.ui.provinceBorderColor')
+      },
     },
     {
       key: 'mapBorderWidth',
-      label: '省界宽度',
+      get label() {
+        return t('editorMaterial.ui.provinceBorderWidth')
+      },
       type: 'slider',
       min: 0,
       max: 3,
       step: 0.5,
       default: 0.5,
-      group: '区域',
+      get group() {
+        return t('editorMaterial.ui.region')
+      },
     },
     {
       key: 'emphasisColor',
-      label: '高亮颜色',
+      get label() {
+        return t('editorMaterial.ui.highlightColor2')
+      },
       type: 'colorpicker',
       default: '#0e7490',
-      group: '区域',
-      tip: '高亮色',
+      get group() {
+        return t('editorMaterial.ui.region')
+      },
+      get tip() {
+        return t('editorMaterial.ui.highlightColor')
+      },
     },
     {
       key: 'visualOn',
-      label: '视觉映射',
+      get label() {
+        return t('editorMaterial.ui.visualMapping')
+      },
       type: 'switch',
       default: true,
-      group: '视觉映射',
-      tip: '按数值着色',
+      get group() {
+        return t('editorMaterial.ui.visualMapping')
+      },
+      get tip() {
+        return t('editorMaterial.ui.colorByValue')
+      },
     },
     {
       key: 'visualFrom',
-      label: '低值色',
+      get label() {
+        return t('editorMaterial.ui.lowValueColor')
+      },
       type: 'colorpicker',
       default: '#fef3c7',
-      group: '视觉映射',
-      tip: '低值色',
+      get group() {
+        return t('editorMaterial.ui.visualMapping')
+      },
+      get tip() {
+        return t('editorMaterial.ui.lowValueColor')
+      },
       visibleWhen: { field: 'visualOn', truthy: true },
     },
     {
       key: 'visualTo',
-      label: '高值色',
+      get label() {
+        return t('editorMaterial.ui.highValueColor')
+      },
       type: 'colorpicker',
       default: '#dc2626',
-      group: '视觉映射',
-      tip: '高值色',
+      get group() {
+        return t('editorMaterial.ui.visualMapping')
+      },
+      get tip() {
+        return t('editorMaterial.ui.highValueColor')
+      },
       visibleWhen: { field: 'visualOn', truthy: true },
     },
     {
       key: 'labelShow',
-      label: '显示标签',
+      get label() {
+        return t('editorMaterial.ui.showLabel')
+      },
       type: 'switch',
       default: false,
-      group: '标签',
-      tip: '显示省份名',
+      get group() {
+        return t('editorMaterial.ui.label')
+      },
+      get tip() {
+        return t('editorMaterial.ui.showProvinceNames')
+      },
     },
     {
       key: 'labelColor',
-      label: '标签颜色',
+      get label() {
+        return t('editorMaterial.ui.labelColor2')
+      },
       type: 'colorpicker',
       default: '#e2e8f0',
-      group: '标签',
+      get group() {
+        return t('editorMaterial.ui.label')
+      },
     },
   ],
   extraDefaults: {
@@ -138,8 +208,20 @@ export const chinaMapDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'nameField', label: '地区名称字段', type: 'name' },
-    { key: 'valueField', label: '数值字段', type: 'value' },
+    {
+      key: 'nameField',
+      get label() {
+        return t('editorMaterial.ui.regionNameField')
+      },
+      type: 'name',
+    },
+    {
+      key: 'valueField',
+      get label() {
+        return t('editorMaterial.ui.valueField')
+      },
+      type: 'value',
+    },
   ],
 }
 

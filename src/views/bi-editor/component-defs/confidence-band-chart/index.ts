@@ -2,6 +2,10 @@ import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 🔑 置信区间图默认数据：12 个月,实际值/预测值/上下界各 1 组
  *  data 允许 null：折线在缺口处（实际值与预测值衔接处）用 null 断开 */
 function buildConfidenceBandDefaults(): {
@@ -30,14 +34,24 @@ function buildConfidenceBandDefaults(): {
   const lower = [120, 132, 101, 134, 90, 230, 210, 182, 165, 167, 190, 195]
   // 🔑 把 actual + forecast 合并成一条线（forecast 从 actual 末尾衔接，缺口用 null 断开）
   const actualFull: (number | null)[] = [...actual, null, null, null, null]
-  const forecastFull: (number | null)[] = [null, null, null, null, null, null, null, null, ...forecast]
+  const forecastFull: (number | null)[] = [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    ...forecast,
+  ]
   return {
     categories,
     series: [
-      { name: '实际值', data: actualFull },
-      { name: '预测值', data: forecastFull },
-      { name: '上界', data: upper },
-      { name: '下界', data: lower },
+      { name: t('editorMaterial.series.actual'), data: actualFull },
+      { name: t('editorMaterial.series.predicted'), data: forecastFull },
+      { name: t('editorMaterial.series.upperBound'), data: upper },
+      { name: t('editorMaterial.series.lowerBound'), data: lower },
     ],
   }
 }
@@ -54,7 +68,9 @@ export const CONFIDENCE_BAND_DEFAULT_FORECAST_COLOR = '#ee6666'
 export const confidenceBandChartDefinition: ComponentDefinition = {
   type: 'confidence-band-chart',
   meta: {
-    name: '置信区间图',
+    get name() {
+      return t('editorMaterial.meta.confidenceBandChart')
+    },
     category: 'chart',
     icon: 'DataLine',
     defaultWidth: 480,
@@ -65,43 +81,85 @@ export const confidenceBandChartDefinition: ComponentDefinition = {
     ...chartBaseSchema,
     {
       key: 'bandColor',
-      label: '区间带颜色',
+      get label() {
+        return t('editorMaterial.ui.bandColor')
+      },
       type: 'colorpicker',
       default: CONFIDENCE_BAND_DEFAULT_BAND_COLOR,
-      group: '颜色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
     },
     {
       key: 'actualColor',
-      label: '实际值颜色',
+      get label() {
+        return t('editorMaterial.ui.actualValueColor')
+      },
       type: 'colorpicker',
       default: CONFIDENCE_BAND_DEFAULT_ACTUAL_COLOR,
-      group: '颜色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
     },
     {
       key: 'forecastColor',
-      label: '预测值颜色',
+      get label() {
+        return t('editorMaterial.ui.predictedValueColor')
+      },
       type: 'colorpicker',
       default: CONFIDENCE_BAND_DEFAULT_FORECAST_COLOR,
-      group: '颜色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
     },
     {
       key: 'bandOpacity',
-      label: '区间带透明度',
+      get label() {
+        return t('editorMaterial.ui.bandOpacity')
+      },
       type: 'slider',
       min: 0,
       max: 100,
       default: 30,
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
-    { key: 'showActual', label: '显示实际值', type: 'switch', default: true, group: '显示' },
-    { key: 'showForecast', label: '显示预测值', type: 'switch', default: true, group: '显示' },
+    {
+      key: 'showActual',
+      get label() {
+        return t('editorMaterial.ui.showActualValue')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.show')
+      },
+    },
+    {
+      key: 'showForecast',
+      get label() {
+        return t('editorMaterial.ui.showPredictedValue')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.show')
+      },
+    },
     {
       key: 'seriesStyles',
-      label: '数据系列样式',
+      get label() {
+        return t('editorMaterial.ui.seriesStyles')
+      },
       type: 'table',
       default: [],
-      group: '数据系列',
-      tip: '根据数据系列名称单独配置颜色、是否显示标签（按名称匹配）',
+      get group() {
+        return t('editorMaterial.ui.dataSeries')
+      },
+      get tip() {
+        return t('editorMaterial.ui.configureColorAndLabelVisibilityPerSeriesByName')
+      },
       columns: [...baseSeriesStylesWithAxesColumns],
     },
     ...buildSeriesLabelSchema('top'),
@@ -113,8 +171,21 @@ export const confidenceBandChartDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'categoryField', label: '类目字段', type: 'category' },
-    { key: 'valueFields', label: '数值字段', type: 'value', multiple: true },
+    {
+      key: 'categoryField',
+      get label() {
+        return t('editorMaterial.ui.categoryField')
+      },
+      type: 'category',
+    },
+    {
+      key: 'valueFields',
+      get label() {
+        return t('editorMaterial.ui.valueField')
+      },
+      type: 'value',
+      multiple: true,
+    },
   ],
 }
 

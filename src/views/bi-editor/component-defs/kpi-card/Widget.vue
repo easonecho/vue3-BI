@@ -28,7 +28,9 @@
     <!-- 底部：达成率进度条 -->
     <div v-if="showProgress" class="widget-kpi-card__progress-wrap">
       <div class="widget-kpi-card__progress-info">
-        <span class="widget-kpi-card__progress-label" :style="progressLabelStyle">达成率</span>
+        <span class="widget-kpi-card__progress-label" :style="progressLabelStyle">{{
+          i18nT('editorMaterial.ui.achievementRate')
+        }}</span>
         <span class="widget-kpi-card__progress-value" :style="progressValueStyle">
           {{ achievementText }}
         </span>
@@ -46,6 +48,10 @@ import type { ComponentInstance } from '@/views/bi-editor/types'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import { useMetricAggregation } from '../../composables/useMetricAggregation'
 import { resolveComponentMetricMapping } from '../aggregate-spec'
+
+import { useI18n } from 'vue-i18n'
+
+const { t: i18nT } = useI18n()
 
 const props = defineProps<{ comp: ComponentInstance }>()
 
@@ -81,21 +87,21 @@ const boundValue = computed<unknown>(() => {
 })
 
 // ============ 字段读取 ============
-const title = computed(() => props.comp.props?.title ?? '月度营收')
+const title = computed(() => props.comp.props?.title ?? i18nT('editorMaterial.ui.monthlyRevenue'))
 const value = computed(() =>
-  boundValue.value !== undefined ? formatMetricValue(boundValue.value) : props.comp.props?.value ?? '¥1,256,800',
+  boundValue.value !== undefined
+    ? formatMetricValue(boundValue.value)
+    : (props.comp.props?.value ?? '¥1,256,800'),
 )
 const target = computed(() => props.comp.props?.target ?? '¥1,500,000')
 const unit = computed(() => props.comp.props?.unit ?? '')
 const trend = computed(() => props.comp.props?.trend ?? 'up')
 const trendValue = computed(() => props.comp.props?.trendValue ?? '+12.5%')
-const trendLabel = computed(() => props.comp.props?.trendLabel ?? '同比')
+const trendLabel = computed(() => props.comp.props?.trendLabel ?? i18nT('editorMaterial.ui.yoy'))
 const sparkData = computed<number[]>(() => {
   const boundField = String(dataConfig.value.sparkField || '')
   if (props.comp.dataSource?.datasetId && boundField && datasetRows.value.length > 0) {
-    return datasetRows.value
-      .map((row) => Number(row[boundField]))
-      .filter((n) => Number.isFinite(n))
+    return datasetRows.value.map((row) => Number(row[boundField])).filter((n) => Number.isFinite(n))
   }
   const raw = props.comp.props?.sparkData
   if (!Array.isArray(raw)) return []

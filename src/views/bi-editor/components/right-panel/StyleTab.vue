@@ -1,16 +1,16 @@
 <template>
   <div v-if="store.selectedComponent" class="style-section">
     <div class="section">
-      <div class="section-title">外观</div>
+      <div class="section-title">{{ t('editorUi.style.appearance') }}</div>
       <div class="form-item">
-        <label>背景色</label>
+        <label>{{ t('editorUi.style.backgroundColor') }}</label>
         <el-color-picker
           :model-value="store.selectedComponent.style?.backgroundColor || '#ffffff'"
           @update:model-value="(v: string) => updateStyle('backgroundColor', v)"
         />
       </div>
       <div class="form-item">
-        <label>边框圆角</label>
+        <label>{{ t('editorUi.style.borderRadius') }}</label>
         <el-input-number
           :model-value="store.selectedComponent.style?.borderRadius || 0"
           :min="0"
@@ -21,13 +21,15 @@
     </div>
   </div>
 
-  <el-empty v-else description="请选择组件查看样式" :image-size="100" />
+  <el-empty v-else :description="t('editorUi.style.empty')" :image-size="100" />
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useBiEditorStore } from '@/stores/bi-editor'
 
 const store = useBiEditorStore()
+const { t } = useI18n()
 
 function updateStyle(key: string, value: any) {
   if (store.selectedId) {

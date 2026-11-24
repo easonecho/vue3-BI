@@ -15,11 +15,13 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 
-const content = computed(
-  () => props.comp.props?.content ?? '欢迎使用 BI 编辑器，这是一个跑马灯组件示例',
-)
+const content = computed(() => props.comp.props?.content ?? t('editorMaterial.ui.marqueeDefault'))
 const speed = computed(() => props.comp.props?.speed ?? 60)
 const direction = computed(() => props.comp.props?.direction ?? 'left')
 const pauseOnHover = computed(() => props.comp.props?.pauseOnHover ?? true)

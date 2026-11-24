@@ -1,10 +1,12 @@
 <template>
   <div class="table-editor">
     <div class="table-toolbar">
-      <el-button size="small" type="primary" plain @click="addTableRow">新增行</el-button>
-      <el-button size="small" type="danger" plain :disabled="!hasRows" @click="removeLastRow"
-        >删除末行</el-button
-      >
+      <el-button size="small" type="primary" plain @click="addTableRow">{{
+        t('editorUi.field.addRow')
+      }}</el-button>
+      <el-button size="small" type="danger" plain :disabled="!hasRows" @click="removeLastRow">{{
+        t('editorUi.field.removeLast')
+      }}</el-button>
     </div>
     <div class="table-scroll">
       <el-table :data="tableValue" size="small" border stripe style="width: 100%">
@@ -23,9 +25,16 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="56" align="center" fixed="right">
+        <el-table-column
+          :label="t('editorUi.field.actions')"
+          width="56"
+          align="center"
+          fixed="right"
+        >
           <template #default="{ $index }">
-            <el-button size="small" link type="danger" @click="removeRow($index)">删除</el-button>
+            <el-button size="small" link type="danger" @click="removeRow($index)">{{
+              t('editorUi.field.delete')
+            }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -35,6 +44,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { PropField } from '@/views/bi-editor/component-defs/types'
 import { TableCellEditor } from './PropTableCellEditor'
 
@@ -46,6 +56,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', value: any): void
 }>()
+
+const { t } = useI18n()
 
 /** 🔑 table 类型的行数据：局部状态，保持用户编辑中间态，外部 modelValue 变化时重新同步 */
 const tableValue = ref<any[]>(Array.isArray(props.modelValue) ? [...props.modelValue] : [])

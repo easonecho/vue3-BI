@@ -1,10 +1,16 @@
 import type { ComponentDefinition } from '../types'
 import Widget from './Widget.vue'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const videoPlayerDefinition: ComponentDefinition = {
   type: 'video-player',
   meta: {
-    name: '视频播放器',
+    get name() {
+      return t('editorMaterial.meta.videoPlayer')
+    },
     category: 'basic',
     icon: 'VideoPlay',
     defaultWidth: 480,
@@ -14,67 +20,129 @@ export const videoPlayerDefinition: ComponentDefinition = {
   propsSchema: [
     {
       key: 'src',
-      label: '视频素材',
+      get label() {
+        return t('editorMaterial.ui.videoAsset')
+      },
       type: 'asset',
       assetType: 'video',
       default: 'https://www.w3schools.com/html/mov_bbb.mp4',
-      group: '源',
-      tip: '从素材库选择视频，或保留默认演示地址',
+      get group() {
+        return t('editorMaterial.ui.source')
+      },
+      get tip() {
+        return t('editorMaterial.ui.selectAVideoFromTheAssetLibraryOrKeepTheDefaultDemoUrl')
+      },
     },
     {
       key: 'poster',
-      label: '封面图素材',
+      get label() {
+        return t('editorMaterial.ui.coverImageAsset')
+      },
       type: 'asset',
       assetType: 'image',
       default: '',
-      group: '源',
-      tip: '可选：从素材库选择封面图',
+      get group() {
+        return t('editorMaterial.ui.source')
+      },
+      get tip() {
+        return t('editorMaterial.ui.optionalSelectACoverImageFromTheAssetLibrary')
+      },
     },
     {
       key: 'autoplay',
-      label: '自动播放',
+      get label() {
+        return t('editorMaterial.ui.autoplay')
+      },
       type: 'switch',
       default: false,
-      group: '播放',
-      tip: '自动播放（浏览器限制需静音）',
+      get group() {
+        return t('editorMaterial.ui.play')
+      },
+      get tip() {
+        return t('editorMaterial.ui.autoplayMutedDueToBrowserPolicy')
+      },
     },
     {
       key: 'loop',
-      label: '循环播放',
+      get label() {
+        return t('editorMaterial.ui.loop')
+      },
       type: 'switch',
       default: true,
-      group: '播放',
-      tip: '循环播放',
+      get group() {
+        return t('editorMaterial.ui.play')
+      },
+      get tip() {
+        return t('editorMaterial.ui.loop')
+      },
     },
     {
       key: 'muted',
-      label: '静音',
+      get label() {
+        return t('editorMaterial.ui.mute')
+      },
       type: 'switch',
       default: true,
-      group: '播放',
-      tip: '静音（autoplay=true 时必须）',
+      get group() {
+        return t('editorMaterial.ui.play')
+      },
+      get tip() {
+        return t('editorMaterial.ui.muteRequiredWhenAutoplayTrue')
+      },
     },
     {
       key: 'controls',
-      label: '显示控制条',
+      get label() {
+        return t('editorMaterial.ui.showControls')
+      },
       type: 'switch',
       default: true,
-      group: '播放',
-      tip: '显示控制条',
+      get group() {
+        return t('editorMaterial.ui.play')
+      },
+      get tip() {
+        return t('editorMaterial.ui.showControls')
+      },
     },
     {
       key: 'objectFit',
-      label: '填充模式',
+      get label() {
+        return t('editorMaterial.ui.fillMode2')
+      },
       type: 'select',
       options: [
-        { label: '填充', value: 'fill' },
-        { label: '包含', value: 'contain' },
-        { label: '覆盖', value: 'cover' },
-        { label: '缩放', value: 'scale-down' },
+        {
+          get label() {
+            return t('editorMaterial.ui.fill')
+          },
+          value: 'fill',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.contains')
+          },
+          value: 'contain',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.cover')
+          },
+          value: 'cover',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.zoom')
+          },
+          value: 'scale-down',
+        },
       ],
       default: 'contain',
-      group: '样式',
-      placeholder: '填充模式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+      get placeholder() {
+        return t('editorMaterial.ui.fillMode2')
+      },
     },
   ],
   defaultStyle: {},

@@ -28,6 +28,7 @@ import {
   type DatasetQueryParams,
   type DatasetQueryResult,
 } from '@/api/dataset'
+import i18n from '@/i18n'
 
 /** 合并窗口: 让同一事件循环/同一帧内的组件请求进入同一批 */
 const FLUSH_DELAY_MS = 24
@@ -118,18 +119,21 @@ async function runBatch(batch: PendingEntry[]): Promise<void> {
   try {
     const res = await fetchDatasetBatch(items)
     const results = res.data
-    if (!Array.isArray(results)) throw new Error('批量取数响应格式异常')
+    if (!Array.isArray(results))
+      throw new Error(i18n.global.t('editorUi.dataset.batchFormatInvalid'))
 
     batch.forEach((entry, index) => {
       const result = results[index]
       if (!result) {
-        entry.reject(new Error('批量取数结果缺失'))
+        entry.reject(new Error(i18n.global.t('editorUi.dataset.batchResultMissing')))
         return
       }
       if (result.ok) {
         entry.resolve(result.data)
       } else {
-        entry.reject(new Error(result.error?.message || '数据加载失败'))
+        entry.reject(
+          new Error(result.error?.message || i18n.global.t('editorUi.dataset.loadFailed')),
+        )
       }
     })
   } catch {

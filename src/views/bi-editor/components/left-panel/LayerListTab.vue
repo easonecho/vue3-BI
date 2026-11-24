@@ -6,7 +6,7 @@
         v-model="layerKeyword"
         size="small"
         clearable
-        placeholder="搜索图层名称…"
+        :placeholder="t('editorUi.layer.searchPlaceholder')"
         :prefix-icon="Search"
       />
       <div v-if="layerKeyword" class="layer-toolbar__count">
@@ -50,10 +50,13 @@
           <span v-else class="layer-name" :class="{ hidden: !layer.visible }">
             {{ layer.name }}
           </span>
-          <div v-if="layer.groupId" class="layer-tag">组</div>
+          <div v-if="layer.groupId" class="layer-tag">{{ t('editorUi.layer.groupTag') }}</div>
         </div>
         <div class="layer-actions">
-          <el-tooltip :content="layer.visible ? '隐藏' : '显示'" placement="top">
+          <el-tooltip
+            :content="layer.visible ? t('editorUi.layer.hide') : t('editorUi.layer.show')"
+            placement="top"
+          >
             <el-icon
               :size="16"
               class="action-btn"
@@ -62,7 +65,10 @@
               ><component :is="layer.visible ? View : Hide"
             /></el-icon>
           </el-tooltip>
-          <el-tooltip :content="layer.locked ? '解锁' : '锁定'" placement="top">
+          <el-tooltip
+            :content="layer.locked ? t('editorUi.layer.unlock') : t('editorUi.layer.lock')"
+            placement="top"
+          >
             <el-icon
               :size="16"
               class="action-btn"
@@ -76,7 +82,7 @@
 
       <el-empty
         v-if="store.components.length === 0"
-        description="暂无图层，请添加组件"
+        :description="t('editorUi.layer.empty')"
         :image-size="80"
       />
     </div>
@@ -86,11 +92,13 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { Search, View, Hide, Lock, Unlock } from '@element-plus/icons-vue'
 import ComponentRenderer from '../canvas/ComponentRenderer.vue'
 import ContextMenu from '../canvas/ContextMenu.vue'
 import { useLayerList } from './useLayerList'
 
+const { t } = useI18n()
 const {
   store,
   layerKeyword,

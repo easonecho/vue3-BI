@@ -2,12 +2,12 @@ import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 import { chartCommonSchema, buildSeriesLabelSchema } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 🔑 力导向图默认分组：3 个分组（开发/测试/产品） */
-export const FORCE_GRAPH_DEFAULT_CATEGORIES = [
-  { name: '开发' },
-  { name: '测试' },
-  { name: '产品' },
-]
+export const FORCE_GRAPH_DEFAULT_CATEGORIES = [{ name: '开发' }, { name: '测试' }, { name: '产品' }]
 
 /** 🔑 力导向图默认节点：8 个节点 */
 export const FORCE_GRAPH_DEFAULT_NODES = [
@@ -48,7 +48,9 @@ export const FORCE_GRAPH_DEFAULT_EDGE_COLOR = '#a3a3a3'
 export const forceGraphChartDefinition: ComponentDefinition = {
   type: 'force-graph-chart',
   meta: {
-    name: '力导向图',
+    get name() {
+      return t('editorMaterial.meta.forceGraph')
+    },
     category: 'chart',
     icon: 'Share',
     defaultWidth: 500,
@@ -59,77 +61,134 @@ export const forceGraphChartDefinition: ComponentDefinition = {
     ...chartCommonSchema,
     {
       key: 'layout',
-      label: '布局方式',
+      get label() {
+        return t('editorMaterial.ui.layoutMode')
+      },
       type: 'select',
       options: [
-        { label: '力导向', value: 'force' },
-        { label: '圆形', value: 'circular' },
-        { label: '固定位置', value: 'none' },
+        {
+          get label() {
+            return t('editorMaterial.ui.forceDirected')
+          },
+          value: 'force',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.circle')
+          },
+          value: 'circular',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.fixedPosition')
+          },
+          value: 'none',
+        },
       ],
       default: FORCE_GRAPH_DEFAULT_LAYOUT,
-      group: '布局',
+      get group() {
+        return t('editorMaterial.ui.layout')
+      },
     },
     {
       key: 'symbolSize',
-      label: '节点大小',
+      get label() {
+        return t('editorMaterial.ui.nodeSize')
+      },
       type: 'slider',
       min: 10,
       max: 50,
       default: FORCE_GRAPH_DEFAULT_SYMBOL_SIZE,
-      group: '节点',
+      get group() {
+        return t('editorMaterial.ui.node')
+      },
     },
     {
       key: 'edgeLength',
-      label: '边长度',
+      get label() {
+        return t('editorMaterial.ui.edgeLength')
+      },
       type: 'slider',
       min: 50,
       max: 300,
       default: FORCE_GRAPH_DEFAULT_EDGE_LENGTH,
-      group: '力导向',
+      get group() {
+        return t('editorMaterial.ui.forceDirected')
+      },
       visibleWhen: { field: 'layout', equals: 'force' },
     },
     {
       key: 'repulsion',
-      label: '斥力',
+      get label() {
+        return t('editorMaterial.ui.repulsion')
+      },
       type: 'slider',
       min: 50,
       max: 500,
       default: FORCE_GRAPH_DEFAULT_REPULSION,
-      group: '力导向',
+      get group() {
+        return t('editorMaterial.ui.forceDirected')
+      },
       visibleWhen: { field: 'layout', equals: 'force' },
     },
     {
       key: 'gravity',
-      label: '引力',
+      get label() {
+        return t('editorMaterial.ui.gravity')
+      },
       type: 'slider',
       min: 0,
       max: 1,
       step: 0.05,
       default: FORCE_GRAPH_DEFAULT_GRAVITY,
-      group: '力导向',
+      get group() {
+        return t('editorMaterial.ui.forceDirected')
+      },
       visibleWhen: { field: 'layout', equals: 'force' },
     },
-    { key: 'draggable', label: '节点拖拽', type: 'switch', default: true, group: '交互' },
+    {
+      key: 'draggable',
+      get label() {
+        return t('editorMaterial.ui.nodeDragging')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.interaction')
+      },
+    },
     {
       key: 'showEdgeLabel',
-      label: '显示边标签',
+      get label() {
+        return t('editorMaterial.ui.showEdgeLabels')
+      },
       type: 'switch',
       default: false,
-      group: '交互',
+      get group() {
+        return t('editorMaterial.ui.interaction')
+      },
     },
     {
       key: 'nodeColor',
-      label: '节点颜色',
+      get label() {
+        return t('editorMaterial.ui.nodeColor')
+      },
       type: 'colorpicker',
       default: FORCE_GRAPH_DEFAULT_NODE_COLOR,
-      group: '颜色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
     },
     {
       key: 'edgeColor',
-      label: '连线颜色',
+      get label() {
+        return t('editorMaterial.ui.linkColor')
+      },
       type: 'colorpicker',
       default: FORCE_GRAPH_DEFAULT_EDGE_COLOR,
-      group: '颜色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
     },
     ...buildSeriesLabelSchema('top'),
   ],
@@ -141,9 +200,27 @@ export const forceGraphChartDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'sourceField', label: '源节点', type: 'name' },
-    { key: 'targetField', label: '目标节点', type: 'name' },
-    { key: 'valueField', label: '关系强度', type: 'value' },
+    {
+      key: 'sourceField',
+      get label() {
+        return t('editorMaterial.ui.sourceNode')
+      },
+      type: 'name',
+    },
+    {
+      key: 'targetField',
+      get label() {
+        return t('editorMaterial.ui.targetNode')
+      },
+      type: 'name',
+    },
+    {
+      key: 'valueField',
+      get label() {
+        return t('editorMaterial.ui.linkStrength')
+      },
+      type: 'value',
+    },
   ],
 }
 

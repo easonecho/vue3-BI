@@ -4,7 +4,7 @@
     <button
       class="sidebar-handle"
       :class="{ collapsed }"
-      :title="collapsed ? '展开属性/样式/数据面板' : '收起属性/样式/数据面板'"
+      :title="collapsed ? t('editorUi.panel.expandRight') : t('editorUi.panel.collapseRight')"
       @click="toggleCollapsed"
     >
       <el-icon class="handle-icon">
@@ -15,27 +15,27 @@
     <div class="right-panel">
       <el-tabs v-model="activeTab" class="panel-tabs">
         <!-- 属性面板：单组件属性 / 多选批量 / 空状态 -->
-        <el-tab-pane label="属性" name="props">
+        <el-tab-pane :label="t('editorUi.panel.propsTab')" name="props">
           <PropsTab />
         </el-tab-pane>
 
         <!-- 样式面板 -->
-        <el-tab-pane label="样式" name="style">
+        <el-tab-pane :label="t('editorUi.panel.styleTab')" name="style">
           <StyleTab />
         </el-tab-pane>
 
         <!-- 数据面板（已拆分为独立组件） -->
-        <el-tab-pane label="数据" name="data">
+        <el-tab-pane :label="t('editorUi.panel.dataTab')" name="data">
           <DataBindingPanel />
         </el-tab-pane>
 
         <!-- 协作评论面板：按组件定位、编辑/删除、标记已解决 -->
-        <el-tab-pane label="评论" name="comment" lazy>
+        <el-tab-pane :label="t('editorUi.panel.commentTab')" name="comment" lazy>
           <CommentTab />
         </el-tab-pane>
 
         <!-- 🔑 画布全局设置：背景/尺寸/网格/标尺 -->
-        <el-tab-pane label="画布" name="canvas">
+        <el-tab-pane :label="t('editorUi.panel.canvasTab')" name="canvas">
           <CanvasTab />
         </el-tab-pane>
       </el-tabs>
@@ -45,12 +45,15 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ArrowLeft as Left, ArrowRight as Right } from '@element-plus/icons-vue'
 import DataBindingPanel from './property/DataBindingPanel.vue'
 import PropsTab from './right-panel/PropsTab.vue'
 import StyleTab from './right-panel/StyleTab.vue'
 import CanvasTab from './right-panel/CanvasTab.vue'
 import CommentTab from './right-panel/CommentTab.vue'
+
+const { t } = useI18n()
 
 const activeTab = ref('props')
 

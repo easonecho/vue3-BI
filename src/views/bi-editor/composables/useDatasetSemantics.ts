@@ -16,6 +16,7 @@
 import { ref } from 'vue'
 import { getDatasetList, type DatasetField, type DatasetFieldFormat } from '@/api/dataset'
 import type { Dataset } from '@/api/types'
+import i18n from '@/i18n'
 
 /** datasetId → 字段定义 */
 const semantics = ref<Map<number, DatasetField[]>>(new Map())
@@ -23,22 +24,46 @@ let loading: Promise<void> | null = null
 
 /** 聚合方式中文标签 */
 export const AGGREGATE_LABELS: Record<string, string> = {
-  none: '不聚合',
-  sum: '求和',
-  avg: '平均值',
-  count: '计数',
-  countDistinct: '去重计数',
-  max: '最大值',
-  min: '最小值',
+  get none() {
+    return i18n.global.t('editorUi.aggregate.none')
+  },
+  get sum() {
+    return i18n.global.t('editorUi.aggregate.sum')
+  },
+  get avg() {
+    return i18n.global.t('editorUi.aggregate.avg')
+  },
+  get count() {
+    return i18n.global.t('editorUi.aggregate.count')
+  },
+  get countDistinct() {
+    return i18n.global.t('editorUi.aggregate.countDistinct')
+  },
+  get max() {
+    return i18n.global.t('editorUi.aggregate.max')
+  },
+  get min() {
+    return i18n.global.t('editorUi.aggregate.min')
+  },
 }
 
 /** 显示格式中文标签 */
 export const FORMAT_LABELS: Record<string, string> = {
-  number: '数值',
-  currency: '货币',
-  percent: '百分比',
-  date: '日期',
-  text: '文本',
+  get number() {
+    return i18n.global.t('editorUi.format.number')
+  },
+  get currency() {
+    return i18n.global.t('editorUi.format.currency')
+  },
+  get percent() {
+    return i18n.global.t('editorUi.format.percent')
+  },
+  get date() {
+    return i18n.global.t('editorUi.format.date')
+  },
+  get text() {
+    return i18n.global.t('editorUi.format.text')
+  },
 }
 
 /** fields 可能是 JSON 字符串或数组 */

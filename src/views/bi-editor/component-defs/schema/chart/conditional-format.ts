@@ -1,5 +1,9 @@
 import type { PropField } from '../props'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /**
  * 🔑 图表条件格式（预警色）：按数值阈值覆盖数据点颜色。
  *
@@ -11,41 +15,131 @@ import type { PropField } from '../props'
 export const chartConditionalFormatSchema: PropField[] = [
   {
     key: 'conditionalColorShow',
-    label: '条件着色',
+    get label() {
+      return t('editorMaterial.ui.conditionalColoring')
+    },
     type: 'switch',
     default: false,
-    group: '条件格式',
-    tip: '按数值阈值给数据点着色，用于预警 / 异常突出',
+    get group() {
+      return t('editorMaterial.ui.conditionalFormat')
+    },
+    get tip() {
+      return t('editorMaterial.ui.colorDataPointsByNumericThresholdForAlertsAnomalies')
+    },
   },
   {
     key: 'conditionalColorRules',
-    label: '着色规则',
+    get label() {
+      return t('editorMaterial.ui.coloringRules')
+    },
     type: 'table',
     default: [],
-    group: '条件格式',
+    get group() {
+      return t('editorMaterial.ui.conditionalFormat')
+    },
     visibleWhen: { field: 'conditionalColorShow', truthy: true },
-    tip: '规则从上到下优先；系列为空时作用于全部系列；未选颜色不生效',
+    get tip() {
+      return t(
+        'editorMaterial.ui.rulesApplyTopToBottomEmptySeriesMeansAllRulesWithoutColorAreIgnored',
+      )
+    },
     columns: [
-      { key: 'seriesName', label: '系列', type: 'input', width: 84, placeholder: '全部' },
+      {
+        key: 'seriesName',
+        get label() {
+          return t('editorMaterial.ui.series')
+        },
+        type: 'input',
+        width: 84,
+        get placeholder() {
+          return t('editorMaterial.ui.all')
+        },
+      },
       {
         key: 'operator',
-        label: '条件',
+        get label() {
+          return t('editorMaterial.ui.condition')
+        },
         type: 'select',
         width: 76,
         options: [
-          { label: '大于', value: 'gt' },
-          { label: '大于等于', value: 'gte' },
-          { label: '小于', value: 'lt' },
-          { label: '小于等于', value: 'lte' },
-          { label: '等于', value: 'eq' },
-          { label: '不等于', value: 'ne' },
-          { label: '介于', value: 'between' },
-          { label: '包含', value: 'contains' },
+          {
+            get label() {
+              return t('editorMaterial.ui.greaterThan')
+            },
+            value: 'gt',
+          },
+          {
+            get label() {
+              return t('editorMaterial.ui.greaterThanOrEqual')
+            },
+            value: 'gte',
+          },
+          {
+            get label() {
+              return t('editorMaterial.ui.lessThan')
+            },
+            value: 'lt',
+          },
+          {
+            get label() {
+              return t('editorMaterial.ui.lessThanOrEqual')
+            },
+            value: 'lte',
+          },
+          {
+            get label() {
+              return t('editorMaterial.ui.equal')
+            },
+            value: 'eq',
+          },
+          {
+            get label() {
+              return t('editorMaterial.ui.notEqual')
+            },
+            value: 'ne',
+          },
+          {
+            get label() {
+              return t('editorMaterial.ui.between')
+            },
+            value: 'between',
+          },
+          {
+            get label() {
+              return t('editorMaterial.ui.contains')
+            },
+            value: 'contains',
+          },
         ],
       },
-      { key: 'value', label: '值', type: 'input', width: 62 },
-      { key: 'value2', label: '值2', type: 'input', width: 62, placeholder: '介于' },
-      { key: 'color', label: '颜色', type: 'colorpicker', width: 62 },
+      {
+        key: 'value',
+        get label() {
+          return t('editorMaterial.ui.value2')
+        },
+        type: 'input',
+        width: 62,
+      },
+      {
+        key: 'value2',
+        get label() {
+          return t('editorMaterial.ui.value22')
+        },
+        type: 'input',
+        width: 62,
+        get placeholder() {
+          return t('editorMaterial.ui.between')
+        },
+      },
+      {
+        key: 'color',
+        get label() {
+          return t('editorMaterial.ui.color')
+        },
+        type: 'colorpicker',
+        width: 62,
+      },
     ],
   },
 ]

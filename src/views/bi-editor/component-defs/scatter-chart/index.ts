@@ -2,6 +2,10 @@ import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 🔑 散点图默认真实数据：每个系列是 {name, data: [[x,y], ...]} */
 export const SCATTER_DEFAULT_CATEGORIES = null as unknown as string[] | null
 export const SCATTER_DEFAULT_SERIES = [
@@ -30,7 +34,9 @@ export const SCATTER_DEFAULT_SERIES = [
 export const scatterChartDefinition: ComponentDefinition = {
   type: 'scatter-chart',
   meta: {
-    name: '散点图',
+    get name() {
+      return t('editorMaterial.meta.scatterChart')
+    },
     category: 'chart',
     icon: 'DataPoint',
     defaultWidth: 400,
@@ -41,25 +47,54 @@ export const scatterChartDefinition: ComponentDefinition = {
     ...chartBaseSchema,
     {
       key: 'symbolSize',
-      label: '点大小',
+      get label() {
+        return t('editorMaterial.ui.pointSize')
+      },
       type: 'slider',
       min: 2,
       max: 30,
       default: 10,
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
-    { key: 'showLabel', label: '显示标签', type: 'switch', default: false, group: '样式' },
+    {
+      key: 'showLabel',
+      get label() {
+        return t('editorMaterial.ui.showLabel')
+      },
+      type: 'switch',
+      default: false,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
     {
       key: 'seriesStyles',
-      label: '数据系列样式',
+      get label() {
+        return t('editorMaterial.ui.seriesStyles')
+      },
       type: 'table',
       default: [],
-      group: '数据系列',
-      tip: '根据数据系列名称单独配置颜色、点大小、是否显示标签等（按名称匹配）',
+      get group() {
+        return t('editorMaterial.ui.dataSeries')
+      },
+      get tip() {
+        return t('editorMaterial.ui.configureColorPointSizeAndLabelVisibilityPerSeriesByName')
+      },
       // 🔑 基础列（通用：seriesName/color/labelShow） + 散点图特有 symbolSize
       columns: [
         ...baseSeriesStylesWithAxesColumns,
-        { key: 'symbolSize', label: '点大小', type: 'number', min: 2, max: 40, width: 80 },
+        {
+          key: 'symbolSize',
+          get label() {
+            return t('editorMaterial.ui.pointSize')
+          },
+          type: 'number',
+          min: 2,
+          max: 40,
+          width: 80,
+        },
       ],
     },
     // 🔑 系列标签（散点图默认在顶部，因 formatter 是 "(x,y)" 的小字，默认字号更合适）
@@ -72,9 +107,27 @@ export const scatterChartDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'xField', label: 'X 轴字段', type: 'value' },
-    { key: 'yField', label: 'Y 轴字段', type: 'value' },
-    { key: 'seriesField', label: '系列字段(可选)', type: 'category' },
+    {
+      key: 'xField',
+      get label() {
+        return t('editorMaterial.ui.xAxisField')
+      },
+      type: 'value',
+    },
+    {
+      key: 'yField',
+      get label() {
+        return t('editorMaterial.ui.yAxisField')
+      },
+      type: 'value',
+    },
+    {
+      key: 'seriesField',
+      get label() {
+        return t('editorMaterial.ui.seriesFieldOptional')
+      },
+      type: 'category',
+    },
   ],
 }
 

@@ -2,6 +2,10 @@ import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 import { chartBaseSchema } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 甘特图默认任务数据 */
 export const GANTT_DEFAULT_TASKS = [
   { name: '需求分析', start: '2024-05-01', end: '2024-05-05', progress: 100 },
@@ -15,7 +19,9 @@ export const GANTT_DEFAULT_TASKS = [
 export const ganttChartDefinition: ComponentDefinition = {
   type: 'gantt-chart',
   meta: {
-    name: '甘特图',
+    get name() {
+      return t('editorMaterial.meta.ganttChart')
+    },
     category: 'chart',
     icon: 'Calendar',
     defaultWidth: 600,
@@ -26,57 +32,106 @@ export const ganttChartDefinition: ComponentDefinition = {
     ...chartBaseSchema,
     {
       key: 'barColor',
-      label: '任务条颜色',
+      get label() {
+        return t('editorMaterial.ui.taskBarColor')
+      },
       type: 'colorpicker',
       default: '#22d3ee',
-      group: '样式',
-      tip: '任务条颜色',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+      get tip() {
+        return t('editorMaterial.ui.taskBarColor')
+      },
     },
     {
       key: 'barColor2',
-      label: '交替色',
+      get label() {
+        return t('editorMaterial.ui.alternatingColors')
+      },
       type: 'colorpicker',
       default: '#67e8f9',
-      group: '样式',
-      tip: '交替色',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+      get tip() {
+        return t('editorMaterial.ui.alternatingColors')
+      },
     },
     {
       key: 'barHeight',
-      label: '任务条高度(px)',
+      get label() {
+        return t('editorMaterial.ui.taskBarHeightPx')
+      },
       type: 'slider',
       min: 10,
       max: 40,
       default: 20,
-      group: '样式',
-      tip: '任务条高度(px)',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+      get tip() {
+        return t('editorMaterial.ui.taskBarHeightPx')
+      },
     },
     {
       key: 'showLabel',
-      label: '显示任务名',
+      get label() {
+        return t('editorMaterial.ui.showTaskName')
+      },
       type: 'switch',
       default: true,
-      group: '标签',
-      tip: '显示任务名',
+      get group() {
+        return t('editorMaterial.ui.label')
+      },
+      get tip() {
+        return t('editorMaterial.ui.showTaskName')
+      },
     },
     {
       key: 'labelColor',
-      label: '标签颜色',
+      get label() {
+        return t('editorMaterial.ui.labelColor2')
+      },
       type: 'colorpicker',
       default: '#e2e8f0',
-      group: '标签',
+      get group() {
+        return t('editorMaterial.ui.label')
+      },
     },
     {
       key: 'timeFormat',
-      label: 'X轴时间粒度',
+      get label() {
+        return t('editorMaterial.ui.xAxisTimeGranularity')
+      },
       type: 'select',
       options: [
-        { label: '日', value: 'day' },
-        { label: '时', value: 'hour' },
-        { label: '月', value: 'month' },
+        {
+          get label() {
+            return t('editorMaterial.ui.day')
+          },
+          value: 'day',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.hour')
+          },
+          value: 'hour',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.month')
+          },
+          value: 'month',
+        },
       ],
       default: 'day',
-      group: '时间',
-      tip: 'X轴时间粒度',
+      get group() {
+        return t('editorMaterial.ui.time')
+      },
+      get tip() {
+        return t('editorMaterial.ui.xAxisTimeGranularity')
+      },
     },
   ],
   extraDefaults: {
@@ -85,10 +140,34 @@ export const ganttChartDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'nameField', label: '任务名称字段', type: 'name' },
-    { key: 'startField', label: '开始时间字段', type: 'category' },
-    { key: 'endField', label: '结束时间字段', type: 'category' },
-    { key: 'progressField', label: '进度字段', type: 'value' },
+    {
+      key: 'nameField',
+      get label() {
+        return t('editorMaterial.ui.taskNameField')
+      },
+      type: 'name',
+    },
+    {
+      key: 'startField',
+      get label() {
+        return t('editorMaterial.ui.startTimeField')
+      },
+      type: 'category',
+    },
+    {
+      key: 'endField',
+      get label() {
+        return t('editorMaterial.ui.endTimeField')
+      },
+      type: 'category',
+    },
+    {
+      key: 'progressField',
+      get label() {
+        return t('editorMaterial.ui.progressField')
+      },
+      type: 'value',
+    },
   ],
 }
 

@@ -12,6 +12,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
 import { useRoute, onBeforeRouteLeave } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import HeaderToolbar from './components/HeaderToolbar.vue'
 import LeftPanel from './components/LeftPanel.vue'
@@ -24,6 +25,7 @@ import type { ComponentMeta } from './types'
 
 const route = useRoute()
 const store = useBiEditorStore()
+const { t } = useI18n()
 
 useKeyboardShortcuts()
 
@@ -46,10 +48,10 @@ onBeforeRouteLeave(async (to) => {
   if (to.path.startsWith('/bi-editor')) return true
   if (!store.isDirty) return true
   try {
-    await ElMessageBox.confirm('有未保存的修改，确定离开？', '提示', {
+    await ElMessageBox.confirm(t('editorUi.doc.unsavedLeaveConfirm'), t('editorUi.doc.tip'), {
       type: 'warning',
-      confirmButtonText: '离开',
-      cancelButtonText: '取消',
+      confirmButtonText: t('editorUi.doc.leave'),
+      cancelButtonText: t('common.cancel'),
     })
     return true
   } catch {
@@ -81,15 +83,19 @@ async function maybeRestoreDraft() {
   if (!draft) return
   const savedAt = new Date(draft.savedAt).toLocaleString()
   const restore = await ElMessageBox.confirm(
-    `检测到 ${savedAt} 的本地草稿，是否恢复未保存的修改？`,
-    '恢复草稿',
-    { type: 'info', confirmButtonText: '恢复', cancelButtonText: '丢弃' },
+    t('editorUi.doc.draftFoundConfirm', { time: savedAt }),
+    t('editorUi.doc.restoreDraftTitle'),
+    {
+      type: 'info',
+      confirmButtonText: t('editorUi.doc.restore'),
+      cancelButtonText: t('editorUi.doc.discard'),
+    },
   )
     .then(() => true)
     .catch(() => false)
   if (restore) {
     store.restoreDraft(draft)
-    ElMessage.success('已恢复本地草稿')
+    ElMessage.success(t('editorUi.doc.draftRestored'))
   } else {
     store.clearDraft()
   }
@@ -111,7 +117,9 @@ async function initFromRoute() {
     }
   } catch (e) {
     console.warn('[bi-editor] load failed', e)
-    ElMessage.error(isTemplateMode ? '模板加载失败,请返回模板库重试' : '看板加载失败,请返回列表重试')
+    ElMessage.error(
+      isTemplateMode ? t('editorUi.doc.templateLoadFailed') : t('editorUi.doc.dashboardLoadFailed'),
+    )
     return
   }
   await maybeRestoreDraft()

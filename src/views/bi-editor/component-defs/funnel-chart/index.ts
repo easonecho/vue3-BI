@@ -1,10 +1,10 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import {
-  chartCommonSchema,
-  baseSeriesStylesNoAxesColumns,
-  buildSeriesLabelSchema,
-} from '../types'
+import { chartCommonSchema, baseSeriesStylesNoAxesColumns, buildSeriesLabelSchema } from '../types'
+
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 漏斗图默认真实数据 */
 export const FUNNEL_DEFAULT_DATA = [
@@ -19,7 +19,9 @@ export const FUNNEL_DEFAULT_DATA = [
 const definition: ComponentDefinition = {
   type: 'funnel-chart',
   meta: {
-    name: '漏斗图',
+    get name() {
+      return t('editorMaterial.meta.funnelChart')
+    },
     category: 'chart',
     icon: 'PieChart',
     defaultWidth: 360,
@@ -28,26 +30,120 @@ const definition: ComponentDefinition = {
   widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
     ...chartCommonSchema,
-    { key: 'sort', label: '排序方式', type: 'select', options: [
-      { label: '降序', value: 'descending' },
-      { label: '升序', value: 'ascending' },
-      { label: '按数据顺序', value: 'none' },
-    ], default: 'descending', group: '样式' },
-    { key: 'funnelAlign', label: '对齐方式', type: 'select', options: [
-      { label: '居中', value: 'center' },
-      { label: '左对齐', value: 'left' },
-      { label: '右对齐', value: 'right' },
-    ], default: 'center', group: '样式' },
-    { key: 'minSize', label: '最小宽度(%)', type: 'slider', min: 0, max: 100, default: 0, group: '样式' },
-    { key: 'maxSize', label: '最大宽度(%)', type: 'slider', min: 10, max: 100, default: 100, group: '样式' },
-    { key: 'gap', label: '间隔(px)', type: 'slider', min: 0, max: 30, default: 2, group: '样式' },
+    {
+      key: 'sort',
+      get label() {
+        return t('editorMaterial.ui.sortMode')
+      },
+      type: 'select',
+      options: [
+        {
+          get label() {
+            return t('editorMaterial.ui.descending2')
+          },
+          value: 'descending',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.ascending2')
+          },
+          value: 'ascending',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.byDataOrder')
+          },
+          value: 'none',
+        },
+      ],
+      default: 'descending',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'funnelAlign',
+      get label() {
+        return t('editorMaterial.ui.alignment')
+      },
+      type: 'select',
+      options: [
+        {
+          get label() {
+            return t('editorMaterial.ui.center')
+          },
+          value: 'center',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.leftAlign')
+          },
+          value: 'left',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.rightAlign')
+          },
+          value: 'right',
+        },
+      ],
+      default: 'center',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'minSize',
+      get label() {
+        return t('editorMaterial.ui.minWidth')
+      },
+      type: 'slider',
+      min: 0,
+      max: 100,
+      default: 0,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'maxSize',
+      get label() {
+        return t('editorMaterial.ui.maxWidth')
+      },
+      type: 'slider',
+      min: 10,
+      max: 100,
+      default: 100,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'gap',
+      get label() {
+        return t('editorMaterial.ui.gapPx')
+      },
+      type: 'slider',
+      min: 0,
+      max: 30,
+      default: 2,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
     {
       key: 'seriesStyles',
-      label: '数据项样式',
+      get label() {
+        return t('editorMaterial.ui.itemStyles')
+      },
       type: 'table',
       default: [],
-      group: '数据系列',
-      tip: '根据漏斗图数据项名称单独配置颜色、是否显示标签等（按 name 匹配）',
+      get group() {
+        return t('editorMaterial.ui.dataSeries')
+      },
+      get tip() {
+        return t('editorMaterial.ui.configureColorAndLabelVisibilityPerFunnelItemByName')
+      },
       columns: [...baseSeriesStylesNoAxesColumns],
     },
     ...buildSeriesLabelSchema('inside'),
@@ -58,8 +154,20 @@ const definition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'nameField', label: '名称字段', type: 'name' },
-    { key: 'valueField', label: '数值字段', type: 'value' },
+    {
+      key: 'nameField',
+      get label() {
+        return t('editorMaterial.ui.nameField')
+      },
+      type: 'name',
+    },
+    {
+      key: 'valueField',
+      get label() {
+        return t('editorMaterial.ui.valueField')
+      },
+      type: 'value',
+    },
   ],
 }
 

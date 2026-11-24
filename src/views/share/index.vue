@@ -5,12 +5,12 @@
       <el-card class="password-card" shadow="always">
         <div class="password-header">
           <el-icon size="32" color="#60a5fa"><Lock /></el-icon>
-          <h3>该看板已设置访问密码</h3>
+          <h3>{{ t('sharePage.passwordRequiredTitle') }}</h3>
         </div>
         <el-input
           v-model="passwordInput"
           type="password"
-          placeholder="请输入访问密码"
+          :placeholder="t('sharePage.passwordPlaceholder')"
           show-password
           @keyup.enter="submitPassword"
         >
@@ -24,7 +24,7 @@
           style="width: 100%; margin-top: 12px"
           @click="submitPassword"
         >
-          验证并查看
+          {{ t('sharePage.verifyAndView') }}
         </el-button>
         <p v-if="passwordError" class="error-text">{{ passwordError }}</p>
       </el-card>
@@ -38,16 +38,18 @@
           <p v-if="dashboard.description">{{ dashboard.description }}</p>
         </div>
         <div class="share-actions">
-          <el-tag type="success" size="small" effect="dark">公开分享</el-tag>
+          <el-tag type="success" size="small" effect="dark">{{
+            t('sharePage.publicShare')
+          }}</el-tag>
           <!-- 查看者导出：与预览页共用截图逻辑，导出画布本身 -->
           <el-dropdown trigger="click" :disabled="exporting" @command="handleExportCommand">
             <el-button size="small" :loading="exporting" :disabled="exporting">
-              导出<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              {{ t('sharePage.export') }}<el-icon class="el-icon--right"><ArrowDown /></el-icon>
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="png">导出图片 (PNG)</el-dropdown-item>
-                <el-dropdown-item command="pdf">导出 PDF</el-dropdown-item>
+                <el-dropdown-item command="png">{{ t('sharePage.exportPng') }}</el-dropdown-item>
+                <el-dropdown-item command="pdf">{{ t('sharePage.exportPdf') }}</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -60,7 +62,7 @@
     <!-- 错误提示 -->
     <div v-if="loadError && !loading" class="error-panel">
       <el-empty :description="loadError">
-        <el-button @click="goHome">返回首页</el-button>
+        <el-button @click="goHome">{{ t('sharePage.backHome') }}</el-button>
       </el-empty>
     </div>
   </div>
@@ -68,6 +70,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowDown, Lock, Key } from '@element-plus/icons-vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
@@ -82,6 +85,7 @@ import {
 import type { DashboardLayout } from '@/views/bi-editor/types'
 import { useDashboardExport } from '@/views/preview/composables/useDashboardExport'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const store = useBiEditorStore()
@@ -100,7 +104,7 @@ const dashboard = ref<PublicDashboard | null>(null)
 
 // 分享页查看者导出（与预览页共用实现）
 const { exporting, exportPng, exportPdf } = useDashboardExport(
-  () => dashboard.value?.name || '看板',
+  () => dashboard.value?.name || t('sharePage.dashboardFallback'),
 )
 
 function handleExportCommand(command: string) {
@@ -113,7 +117,7 @@ onMounted(async () => {
   linkageStore.setLinkageEnabled(true)
   const token = route.params.token as string
   if (!token) {
-    loadError.value = '分享链接无效'
+    loadError.value = t('sharePage.invalidLink')
     return
   }
   await loadPublicDashboard(token)
@@ -161,17 +165,17 @@ async function loadPublicDashboard(token: string, password?: string) {
     }) as unknown as DashboardLayout
     store.dashboardName = result.name
     store.applyLayout(layout)
-  } catch (e: any) {
-    const msg = e?.message || ''
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : ''
     if (msg.includes('过期')) {
-      loadError.value = '分享链接已过期'
+      loadError.value = t('sharePage.expiredLink')
     } else if (msg.includes('不存在')) {
-      loadError.value = '分享链接不存在或已被取消'
+      loadError.value = t('sharePage.notFoundLink')
     } else if (msg.includes('密码错误')) {
-      passwordError.value = '访问密码错误, 请重试'
+      passwordError.value = t('sharePage.passwordIncorrect')
       return
     } else {
-      loadError.value = msg || '加载失败'
+      loadError.value = msg || t('sharePage.loadFailed')
     }
   } finally {
     loading.value = false

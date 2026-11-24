@@ -15,6 +15,10 @@ import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 // 🔑 模块级注册象形柱图（运行一次,echarts/core 内部去重）
 use([PictorialBarChart])
 
@@ -71,14 +75,16 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const categories = mappedData.value?.categories
-    ?? (Array.isArray(mergedProps.categories)
+  const categories =
+    mappedData.value?.categories ??
+    (Array.isArray(mergedProps.categories)
       ? mergedProps.categories
       : ['周一', '周二', '周三', '周四', '周五', '周六', '周日'])
-  const seriesData = mappedData.value?.series
-    ?? (Array.isArray(mergedProps.series)
+  const seriesData =
+    mappedData.value?.series ??
+    (Array.isArray(mergedProps.series)
       ? mergedProps.series
-      : [{ name: '访问量', data: [120, 200, 150, 80, 70, 110, 130] }])
+      : [{ name: t('editorMaterial.series.visits'), data: [120, 200, 150, 80, 70, 110, 130] }])
 
   const symbol = String(mergedProps.symbol)
   const symbolRepeat = !!mergedProps.symbolRepeat
@@ -144,7 +150,7 @@ function applyChartOption() {
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: true,
       xAxisData: getXAxisData(specificOption),
-      fallbackTitle: '象形柱图',
+      fallbackTitle: t('editorMaterial.meta.pictorialBarChart'),
     })
   })
 }
@@ -155,11 +161,7 @@ onMounted(async () => {
 
 watch(
   // 🔑 性能优化：签名式 watch 替代 deep watch
-  [
-    () => JSON.stringify(props.comp.props),
-    () => JSON.stringify(props.comp.dataConfig),
-    rows,
-  ],
+  [() => JSON.stringify(props.comp.props), () => JSON.stringify(props.comp.dataConfig), rows],
   () => {
     applyChartOption()
   },

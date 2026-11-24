@@ -1,10 +1,16 @@
 import type { ComponentDefinition } from '../types'
 import Widget from './Widget.vue'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const dividerDefinition: ComponentDefinition = {
   type: 'divider',
   meta: {
-    name: '分割线',
+    get name() {
+      return t('editorMaterial.meta.divider')
+    },
     category: 'basic',
     icon: 'Minus',
     defaultWidth: 300,
@@ -12,45 +18,134 @@ export const dividerDefinition: ComponentDefinition = {
   },
   widget: Widget,
   propsSchema: [
-    { key: 'text', label: '中间文案', type: 'input', default: '', group: '内容' },
+    {
+      key: 'text',
+      get label() {
+        return t('editorMaterial.ui.centerText')
+      },
+      type: 'input',
+      default: '',
+      get group() {
+        return t('editorMaterial.ui.content')
+      },
+    },
     {
       key: 'direction',
-      label: '方向',
+      get label() {
+        return t('editorMaterial.ui.direction')
+      },
       type: 'select',
       options: [
-        { label: '水平', value: 'horizontal' },
-        { label: '垂直', value: 'vertical' },
+        {
+          get label() {
+            return t('editorMaterial.ui.horizontal')
+          },
+          value: 'horizontal',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.vertical')
+          },
+          value: 'vertical',
+        },
       ],
       default: 'horizontal',
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
     {
       key: 'borderStyle',
-      label: '线条样式',
+      get label() {
+        return t('editorMaterial.ui.lineStyle')
+      },
       type: 'select',
       options: [
-        { label: '实线', value: 'solid' },
-        { label: '虚线', value: 'dashed' },
-        { label: '点线', value: 'dotted' },
-        { label: '双线', value: 'double' },
+        {
+          get label() {
+            return t('editorMaterial.ui.solidLine')
+          },
+          value: 'solid',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.dashedLine')
+          },
+          value: 'dashed',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.dottedLine')
+          },
+          value: 'dotted',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.doubleLine')
+          },
+          value: 'double',
+        },
       ],
       default: 'solid',
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
     {
       key: 'contentPosition',
-      label: '文案位置',
+      get label() {
+        return t('editorMaterial.ui.textPosition')
+      },
       type: 'select',
       options: [
-        { label: '左', value: 'left' },
-        { label: '居中', value: 'center' },
-        { label: '右', value: 'right' },
+        {
+          get label() {
+            return t('editorMaterial.ui.left2')
+          },
+          value: 'left',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.center')
+          },
+          value: 'center',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.right2')
+          },
+          value: 'right',
+        },
       ],
       default: 'center',
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
-    { key: 'color', label: '颜色', type: 'colorpicker', default: '#dcdfe6', group: '样式' },
-    { key: 'thickness', label: '粗细', type: 'number', min: 1, max: 10, default: 1, group: '样式' },
+    {
+      key: 'color',
+      get label() {
+        return t('editorMaterial.ui.color')
+      },
+      type: 'colorpicker',
+      default: '#dcdfe6',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'thickness',
+      get label() {
+        return t('editorMaterial.ui.thickness')
+      },
+      type: 'number',
+      min: 1,
+      max: 10,
+      default: 1,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
   ],
   defaultStyle: {},
   supportsDataBinding: false,

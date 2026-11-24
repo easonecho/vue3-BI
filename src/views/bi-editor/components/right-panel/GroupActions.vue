@@ -1,23 +1,31 @@
 <template>
   <div class="group-actions">
-    <el-button size="small" type="primary" plain :disabled="!store.canGroup" @click="store.groupSelection()">
-      组合 (Group)
+    <el-button
+      size="small"
+      type="primary"
+      plain
+      :disabled="!store.canGroup"
+      @click="store.groupSelection()"
+    >
+      {{ t('editorUi.props.groupBtn') }}
     </el-button>
     <el-button size="small" :disabled="!store.canUngroup" @click="store.ungroupSelection()">
-      取消组合 (Ungroup)
+      {{ t('editorUi.props.ungroupBtn') }}
     </el-button>
   </div>
   <div v-if="showHint && store.selectedComponent?.groupId" class="group-hint">
-    主选组件已归属到分组
+    {{ t('editorUi.props.groupHint') }}
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useBiEditorStore } from '@/stores/bi-editor'
 
 withDefaults(defineProps<{ showHint?: boolean }>(), { showHint: false })
 
 const store = useBiEditorStore()
+const { t } = useI18n()
 </script>
 
 <style scoped lang="less">

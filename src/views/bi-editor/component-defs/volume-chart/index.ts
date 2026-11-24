@@ -2,8 +2,15 @@ import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 🔑 成交量图默认数据：14 天,volume 量级 1000-5000,amount 量级 100k-500k */
-function buildVolumeDefaults(): { categories: string[]; series: { name: string; data: number[] }[] } {
+function buildVolumeDefaults(): {
+  categories: string[]
+  series: { name: string; data: number[] }[]
+} {
   const categories: string[] = []
   const volume: number[] = []
   const amount: number[] = []
@@ -24,8 +31,8 @@ function buildVolumeDefaults(): { categories: string[]; series: { name: string; 
   return {
     categories,
     series: [
-      { name: '成交量', data: volume },
-      { name: '成交额', data: amount },
+      { name: t('editorMaterial.series.volume'), data: volume },
+      { name: t('editorMaterial.series.turnover'), data: amount },
     ],
   }
 }
@@ -42,7 +49,9 @@ export const VOLUME_DEFAULT_DOWN_COLOR = '#2ec07e'
 export const volumeChartDefinition: ComponentDefinition = {
   type: 'volume-chart',
   meta: {
-    name: '成交量图',
+    get name() {
+      return t('editorMaterial.meta.volumeChart')
+    },
     category: 'chart',
     icon: 'DataLine',
     defaultWidth: 480,
@@ -53,43 +62,75 @@ export const volumeChartDefinition: ComponentDefinition = {
     ...chartBaseSchema,
     {
       key: 'barWidth',
-      label: '柱宽',
+      get label() {
+        return t('editorMaterial.ui.barWidth')
+      },
       type: 'slider',
       min: 5,
       max: 30,
       default: 10,
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
     {
       key: 'upColor',
-      label: '阳线颜色（涨）',
+      get label() {
+        return t('editorMaterial.ui.upCandleColor')
+      },
       type: 'colorpicker',
       default: VOLUME_DEFAULT_UP_COLOR,
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
     {
       key: 'downColor',
-      label: '阴线颜色（跌）',
+      get label() {
+        return t('editorMaterial.ui.downCandleColor')
+      },
       type: 'colorpicker',
       default: VOLUME_DEFAULT_DOWN_COLOR,
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
-    { key: 'showMA', label: '显示均线', type: 'switch', default: true, group: '均线' },
+    {
+      key: 'showMA',
+      get label() {
+        return t('editorMaterial.ui.showMa')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.movingAverage')
+      },
+    },
     {
       key: 'maPeriod',
-      label: '均线周期',
+      get label() {
+        return t('editorMaterial.ui.maPeriod')
+      },
       type: 'number',
       default: 5,
-      group: '均线',
+      get group() {
+        return t('editorMaterial.ui.movingAverage')
+      },
       visibleWhen: { field: 'showMA', truthy: true },
     },
     {
       key: 'seriesStyles',
-      label: '数据系列样式',
+      get label() {
+        return t('editorMaterial.ui.seriesStyles')
+      },
       type: 'table',
       default: [],
-      group: '数据系列',
-      tip: '根据数据系列名称单独配置颜色、是否显示标签（按名称匹配）',
+      get group() {
+        return t('editorMaterial.ui.dataSeries')
+      },
+      get tip() {
+        return t('editorMaterial.ui.configureColorAndLabelVisibilityPerSeriesByName')
+      },
       columns: [...baseSeriesStylesWithAxesColumns],
     },
     ...buildSeriesLabelSchema('top'),
@@ -101,8 +142,21 @@ export const volumeChartDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'categoryField', label: '日期字段', type: 'category' },
-    { key: 'valueFields', label: '数值字段', type: 'value', multiple: true },
+    {
+      key: 'categoryField',
+      get label() {
+        return t('editorMaterial.ui.dateField')
+      },
+      type: 'category',
+    },
+    {
+      key: 'valueFields',
+      get label() {
+        return t('editorMaterial.ui.valueField')
+      },
+      type: 'value',
+      multiple: true,
+    },
   ],
 }
 

@@ -1,10 +1,16 @@
 import type { ComponentDefinition } from '../types'
 import Widget from './Widget.vue'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const dropdownFilterDefinition: ComponentDefinition = {
   type: 'dropdown-filter',
   meta: {
-    name: '下拉选择器',
+    get name() {
+      return t('editorMaterial.meta.dropdownFilter')
+    },
     category: 'data',
     icon: 'ArrowDown',
     defaultWidth: 200,
@@ -14,61 +20,141 @@ export const dropdownFilterDefinition: ComponentDefinition = {
   propsSchema: [
     {
       key: 'placeholder',
-      label: '占位文字',
+      get label() {
+        return t('editorMaterial.ui.placeholderText')
+      },
       type: 'input',
-      default: '请选择',
-      group: '内容',
+      default: t('editorMaterial.ui.pleaseSelect'),
+      get group() {
+        return t('editorMaterial.ui.content')
+      },
     },
     {
       key: 'options',
-      label: '选项',
+      get label() {
+        return t('editorMaterial.ui.options')
+      },
       type: 'textarea',
       default: '选项1,选项2,选项3',
-      group: '内容',
-      tip: '每行一个或逗号分隔',
+      get group() {
+        return t('editorMaterial.ui.content')
+      },
+      get tip() {
+        return t('editorMaterial.ui.onePerLineOrCommaSeparated')
+      },
     },
     {
       key: 'defaultValue',
-      label: '默认选中值',
+      get label() {
+        return t('editorMaterial.ui.defaultSelectedValue')
+      },
       type: 'input',
       default: '',
-      group: '内容',
-      tip: '默认选中值',
+      get group() {
+        return t('editorMaterial.ui.content')
+      },
+      get tip() {
+        return t('editorMaterial.ui.defaultSelectedValue')
+      },
     },
     {
       key: 'showLabel',
-      label: '显示左侧标签',
+      get label() {
+        return t('editorMaterial.ui.showLeftLabels')
+      },
       type: 'switch',
       default: true,
-      group: '外观',
-      tip: '显示左侧标签',
+      get group() {
+        return t('editorMaterial.ui.appearance')
+      },
+      get tip() {
+        return t('editorMaterial.ui.showLeftLabels')
+      },
     },
     {
       key: 'labelText',
-      label: '标签文字',
+      get label() {
+        return t('editorMaterial.ui.labelText')
+      },
       type: 'input',
-      default: '筛选',
-      group: '外观',
+      default: t('editorMaterial.ui.filterLabel'),
+      get group() {
+        return t('editorMaterial.ui.appearance')
+      },
     },
-    { key: 'bgColor', label: '背景颜色', type: 'colorpicker', default: '#1e293b', group: '颜色' },
-    { key: 'textColor', label: '文字颜色', type: 'colorpicker', default: '#e2e8f0', group: '颜色' },
+    {
+      key: 'bgColor',
+      get label() {
+        return t('editorMaterial.ui.backgroundColor2')
+      },
+      type: 'colorpicker',
+      default: '#1e293b',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
+    },
+    {
+      key: 'textColor',
+      get label() {
+        return t('editorMaterial.ui.textColor')
+      },
+      type: 'colorpicker',
+      default: '#e2e8f0',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
+    },
     {
       key: 'borderColor',
-      label: '边框颜色',
+      get label() {
+        return t('editorMaterial.ui.borderColor')
+      },
       type: 'colorpicker',
       default: '#475569',
-      group: '颜色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
     },
     {
       key: 'accentColor',
-      label: '强调色',
+      get label() {
+        return t('editorMaterial.ui.accentColor')
+      },
       type: 'colorpicker',
       default: '#22d3ee',
-      group: '颜色',
-      tip: '选中态/聚焦色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
+      get tip() {
+        return t('editorMaterial.ui.selectedFocusColor')
+      },
     },
-    { key: 'fontSize', label: '字号', type: 'slider', min: 10, max: 18, default: 13, group: '字体' },
-    { key: 'borderRadius', label: '圆角', type: 'slider', min: 0, max: 20, default: 4, group: '样式' },
+    {
+      key: 'fontSize',
+      get label() {
+        return t('editorMaterial.ui.fontSize')
+      },
+      type: 'slider',
+      min: 10,
+      max: 18,
+      default: 13,
+      get group() {
+        return t('editorMaterial.ui.font')
+      },
+    },
+    {
+      key: 'borderRadius',
+      get label() {
+        return t('editorMaterial.ui.cornerRadius')
+      },
+      type: 'slider',
+      min: 0,
+      max: 20,
+      default: 4,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
   ],
   defaultStyle: {},
 }

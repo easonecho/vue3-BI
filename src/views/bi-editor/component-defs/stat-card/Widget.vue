@@ -28,6 +28,10 @@ import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import { useMetricAggregation } from '../../composables/useMetricAggregation'
 import { resolveComponentMetricMapping } from '../aggregate-spec'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 
 /** 🔑 数据集绑定: 统计卡取一个全局聚合指标, 未绑定/未配置时回退静态值 */
@@ -60,11 +64,11 @@ const boundValue = computed<unknown>(() => {
   return undefined
 })
 
-const title = computed(() => props.comp.props?.title ?? '总销售额')
+const title = computed(() => props.comp.props?.title ?? t('editorMaterial.ui.totalSales'))
 const value = computed(() =>
   boundValue.value !== undefined
     ? formatMetricValue(boundValue.value)
-    : props.comp.props?.value ?? '¥126,560',
+    : (props.comp.props?.value ?? '¥126,560'),
 )
 const prefix = computed(() => props.comp.props?.prefix ?? '')
 const suffix = computed(() => props.comp.props?.suffix ?? '')

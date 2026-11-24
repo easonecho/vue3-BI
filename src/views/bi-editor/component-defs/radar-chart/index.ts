@@ -1,10 +1,10 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import {
-  chartCommonSchema,
-  baseSeriesStylesNoAxesColumns,
-  buildSeriesLabelSchema,
-} from '../types'
+import { chartCommonSchema, baseSeriesStylesNoAxesColumns, buildSeriesLabelSchema } from '../types'
+
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 雷达图默认真实数据 */
 export const RADAR_DEFAULT_INDICATOR = [
@@ -23,7 +23,9 @@ export const RADAR_DEFAULT_SERIES = [
 const definition: ComponentDefinition = {
   type: 'radar-chart',
   meta: {
-    name: '雷达图',
+    get name() {
+      return t('editorMaterial.meta.radarChart')
+    },
     category: 'chart',
     icon: 'PieChart',
     defaultWidth: 360,
@@ -32,22 +34,103 @@ const definition: ComponentDefinition = {
   widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
     ...chartCommonSchema,
-    { key: 'shape', label: '形状', type: 'select', options: [
-      { label: '多边形', value: 'polygon' },
-      { label: '圆形', value: 'circle' },
-    ], default: 'polygon', group: '样式' },
-    { key: 'splitNumber', label: '分割段数', type: 'slider', min: 2, max: 10, default: 5, group: '样式' },
-    { key: 'splitAreaShow', label: '显示分割区域', type: 'switch', default: true, group: '样式' },
-    { key: 'axisNameShow', label: '显示指标名称', type: 'switch', default: true, group: '样式' },
-    { key: 'axisNameColor', label: '指标名称颜色', type: 'colorpicker', default: '#6b7280', group: '样式' },
-    { key: 'axisNameFontSize', label: '指标名称字号', type: 'slider', min: 10, max: 24, default: 12, group: '样式' },
+    {
+      key: 'shape',
+      get label() {
+        return t('editorMaterial.ui.shape2')
+      },
+      type: 'select',
+      options: [
+        {
+          get label() {
+            return t('editorMaterial.ui.polygon')
+          },
+          value: 'polygon',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.circle')
+          },
+          value: 'circle',
+        },
+      ],
+      default: 'polygon',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'splitNumber',
+      get label() {
+        return t('editorMaterial.ui.segmentCount')
+      },
+      type: 'slider',
+      min: 2,
+      max: 10,
+      default: 5,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'splitAreaShow',
+      get label() {
+        return t('editorMaterial.ui.showSplitAreas')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'axisNameShow',
+      get label() {
+        return t('editorMaterial.ui.showMetricName')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'axisNameColor',
+      get label() {
+        return t('editorMaterial.ui.metricNameColor')
+      },
+      type: 'colorpicker',
+      default: '#6b7280',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'axisNameFontSize',
+      get label() {
+        return t('editorMaterial.ui.metricNameFontSize')
+      },
+      type: 'slider',
+      min: 10,
+      max: 24,
+      default: 12,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
     {
       key: 'seriesStyles',
-      label: '数据系列样式',
+      get label() {
+        return t('editorMaterial.ui.seriesStyles')
+      },
       type: 'table',
       default: [],
-      group: '数据系列',
-      tip: '根据数据系列名称单独配置颜色、是否显示标签等（按 name 匹配）',
+      get group() {
+        return t('editorMaterial.ui.dataSeries')
+      },
+      get tip() {
+        return t('editorMaterial.ui.configureColorAndLabelVisibilityPerSeriesByName2')
+      },
       columns: [...baseSeriesStylesNoAxesColumns],
     },
     ...buildSeriesLabelSchema('top'),
@@ -59,8 +142,21 @@ const definition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'nameField', label: '指标名称字段', type: 'name' },
-    { key: 'valueField', label: '数值字段', type: 'value', multiple: true },
+    {
+      key: 'nameField',
+      get label() {
+        return t('editorMaterial.ui.metricNameField')
+      },
+      type: 'name',
+    },
+    {
+      key: 'valueField',
+      get label() {
+        return t('editorMaterial.ui.valueField')
+      },
+      type: 'value',
+      multiple: true,
+    },
   ],
 }
 

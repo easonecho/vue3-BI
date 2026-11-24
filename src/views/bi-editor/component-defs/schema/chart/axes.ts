@@ -3,34 +3,58 @@ import { chartDataZoomSchema } from './data-zoom'
 import { chartXAxisSchema } from './x-axis'
 import { chartYAxisSchema } from './y-axis'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 🔑 分析指标（占比 / 同环比）：仅坐标轴图表，在 tooltip 中展示，不改变原始数据 */
 export const chartAnalysisSchema: PropField[] = [
   {
     key: 'sharePercentShow',
-    label: '显示占比',
+    get label() {
+      return t('editorMaterial.ui.showPercentage')
+    },
     type: 'switch',
     default: false,
-    group: '数据对比',
-    tip: '在 tooltip 中显示当前值占该系列总和的百分比',
+    get group() {
+      return t('editorMaterial.ui.dataComparison')
+    },
+    get tip() {
+      return t('editorMaterial.ui.showTheCurrentValueAsAPercentageOfTheSeriesTotalInTheTooltip')
+    },
   },
   {
     key: 'compareShow',
-    label: '显示同环比',
+    get label() {
+      return t('editorMaterial.ui.showMomYoy')
+    },
     type: 'switch',
     default: false,
-    group: '数据对比',
-    tip: '环比对比前 1 个类目，同比对比前 N 个类目（按 X 轴类目顺序）',
+    get group() {
+      return t('editorMaterial.ui.dataComparison')
+    },
+    get tip() {
+      return t(
+        'editorMaterial.ui.momComparesThePreviousCategoryYoyComparesNCategoriesBackXAxisOrder',
+      )
+    },
   },
   {
     key: 'compareYoyLag',
-    label: '同比间隔',
+    get label() {
+      return t('editorMaterial.ui.yoyLag')
+    },
     type: 'number',
     default: 12,
     min: 1,
     max: 60,
     step: 1,
-    group: '数据对比',
-    tip: '同比对比前 N 个类目；月度数据建议 12，季度数据建议 4',
+    get group() {
+      return t('editorMaterial.ui.dataComparison')
+    },
+    get tip() {
+      return t('editorMaterial.ui.yoyComparesNCategoriesBackUse12ForMonthlyAnd4ForQuarterlyData')
+    },
     visibleWhen: { field: 'compareShow', truthy: true },
   },
 ]
@@ -39,37 +63,59 @@ export const chartAnalysisSchema: PropField[] = [
 export const chartReferenceLineSchema: PropField[] = [
   {
     key: 'referenceLineShow',
-    label: '显示参考线',
+    get label() {
+      return t('editorMaterial.ui.showReferenceLine')
+    },
     type: 'switch',
     default: false,
-    group: '参考线',
-    tip: '在 Y 轴指定数值处绘制水平虚线',
+    get group() {
+      return t('editorMaterial.ui.referenceLine')
+    },
+    get tip() {
+      return t('editorMaterial.ui.drawAHorizontalDashedLineAtTheGivenYValue')
+    },
   },
   {
     key: 'referenceLineValue',
-    label: '参考值',
+    get label() {
+      return t('editorMaterial.ui.referenceValue')
+    },
     type: 'number',
     default: 0,
     step: 1,
-    group: '参考线',
-    tip: '参考线在 Y 轴上的数值位置',
+    get group() {
+      return t('editorMaterial.ui.referenceLine')
+    },
+    get tip() {
+      return t('editorMaterial.ui.referenceLineValueOnTheYAxis')
+    },
     visibleWhen: { field: 'referenceLineShow', truthy: true },
   },
   {
     key: 'referenceLineLabel',
-    label: '线条标签',
+    get label() {
+      return t('editorMaterial.ui.lineLabel')
+    },
     type: 'input',
     default: '',
-    placeholder: '留空则显示参考值',
-    group: '参考线',
+    get placeholder() {
+      return t('editorMaterial.ui.leaveEmptyToShowTheReferenceValue')
+    },
+    get group() {
+      return t('editorMaterial.ui.referenceLine')
+    },
     visibleWhen: { field: 'referenceLineShow', truthy: true },
   },
   {
     key: 'referenceLineColor',
-    label: '线条颜色',
+    get label() {
+      return t('editorMaterial.ui.lineColor')
+    },
     type: 'colorpicker',
     default: '#ef4444',
-    group: '参考线',
+    get group() {
+      return t('editorMaterial.ui.referenceLine')
+    },
     visibleWhen: { field: 'referenceLineShow', truthy: true },
   },
 ]

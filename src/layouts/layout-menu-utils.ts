@@ -4,6 +4,7 @@
  * 从 SystemLayout.vue 抽出，便于单测覆盖三级菜单路径拼接等边界逻辑。
  */
 import type { Component } from 'vue'
+import i18n from '@/i18n'
 import {
   DataBoard,
   Setting,
@@ -31,21 +32,51 @@ export interface BreadcrumbItem {
 
 /** 一级路由 -> 面包屑标题 */
 export const MENU_TITLE: Record<string, string> = {
-  '/dashboard': '看板管理',
-  '/dashboard-templates': '模板库',
-  '/system/users': '用户管理',
-  '/system/roles': '角色管理',
-  '/system/menus': '菜单管理',
-  '/system/departments': '部门管理',
-  '/system/datasources': '数据源管理',
-  '/system/datasets': '数据集管理',
-  '/system/dicts': '数据字典',
-  '/system/logs': '操作日志',
-  '/system/configs': '系统配置',
-  '/system/positions': '岗位管理',
-  '/system/scheduled-tasks': '定时任务',
-  '/system/usage': '使用分析',
-  '/system/monitor': '系统监控',
+  get '/dashboard'() {
+    return i18n.global.t('menu.dashboard')
+  },
+  get '/dashboard-templates'() {
+    return i18n.global.t('menu.dashboardTemplates')
+  },
+  get '/system/users'() {
+    return i18n.global.t('menu.users')
+  },
+  get '/system/roles'() {
+    return i18n.global.t('menu.roles')
+  },
+  get '/system/menus'() {
+    return i18n.global.t('menu.menus')
+  },
+  get '/system/departments'() {
+    return i18n.global.t('menu.departments')
+  },
+  get '/system/datasources'() {
+    return i18n.global.t('menu.datasources')
+  },
+  get '/system/datasets'() {
+    return i18n.global.t('menu.datasets')
+  },
+  get '/system/dicts'() {
+    return i18n.global.t('menu.dicts')
+  },
+  get '/system/logs'() {
+    return i18n.global.t('menu.logs')
+  },
+  get '/system/configs'() {
+    return i18n.global.t('menu.configs')
+  },
+  get '/system/positions'() {
+    return i18n.global.t('menu.positions')
+  },
+  get '/system/scheduled-tasks'() {
+    return i18n.global.t('menu.scheduledTasks')
+  },
+  get '/system/usage'() {
+    return i18n.global.t('menu.usage')
+  },
+  get '/system/monitor'() {
+    return i18n.global.t('menu.monitor')
+  },
 }
 
 /**
@@ -103,7 +134,7 @@ export function iconComp(iconName?: string): Component {
 
 /** 根据当前路由生成面包屑（首页 + 一级路由标题） */
 export function buildBreadcrumbs(path: string): BreadcrumbItem[] {
-  const crumbs: BreadcrumbItem[] = [{ title: '首页', path: '/dashboard' }]
+  const crumbs: BreadcrumbItem[] = [{ title: i18n.global.t('layout.home'), path: '/dashboard' }]
   const title = MENU_TITLE[path]
   if (title && path !== '/dashboard') {
     crumbs.push({ title, path })

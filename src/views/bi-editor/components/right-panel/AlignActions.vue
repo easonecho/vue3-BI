@@ -1,40 +1,48 @@
 <template>
   <div class="align-section">
-    <div class="align-label">水平对齐</div>
+    <div class="align-label">{{ t('editorUi.props.alignHorizontal') }}</div>
     <div class="align-row">
-      <el-button size="small" :disabled="!canAlign" @click="store.alignLeft()">左对齐</el-button>
-      <el-button size="small" :disabled="!canAlign" @click="store.alignHCenter()"
-        >水平居中</el-button
-      >
-      <el-button size="small" :disabled="!canAlign" @click="store.alignRight()">右对齐</el-button>
+      <el-button size="small" :disabled="!canAlign" @click="store.alignLeft()">{{
+        t('editorUi.props.alignLeft')
+      }}</el-button>
+      <el-button size="small" :disabled="!canAlign" @click="store.alignHCenter()">{{
+        t('editorUi.props.alignHCenter')
+      }}</el-button>
+      <el-button size="small" :disabled="!canAlign" @click="store.alignRight()">{{
+        t('editorUi.props.alignRight')
+      }}</el-button>
     </div>
-    <div class="align-label">垂直对齐</div>
+    <div class="align-label">{{ t('editorUi.props.alignVertical') }}</div>
     <div class="align-row">
-      <el-button size="small" :disabled="!canAlign" @click="store.alignTop()">顶对齐</el-button>
-      <el-button size="small" :disabled="!canAlignMulti" @click="store.alignVCenter()"
-        >垂直居中</el-button
-      >
-      <el-button size="small" :disabled="!canAlignMulti" @click="store.alignBottom()"
-        >底对齐</el-button
-      >
+      <el-button size="small" :disabled="!canAlign" @click="store.alignTop()">{{
+        t('editorUi.props.alignTop')
+      }}</el-button>
+      <el-button size="small" :disabled="!canAlignMulti" @click="store.alignVCenter()">{{
+        t('editorUi.props.alignVCenter')
+      }}</el-button>
+      <el-button size="small" :disabled="!canAlignMulti" @click="store.alignBottom()">{{
+        t('editorUi.props.alignBottom')
+      }}</el-button>
     </div>
-    <div class="align-label">等距分布（≥3 个组件）</div>
+    <div class="align-label">{{ t('editorUi.props.alignDistribute') }}</div>
     <div class="align-row">
-      <el-button size="small" :disabled="!canDistribute" @click="store.distributeHorizontal()"
-        >水平分布</el-button
-      >
-      <el-button size="small" :disabled="!canDistribute" @click="store.distributeVertical()"
-        >垂直分布</el-button
-      >
+      <el-button size="small" :disabled="!canDistribute" @click="store.distributeHorizontal()">{{
+        t('editorUi.props.distributeH')
+      }}</el-button>
+      <el-button size="small" :disabled="!canDistribute" @click="store.distributeVertical()">{{
+        t('editorUi.props.distributeV')
+      }}</el-button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useBiEditorStore } from '@/stores/bi-editor'
 
 const store = useBiEditorStore()
+const { t } = useI18n()
 
 /**
  * 🔑 对齐 / 分布可用性判定

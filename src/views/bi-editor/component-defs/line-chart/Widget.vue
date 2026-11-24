@@ -16,6 +16,10 @@ import { resolveComponentFieldMapping } from '../aggregate-spec'
 import { useLinkageStore } from '@/stores/linkage'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 const linkageStore = useLinkageStore()
@@ -74,14 +78,16 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const categories = mappedData.value?.categories
-    ?? (Array.isArray(mergedProps.categories)
+  const categories =
+    mappedData.value?.categories ??
+    (Array.isArray(mergedProps.categories)
       ? mergedProps.categories
       : ['周一', '周二', '周三', '周四', '周五', '周六', '周日'])
-  const seriesData = mappedData.value?.series
-    ?? (Array.isArray(mergedProps.series)
+  const seriesData =
+    mappedData.value?.series ??
+    (Array.isArray(mergedProps.series)
       ? mergedProps.series
-      : [{ name: '数据', data: [120, 200, 150, 80, 70, 110, 130] }])
+      : [{ name: t('editorMaterial.ui.data'), data: [120, 200, 150, 80, 70, 110, 130] }])
   const smooth = !!mergedProps.smooth // schema default: true
   const showArea = !!mergedProps.area
   const pointSize = Number(mergedProps.pointSize)
@@ -151,7 +157,7 @@ function applyChartOption() {
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: true,
       xAxisData: getXAxisData(specificOption),
-      fallbackTitle: '折线图',
+      fallbackTitle: t('editorMaterial.meta.lineChart'),
     })
   })
 }
@@ -180,5 +186,4 @@ onUnmounted(() => {
   if (debounceTimer !== null) cancelAnimationFrame(debounceTimer)
   pendingBuilder = null
 })
-
 </script>

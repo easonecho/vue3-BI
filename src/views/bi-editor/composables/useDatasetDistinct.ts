@@ -8,6 +8,7 @@
  *   - 同一数据集+字段+关键字在 5 分钟内复用缓存, 刷新看板时主动重取
  */
 import { computed, onUnmounted, ref, watch, type Ref } from 'vue'
+import i18n from '@/i18n'
 import { fetchDatasetDistinct, type DatasetDistinctResult } from '@/api/dataset'
 import { fetchPublicDatasetDistinct } from '@/api/share'
 import { getPublicDashboardContext } from '@/utils/public-dashboard-context'
@@ -161,7 +162,8 @@ export function useDatasetDistinct(
       if (seq !== requestSeq) return
       values.value = []
       truncated.value = false
-      error.value = e instanceof Error ? e.message : '候选值加载失败'
+      error.value =
+        e instanceof Error ? e.message : i18n.global.t('editorUi.dataset.distinctLoadFailed')
     } finally {
       if (seq === requestSeq) loading.value = false
     }

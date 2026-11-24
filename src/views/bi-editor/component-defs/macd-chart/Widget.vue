@@ -15,6 +15,10 @@ import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 // 🔑 模块级注册柱状图 + 折线图（运行一次,echarts/core 内部去重）
 use([BarChart, LineChart])
 
@@ -71,14 +75,13 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const categories = mappedData.value?.categories
-    ?? (Array.isArray(mergedProps.categories) ? mergedProps.categories : [])
-  const difData = mappedData.value?.dif
-    ?? (Array.isArray(mergedProps.dif) ? mergedProps.dif : [])
-  const deaData = mappedData.value?.dea
-    ?? (Array.isArray(mergedProps.dea) ? mergedProps.dea : [])
-  const macdData = mappedData.value?.macd
-    ?? (Array.isArray(mergedProps.macd) ? mergedProps.macd : [])
+  const categories =
+    mappedData.value?.categories ??
+    (Array.isArray(mergedProps.categories) ? mergedProps.categories : [])
+  const difData = mappedData.value?.dif ?? (Array.isArray(mergedProps.dif) ? mergedProps.dif : [])
+  const deaData = mappedData.value?.dea ?? (Array.isArray(mergedProps.dea) ? mergedProps.dea : [])
+  const macdData =
+    mappedData.value?.macd ?? (Array.isArray(mergedProps.macd) ? mergedProps.macd : [])
 
   const showDIF = mergedProps.showDIF !== false
   const showDEA = mergedProps.showDEA !== false
@@ -186,7 +189,7 @@ function applyChartOption() {
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: true,
       xAxisData: getXAxisData(specificOption),
-      fallbackTitle: 'MACD指标图',
+      fallbackTitle: t('editorMaterial.meta.macdChart'),
     })
   })
 }
@@ -197,11 +200,7 @@ onMounted(async () => {
 
 watch(
   // 🔑 性能优化：签名式 watch 替代 deep watch
-  [
-    () => JSON.stringify(props.comp.props),
-    () => JSON.stringify(props.comp.dataConfig),
-    rows,
-  ],
+  [() => JSON.stringify(props.comp.props), () => JSON.stringify(props.comp.dataConfig), rows],
   () => {
     applyChartOption()
   },

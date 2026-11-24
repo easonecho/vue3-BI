@@ -1,4 +1,5 @@
 import type { ComponentInstance, ComponentType } from '@/views/bi-editor/types'
+import i18n from '@/i18n'
 import { getMeta } from '../metadata'
 import type { ComponentIndexApi, OpsDeps } from './types'
 
@@ -78,7 +79,7 @@ export function createComponentCrud(deps: OpsDeps, index: ComponentIndexApi) {
       const copy: ComponentInstance = {
         ...comp,
         id: generateId(),
-        name: `${comp.name} (副本)`,
+        name: i18n.global.t('appMessages.editor.copySuffix', { name: comp.name }),
         x: comp.x + 20,
         y: comp.y + 20,
         zIndex: comp.zIndex + 1,

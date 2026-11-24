@@ -2,6 +2,10 @@ import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 import { chartBaseSchema, buildSeriesLabelSchema } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 🔑 回归分析图默认数据：30 个散点,正相关性 y ≈ 2x + 1 + 噪声 */
 function buildRegressionDefaults(): {
   scatterData: number[][]
@@ -52,7 +56,9 @@ export const REGRESSION_DEFAULT_CONFIDENCE_COLOR = 'rgba(84,112,198,0.2)'
 export const regressionChartDefinition: ComponentDefinition = {
   type: 'regression-chart',
   meta: {
-    name: '回归分析图',
+    get name() {
+      return t('editorMaterial.meta.regressionChart')
+    },
     category: 'chart',
     icon: 'DataLine',
     defaultWidth: 480,
@@ -61,17 +67,33 @@ export const regressionChartDefinition: ComponentDefinition = {
   widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
     ...chartBaseSchema,
-    { key: 'showRegression', label: '显示回归线', type: 'switch', default: true, group: '回归' },
     {
-      key: 'showConfidence',
-      label: '显示置信区间',
+      key: 'showRegression',
+      get label() {
+        return t('editorMaterial.ui.showRegressionLine')
+      },
       type: 'switch',
       default: true,
-      group: '回归',
+      get group() {
+        return t('editorMaterial.ui.regression')
+      },
+    },
+    {
+      key: 'showConfidence',
+      get label() {
+        return t('editorMaterial.ui.showConfidenceInterval')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.regression')
+      },
     },
     {
       key: 'confidenceLevel',
-      label: '置信度',
+      get label() {
+        return t('editorMaterial.ui.confidenceLevel')
+      },
       type: 'select',
       options: [
         { label: '90%', value: '90' },
@@ -79,40 +101,58 @@ export const regressionChartDefinition: ComponentDefinition = {
         { label: '99%', value: '99' },
       ],
       default: '95',
-      group: '回归',
+      get group() {
+        return t('editorMaterial.ui.regression')
+      },
       visibleWhen: { field: 'showConfidence', truthy: true },
     },
     {
       key: 'scatterColor',
-      label: '散点颜色',
+      get label() {
+        return t('editorMaterial.ui.pointColor')
+      },
       type: 'colorpicker',
       default: REGRESSION_DEFAULT_SCATTER_COLOR,
-      group: '颜色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
     },
     {
       key: 'lineColor',
-      label: '回归线颜色',
+      get label() {
+        return t('editorMaterial.ui.regressionLineColor')
+      },
       type: 'colorpicker',
       default: REGRESSION_DEFAULT_LINE_COLOR,
-      group: '颜色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
       visibleWhen: { field: 'showRegression', truthy: true },
     },
     {
       key: 'confidenceColor',
-      label: '置信区间颜色',
+      get label() {
+        return t('editorMaterial.ui.confidenceIntervalColor')
+      },
       type: 'colorpicker',
       default: REGRESSION_DEFAULT_CONFIDENCE_COLOR,
-      group: '颜色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
       visibleWhen: { field: 'showConfidence', truthy: true },
     },
     {
       key: 'symbolSize',
-      label: '点大小',
+      get label() {
+        return t('editorMaterial.ui.pointSize')
+      },
       type: 'slider',
       min: 5,
       max: 20,
       default: 8,
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
     ...buildSeriesLabelSchema('top'),
   ],
@@ -123,8 +163,20 @@ export const regressionChartDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'xField', label: 'X字段', type: 'value' },
-    { key: 'yField', label: 'Y字段', type: 'value' },
+    {
+      key: 'xField',
+      get label() {
+        return t('editorMaterial.ui.xField')
+      },
+      type: 'value',
+    },
+    {
+      key: 'yField',
+      get label() {
+        return t('editorMaterial.ui.yField')
+      },
+      type: 'value',
+    },
   ],
 }
 

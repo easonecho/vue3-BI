@@ -1,30 +1,54 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="保存模板"
+    :title="t('editorUi.header.saveTemplateTitle')"
     width="480px"
     :close-on-click-modal="false"
   >
     <el-form :model="templateMeta" label-width="80px">
-      <el-form-item label="模板名称">
-        <el-input v-model="store.dashboardName" placeholder="请输入模板名称" maxlength="100" show-word-limit />
+      <el-form-item :label="t('editorUi.header.templateName')">
+        <el-input
+          v-model="store.dashboardName"
+          :placeholder="t('editorUi.header.templateNamePlaceholder')"
+          maxlength="100"
+          show-word-limit
+        />
       </el-form-item>
-      <el-form-item label="描述">
-        <el-input v-model="templateMeta.description" type="textarea" :rows="3" placeholder="可选, 模板用途说明" maxlength="500" show-word-limit />
+      <el-form-item :label="t('editorUi.header.description')">
+        <el-input
+          v-model="templateMeta.description"
+          type="textarea"
+          :rows="3"
+          :placeholder="t('editorUi.header.templateDescPlaceholder')"
+          maxlength="500"
+          show-word-limit
+        />
       </el-form-item>
-      <el-form-item label="分类">
-        <el-select v-model="templateMeta.category" placeholder="选择分类" clearable style="width: 100%">
-          <el-option v-for="c in categoryOptions" :key="c.value" :label="c.label" :value="c.value" />
+      <el-form-item :label="t('editorUi.header.category')">
+        <el-select
+          v-model="templateMeta.category"
+          :placeholder="t('editorUi.header.categoryPlaceholder')"
+          clearable
+          style="width: 100%"
+        >
+          <el-option
+            v-for="c in categoryOptions"
+            :key="c.value"
+            :label="c.label"
+            :value="c.value"
+          />
         </el-select>
       </el-form-item>
-      <el-form-item label="是否公开">
+      <el-form-item :label="t('editorUi.header.isPublic')">
         <el-switch v-model="templateMeta.isPublic" />
-        <span class="form-hint">公开模板其他用户可用</span>
+        <span class="form-hint">{{ t('editorUi.header.templatePublicHint') }}</span>
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
-      <el-button type="primary" :loading="store.isSaving" @click="confirmSaveTemplate">保存模板</el-button>
+      <el-button @click="visible = false">{{ t('common.cancel') }}</el-button>
+      <el-button type="primary" :loading="store.isSaving" @click="confirmSaveTemplate">{{
+        t('editorUi.header.saveTemplate')
+      }}</el-button>
     </template>
   </el-dialog>
 </template>
@@ -32,6 +56,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import { getTemplateCategories, type TemplateCategoryOption } from '@/api/dashboard-template'
 
@@ -39,6 +64,7 @@ const visible = defineModel<boolean>({ required: true })
 const store = useBiEditorStore()
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 const templateMeta = reactive({
   description: '',

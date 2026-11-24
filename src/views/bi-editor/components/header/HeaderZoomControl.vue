@@ -1,6 +1,6 @@
 <template>
   <div class="zoom-control">
-    <el-tooltip content="缩小" placement="bottom">
+    <el-tooltip :content="t('editorUi.zoom.out')" placement="bottom">
       <el-button size="small" @click="zoomOut">
         <el-icon><ZoomOut /></el-icon>
       </el-button>
@@ -23,12 +23,12 @@
         </el-dropdown-menu>
       </template>
     </el-dropdown>
-    <el-tooltip content="放大" placement="bottom">
+    <el-tooltip :content="t('editorUi.zoom.in')" placement="bottom">
       <el-button size="small" @click="zoomIn">
         <el-icon><ZoomIn /></el-icon>
       </el-button>
     </el-tooltip>
-    <el-tooltip content="居中显示整张画布 (Ctrl+0 / 双击画布空白)" placement="bottom">
+    <el-tooltip :content="t('editorUi.zoom.fit')" placement="bottom">
       <el-button size="small" @click="fitToScreen">
         <el-icon><ScaleToOriginal /></el-icon>
       </el-button>
@@ -38,10 +38,12 @@
 
 <script setup lang="ts">
 import { ArrowDown, ScaleToOriginal, ZoomIn, ZoomOut } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import { useCanvasZoom } from '@/views/bi-editor/composables/useCanvas'
 
 const store = useBiEditorStore()
+const { t } = useI18n()
 const { zoomOptions, zoomIn, zoomOut } = useCanvasZoom()
 
 /**
@@ -50,7 +52,9 @@ const { zoomOptions, zoomIn, zoomOut } = useCanvasZoom()
  */
 function fitToScreen() {
   let taken = false
-  const handler = () => { taken = true }
+  const handler = () => {
+    taken = true
+  }
   window.addEventListener('bi-editor:fit-to-screen-done', handler, { once: true })
   window.dispatchEvent(new CustomEvent('bi-editor:fit-to-screen'))
   setTimeout(() => {
@@ -82,7 +86,10 @@ function fitToScreen() {
   border-radius: 6px;
   box-shadow: none;
   color: var(--bi-text-primary, #f3f4f6) !important;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
 }
 
 .zoom-display:hover,
@@ -101,7 +108,9 @@ function fitToScreen() {
   font-size: 12px;
   color: var(--bi-text-secondary, #9ca3af);
   margin-top: 1px;
-  transition: transform 0.15s ease, color 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    color 0.15s ease;
 }
 
 .zoom-display:hover .zoom-caret {

@@ -3,14 +3,14 @@
     <div class="left-panel">
       <!-- 组件库 / 图层 -->
       <el-tabs v-model="activeTab" class="panel-tabs">
-        <el-tab-pane label="组件库" name="components">
+        <el-tab-pane :label="t('editorUi.panel.componentsTab')" name="components">
           <ComponentLibraryTab
             :collapsed="collapsed"
             @drag-start="forwardDragStart"
             @add-component="forwardAddComponent"
           />
         </el-tab-pane>
-        <el-tab-pane label="图层" name="layers">
+        <el-tab-pane :label="t('editorUi.panel.layersTab')" name="layers">
           <LayerListTab />
         </el-tab-pane>
       </el-tabs>
@@ -20,7 +20,7 @@
     <button
       class="sidebar-handle"
       :class="{ collapsed }"
-      :title="collapsed ? '展开组件/图层面板' : '收起组件/图层面板'"
+      :title="collapsed ? t('editorUi.panel.expandLeft') : t('editorUi.panel.collapseLeft')"
       @click="toggleCollapsed"
     >
       <el-icon class="handle-icon">
@@ -32,10 +32,13 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { ComponentMeta } from '@/views/bi-editor/types'
 import { ArrowLeft as Left, ArrowRight as Right } from '@element-plus/icons-vue'
 import ComponentLibraryTab from './left-panel/ComponentLibraryTab.vue'
 import LayerListTab from './left-panel/LayerListTab.vue'
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   (e: 'drag-start', event: DragEvent, meta: ComponentMeta): void

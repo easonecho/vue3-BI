@@ -20,7 +20,7 @@
       </div>
       <div class="thumb-mask">
         <el-icon class="mask-icon"><ZoomIn /></el-icon>
-        <span>预览</span>
+        <span>{{ t('materialPage.preview') }}</span>
       </div>
     </div>
     <div class="card-body">
@@ -35,19 +35,19 @@
     </div>
     <div class="card-actions">
       <el-button link type="primary" size="small" @click="emit('preview', material)">
-        <el-icon><View /></el-icon>预览
+        <el-icon><View /></el-icon>{{ t('materialPage.preview') }}
       </el-button>
       <el-button link type="primary" size="small" @click="emit('download', material)">
-        <el-icon><Download /></el-icon>下载
+        <el-icon><Download /></el-icon>{{ t('materialPage.download') }}
       </el-button>
       <el-popconfirm
-        title="确定删除该素材吗？删除后无法恢复"
+        :title="t('materialPage.deleteConfirm')"
         confirm-button-type="danger"
         @confirm="emit('delete', material)"
       >
         <template #reference>
           <el-button link type="danger" size="small">
-            <el-icon><Delete /></el-icon>删除
+            <el-icon><Delete /></el-icon>{{ t('materialPage.delete') }}
           </el-button>
         </template>
       </el-popconfirm>
@@ -57,13 +57,11 @@
 
 <script setup lang="ts">
 import { Box, Delete, Download, View, ZoomIn } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import type { Material } from '@/api/material'
-import {
-  formatSize,
-  formatTime,
-  typeLabel,
-  typeTagType,
-} from '../utils/material-utils'
+import { formatSize, formatTime, typeLabel, typeTagType } from '../utils/material-utils'
+
+const { t } = useI18n()
 
 defineProps<{ material: Material }>()
 

@@ -18,13 +18,19 @@
 import { computed, ref, watch } from 'vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 
 const mode = computed(() => props.comp.props?.mode ?? 'date')
-const placeholder = computed(() => props.comp.props?.placeholder ?? '选择日期')
+const placeholder = computed(
+  () => props.comp.props?.placeholder ?? t('editorMaterial.ui.selectDate'),
+)
 const defaultValue = computed(() => props.comp.props?.defaultValue ?? '')
 const showLabel = computed(() => props.comp.props?.showLabel ?? true)
-const labelText = computed(() => props.comp.props?.labelText ?? '日期')
+const labelText = computed(() => props.comp.props?.labelText ?? t('editorMaterial.ui.date'))
 const bgColor = computed(() => props.comp.props?.bgColor ?? '#1e293b')
 const textColor = computed(() => props.comp.props?.textColor ?? '#e2e8f0')
 const borderColor = computed(() => props.comp.props?.borderColor ?? '#475569')

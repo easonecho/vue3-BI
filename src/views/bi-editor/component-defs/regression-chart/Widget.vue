@@ -15,6 +15,10 @@ import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 // 🔑 模块级注册散点图 + 折线图（运行一次,echarts/core 内部去重）
 use([ScatterChart, LineChart])
 
@@ -103,8 +107,8 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const scatterData = mappedData.value
-    ?? (Array.isArray(mergedProps.scatterData) ? mergedProps.scatterData : [])
+  const scatterData =
+    mappedData.value ?? (Array.isArray(mergedProps.scatterData) ? mergedProps.scatterData : [])
   // 🔑 用户可在 props.regressionLine 中预设回归方程,否则从散点动态计算
   const userLine = mergedProps.regressionLine
   const regression =
@@ -165,7 +169,7 @@ function getChartSpecificOption(): {
       bandData.push([base[i], lower[i]])
     }
     seriesList.push({
-      name: '置信区间',
+      name: t('editorMaterial.ui.confidenceInterval'),
       type: 'line',
       data: bandData,
       smooth: false,
@@ -182,7 +186,7 @@ function getChartSpecificOption(): {
   // 🔑 回归线
   if (showRegression) {
     seriesList.push({
-      name: '回归线',
+      name: t('editorMaterial.ui.regressionLine'),
       type: 'line',
       data: [
         [minX, +(regression.slope * minX + regression.intercept).toFixed(4)],
@@ -208,7 +212,7 @@ function getChartSpecificOption(): {
 
   // 🔑 散点（最上层）
   seriesList.push({
-    name: '散点',
+    name: t('editorMaterial.ui.scatter'),
     type: 'scatter',
     data: scatterData,
     symbolSize,
@@ -245,7 +249,7 @@ function applyChartOption() {
     const { specificOption, mergedProps } = getChartSpecificOption()
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: true,
-      fallbackTitle: '回归分析图',
+      fallbackTitle: t('editorMaterial.meta.regressionChart'),
     })
   })
 }
@@ -256,11 +260,7 @@ onMounted(async () => {
 
 watch(
   // 🔑 性能优化：签名式 watch 替代 deep watch
-  [
-    () => JSON.stringify(props.comp.props),
-    () => JSON.stringify(props.comp.dataConfig),
-    rows,
-  ],
+  [() => JSON.stringify(props.comp.props), () => JSON.stringify(props.comp.dataConfig), rows],
   () => {
     applyChartOption()
   },

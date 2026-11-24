@@ -1,14 +1,18 @@
 <template>
   <div class="canvas-info-bar">
-    <span>画布: {{ store.canvas.width }} × {{ store.canvas.height }}</span>
+    <span>{{
+      t('editorUi.canvas.infoCanvas', { width: store.canvas.width, height: store.canvas.height })
+    }}</span>
     <ElDivider direction="vertical" />
-    <span>缩放: {{ Math.round(localScale * 100) }}%</span>
+    <span>{{ t('editorUi.canvas.infoZoom', { percent: Math.round(localScale * 100) }) }}</span>
     <ElDivider direction="vertical" />
     <span>
-      选中:
+      {{ t('editorUi.canvas.infoSelection') }}
       <template v-if="store.selectedIds.length > 1">
-        共 {{ store.selectedIds.length }} 个组件
-        <template v-if="store.selectedComponent">(主选: {{ store.selectedComponent.name }})</template>
+        {{ t('editorUi.canvas.infoMulti', { count: store.selectedIds.length }) }}
+        <template v-if="store.selectedComponent">{{
+          t('editorUi.canvas.infoPrimary', { name: store.selectedComponent.name })
+        }}</template>
       </template>
       <template v-else-if="store.selectedComponent">
         {{ store.selectedComponent.name }} ({{ Math.round(store.selectedComponent.x) }},
@@ -17,14 +21,15 @@
           Math.round(store.selectedComponent.height)
         }}
       </template>
-      <template v-else>未选择</template>
+      <template v-else>{{ t('editorUi.canvas.infoUnselected') }}</template>
     </span>
     <ElDivider direction="vertical" />
-    <span>组件数: {{ store.components.length }}</span>
+    <span>{{ t('editorUi.canvas.infoComponents', { count: store.components.length }) }}</span>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import { ElDivider } from 'element-plus'
 
@@ -34,6 +39,7 @@ interface Props {
 defineProps<Props>()
 
 const store = useBiEditorStore()
+const { t } = useI18n()
 </script>
 
 <style scoped lang="less">

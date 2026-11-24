@@ -2,10 +2,16 @@ import type { ComponentDefinition } from '../types'
 import { aggregatePropField } from '../types'
 import Widget from './Widget.vue'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const statCardDefinition: ComponentDefinition = {
   type: 'stat-card',
   meta: {
-    name: '统计卡片',
+    get name() {
+      return t('editorMaterial.meta.statCard')
+    },
     category: 'info',
     icon: 'Histogram',
     defaultWidth: 240,
@@ -13,44 +19,199 @@ export const statCardDefinition: ComponentDefinition = {
   },
   widget: Widget,
   propsSchema: [
-    { key: 'title', label: '标题', type: 'input', default: '总销售额', group: '内容' },
-    { key: 'value', label: '数值', type: 'input', default: '¥126,560', group: '内容' },
-    { key: 'prefix', label: '前缀', type: 'input', default: '', group: '内容' },
-    { key: 'suffix', label: '后缀', type: 'input', default: '', group: '内容' },
+    {
+      key: 'title',
+      get label() {
+        return t('editorMaterial.ui.title')
+      },
+      type: 'input',
+      default: t('editorMaterial.ui.totalSales'),
+      get group() {
+        return t('editorMaterial.ui.content')
+      },
+    },
+    {
+      key: 'value',
+      get label() {
+        return t('editorMaterial.ui.value')
+      },
+      type: 'input',
+      default: '¥126,560',
+      get group() {
+        return t('editorMaterial.ui.content')
+      },
+    },
+    {
+      key: 'prefix',
+      get label() {
+        return t('editorMaterial.ui.prefix')
+      },
+      type: 'input',
+      default: '',
+      get group() {
+        return t('editorMaterial.ui.content')
+      },
+    },
+    {
+      key: 'suffix',
+      get label() {
+        return t('editorMaterial.ui.suffix')
+      },
+      type: 'input',
+      default: '',
+      get group() {
+        return t('editorMaterial.ui.content')
+      },
+    },
     {
       key: 'trend',
-      label: '趋势',
+      get label() {
+        return t('editorMaterial.ui.trend')
+      },
       type: 'select',
       options: [
-        { label: '上升', value: 'up' },
-        { label: '下降', value: 'down' },
-        { label: '持平', value: 'flat' },
+        {
+          get label() {
+            return t('editorMaterial.ui.up')
+          },
+          value: 'up',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.down')
+          },
+          value: 'down',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.unchanged')
+          },
+          value: 'flat',
+        },
       ],
       default: 'up',
-      group: '内容',
+      get group() {
+        return t('editorMaterial.ui.content')
+      },
     },
-    { key: 'trendValue', label: '趋势值', type: 'input', default: '+12.5%', group: '内容' },
+    {
+      key: 'trendValue',
+      get label() {
+        return t('editorMaterial.ui.trendValue')
+      },
+      type: 'input',
+      default: '+12.5%',
+      get group() {
+        return t('editorMaterial.ui.content')
+      },
+    },
     {
       key: 'iconName',
-      label: '图标名',
+      get label() {
+        return t('editorMaterial.ui.iconName')
+      },
       type: 'input',
       default: 'TrendCharts',
-      group: '内容',
-      tip: 'Element Plus 图标名',
+      get group() {
+        return t('editorMaterial.ui.content')
+      },
+      get tip() {
+        return t('editorMaterial.ui.elementPlusIconName')
+      },
     },
-    { key: 'bgColor', label: '背景色', type: 'colorpicker', default: '#ffffff', group: '样式' },
-    { key: 'textColor', label: '文字颜色', type: 'colorpicker', default: '#1f2937', group: '样式' },
-    { key: 'titleColor', label: '标题颜色', type: 'colorpicker', default: '#6b7280', group: '样式' },
-    { key: 'accentColor', label: '强调色', type: 'colorpicker', default: '#5470c6', group: '样式' },
-    { key: 'fontSize', label: '数值字号', type: 'number', min: 12, max: 48, default: 24, group: '样式' },
-    { key: 'borderRadius', label: '圆角', type: 'number', min: 0, max: 24, default: 8, group: '样式' },
-    { key: 'showIcon', label: '显示图标', type: 'switch', default: true, group: '样式' },
+    {
+      key: 'bgColor',
+      get label() {
+        return t('editorMaterial.ui.backgroundColor')
+      },
+      type: 'colorpicker',
+      default: '#ffffff',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'textColor',
+      get label() {
+        return t('editorMaterial.ui.textColor')
+      },
+      type: 'colorpicker',
+      default: '#1f2937',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'titleColor',
+      get label() {
+        return t('editorMaterial.ui.titleColor')
+      },
+      type: 'colorpicker',
+      default: '#6b7280',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'accentColor',
+      get label() {
+        return t('editorMaterial.ui.accentColor')
+      },
+      type: 'colorpicker',
+      default: '#5470c6',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'fontSize',
+      get label() {
+        return t('editorMaterial.ui.valueFontSize')
+      },
+      type: 'number',
+      min: 12,
+      max: 48,
+      default: 24,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'borderRadius',
+      get label() {
+        return t('editorMaterial.ui.cornerRadius')
+      },
+      type: 'number',
+      min: 0,
+      max: 24,
+      default: 8,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'showIcon',
+      get label() {
+        return t('editorMaterial.ui.showIcon')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
     aggregatePropField,
   ],
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'valueField', label: '数值字段', type: 'value' },
+    {
+      key: 'valueField',
+      get label() {
+        return t('editorMaterial.ui.valueField')
+      },
+      type: 'value',
+    },
   ],
 }
 

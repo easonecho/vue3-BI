@@ -2,7 +2,7 @@
   <div class="preview-header">
     <el-button text @click="emit('back')">
       <el-icon><ArrowLeft /></el-icon>
-      <span>返回</span>
+      <span>{{ t('previewPage.back') }}</span>
     </el-button>
     <span class="preview-title">{{ dashboardName }}</span>
     <span class="preview-spacer"></span>
@@ -10,24 +10,35 @@
       <el-icon><Clock /></el-icon>
       {{ formatTime(lastRefreshAt) }}
     </span>
-    <el-tooltip content="手动刷新 (R)" placement="bottom">
-      <el-button text aria-label="刷新 (R)" :loading="refreshing" @click="emit('refresh')">
+    <el-tooltip :content="t('previewPage.refreshManual')" placement="bottom">
+      <el-button
+        text
+        :aria-label="t('previewPage.refresh')"
+        :loading="refreshing"
+        @click="emit('refresh')"
+      >
         <el-icon><Refresh /></el-icon>
       </el-button>
     </el-tooltip>
-    <el-tooltip :content="pureMode ? '显示工具栏 (H)' : '纯净模式 (H)'" placement="bottom">
+    <el-tooltip
+      :content="pureMode ? t('previewPage.showToolbar') : t('previewPage.pureMode')"
+      placement="bottom"
+    >
       <el-button
         text
-        :aria-label="pureMode ? '显示工具栏 (H)' : '纯净模式 (H)'"
+        :aria-label="pureMode ? t('previewPage.showToolbar') : t('previewPage.pureMode')"
         @click="emit('toggle-pure')"
       >
         <el-icon><component :is="pureMode ? Menu : Hide" /></el-icon>
       </el-button>
     </el-tooltip>
-    <el-tooltip :content="isFullscreen ? '退出全屏 (F/Esc)' : '全屏 (F)'" placement="bottom">
+    <el-tooltip
+      :content="isFullscreen ? t('previewPage.exitFullscreen') : t('previewPage.fullscreen')"
+      placement="bottom"
+    >
       <el-button
         text
-        :aria-label="isFullscreen ? '退出全屏 (F/Esc)' : '全屏 (F)'"
+        :aria-label="isFullscreen ? t('previewPage.exitFullscreen') : t('previewPage.fullscreen')"
         @click="emit('toggle-fullscreen')"
       >
         <el-icon><component :is="isFullscreen ? CloseBold : FullScreen" /></el-icon>
@@ -35,14 +46,19 @@
     </el-tooltip>
     <!-- 查看者导出：PNG / PDF（导出目标仅画布本身，不含工具栏） -->
     <el-dropdown trigger="click" :disabled="exporting" @command="handleExport">
-      <el-button text aria-label="导出" :loading="exporting" :disabled="exporting">
+      <el-button
+        text
+        :aria-label="t('previewPage.export')"
+        :loading="exporting"
+        :disabled="exporting"
+      >
         <el-icon><Download /></el-icon>
-        <span class="export-label">导出</span>
+        <span class="export-label">{{ t('previewPage.export') }}</span>
       </el-button>
       <template #dropdown>
         <el-dropdown-menu>
-          <el-dropdown-item command="png">导出图片 (PNG)</el-dropdown-item>
-          <el-dropdown-item command="pdf">导出 PDF</el-dropdown-item>
+          <el-dropdown-item command="png">{{ t('previewPage.exportPng') }}</el-dropdown-item>
+          <el-dropdown-item command="pdf">{{ t('previewPage.exportPdf') }}</el-dropdown-item>
         </el-dropdown-menu>
       </template>
     </el-dropdown>
@@ -51,19 +67,20 @@
       :model-value="autoRefreshInterval"
       size="small"
       style="width: 110px"
-      placeholder="自动刷新"
+      :placeholder="t('previewPage.autoRefresh')"
       @update:model-value="(v: number) => emit('update:autoRefreshInterval', v)"
       @change="emit('reset-auto-refresh')"
     >
-      <el-option label="关闭" :value="0" />
-      <el-option label="30 秒" :value="30" />
-      <el-option label="1 分钟" :value="60" />
-      <el-option label="5 分钟" :value="300" />
+      <el-option :label="t('previewPage.autoRefreshOff')" :value="0" />
+      <el-option :label="t('previewPage.seconds30')" :value="30" />
+      <el-option :label="t('previewPage.minute1')" :value="60" />
+      <el-option :label="t('previewPage.minutes5')" :value="300" />
     </el-select>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import {
   ArrowLeft,
   Clock,
@@ -75,6 +92,8 @@ import {
   Refresh,
 } from '@element-plus/icons-vue'
 import { formatTime } from '../utils/preview-utils'
+
+const { t } = useI18n()
 
 defineProps<{
   dashboardName: string
@@ -121,7 +140,9 @@ function handleExport(command: string) {
   backdrop-filter: blur(var(--bi-glass-blur));
   -webkit-backdrop-filter: blur(var(--bi-glass-blur));
   border-bottom: 1px solid var(--bi-glass-border);
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 
   /* 与全局按钮/文本风格统一 */
   .preview-title {
@@ -179,7 +200,8 @@ function handleExport(command: string) {
         box-shadow: 0 0 0 1px var(--bi-accent) inset;
       }
       &.is-focus {
-        box-shadow: 0 0 0 1px var(--bi-accent) inset,
+        box-shadow:
+          0 0 0 1px var(--bi-accent) inset,
           0 0 0 3px var(--bi-accent-glow);
       }
     }

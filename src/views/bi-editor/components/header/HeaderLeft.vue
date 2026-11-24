@@ -2,24 +2,28 @@
   <div class="header-left">
     <div class="logo">
       <el-icon :size="24" color="#409EFF"><DataAnalysis /></el-icon>
-      <span class="logo-text">{{ store.isTemplateMode ? '模板编辑器' : 'BI 编辑器' }}</span>
+      <span class="logo-text">{{
+        store.isTemplateMode ? t('editorUi.header.templateEditor') : t('editorUi.header.biEditor')
+      }}</span>
     </div>
     <el-divider direction="vertical" />
     <el-input
       v-model="store.dashboardName"
       class="file-name-input"
       size="small"
-      placeholder="未命名报表"
+      :placeholder="t('editorUi.header.untitledReport')"
     />
-    <span v-if="store.isDirty" class="dirty-dot" title="有未保存的修改"></span>
+    <span v-if="store.isDirty" class="dirty-dot" :title="t('editorUi.header.dirtyTitle')"></span>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { DataAnalysis } from '@element-plus/icons-vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
 
 const store = useBiEditorStore()
+const { t } = useI18n()
 </script>
 
 <style scoped lang="less">

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import i18n from '@/i18n'
 import type { ComponentInstance, CanvasState, GuideLine } from '@/views/bi-editor/types'
 import { getMeta, CATEGORY_GROUPS, CATEGORY_LABELS } from './metadata'
 import { useHistory } from './history'
@@ -56,7 +57,7 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
   const currentDashboardId = ref<number | null>(null) // null = 新建未保存
   /** 🔑 乐观锁版本号：加载/保存成功后更新，保存时回传后端做并发冲突检测 */
   const dashboardVersion = ref<number | null>(null)
-  const dashboardName = ref('未命名报表')
+  const dashboardName = ref(i18n.global.t('appMessages.editor.untitledDashboard'))
   const isDirty = ref(false) // 是否有未保存的改动
   const isSaving = ref(false)
   const isLoading = ref(false)
@@ -179,12 +180,8 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
   } = useCanvasOperations(canvas, guides, pushHistory, markDirty)
 
   // ========== 画布导出（PNG / PDF / 缩略图） ==========
-  const {
-    registerExportPng,
-    exportCanvasAsPng,
-    exportCanvasAsPdf,
-    captureThumbnail,
-  } = createCanvasExport({ dashboardName, isExportingPng })
+  const { registerExportPng, exportCanvasAsPng, exportCanvasAsPdf, captureThumbnail } =
+    createCanvasExport({ dashboardName, isExportingPng })
 
   // ========== 看板 / 模板会话 ==========
   const {
@@ -232,12 +229,7 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
   })
 
   // ========== 画布感知的对齐包装（单选按画布尺寸） ==========
-  const {
-    alignHCenter,
-    alignRight,
-    alignVCenter,
-    alignBottom,
-  } = createCanvasAlign({
+  const { alignHCenter, alignRight, alignVCenter, alignBottom } = createCanvasAlign({
     canvas,
     components,
     selectedId,
@@ -254,9 +246,8 @@ export const useBiEditorStore = defineStore('bi-editor', () => {
    * 延迟 import 避免循环依赖。
    */
   async function refreshAllData() {
-    const { clearAllDatasetCache, triggerDatasetRefresh } = await import(
-      '@/views/bi-editor/composables/useDatasetBinding'
-    )
+    const { clearAllDatasetCache, triggerDatasetRefresh } =
+      await import('@/views/bi-editor/composables/useDatasetBinding')
     clearAllDatasetCache()
     triggerDatasetRefresh()
   }

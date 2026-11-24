@@ -1,10 +1,16 @@
 import type { ComponentDefinition } from '../types'
 import Widget from './Widget.vue'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const datePickerDefinition: ComponentDefinition = {
   type: 'date-picker',
   meta: {
-    name: '日期选择器',
+    get name() {
+      return t('editorMaterial.meta.datePicker')
+    },
     category: 'data',
     icon: 'Calendar',
     defaultWidth: 220,
@@ -14,65 +20,158 @@ export const datePickerDefinition: ComponentDefinition = {
   propsSchema: [
     {
       key: 'mode',
-      label: '类型',
+      get label() {
+        return t('editorMaterial.ui.type')
+      },
       type: 'select',
       options: [
-        { label: '日期', value: 'date' },
-        { label: '时间', value: 'time' },
-        { label: '日期时间', value: 'datetime' },
+        {
+          get label() {
+            return t('editorMaterial.ui.date')
+          },
+          value: 'date',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.time')
+          },
+          value: 'time',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.dateTime')
+          },
+          value: 'datetime',
+        },
       ],
       default: 'date',
-      group: '类型',
+      get group() {
+        return t('editorMaterial.ui.type')
+      },
     },
     {
       key: 'placeholder',
-      label: '占位文字',
+      get label() {
+        return t('editorMaterial.ui.placeholderText')
+      },
       type: 'input',
-      default: '选择日期',
-      group: '内容',
+      default: t('editorMaterial.ui.selectDate'),
+      get group() {
+        return t('editorMaterial.ui.content')
+      },
     },
     {
       key: 'defaultValue',
-      label: '默认值',
+      get label() {
+        return t('editorMaterial.ui.defaultValue')
+      },
       type: 'input',
       default: '',
-      group: '内容',
-      tip: '默认值，格式 YYYY-MM-DD 或 HH:mm 或 YYYY-MM-DDTHH:mm',
+      get group() {
+        return t('editorMaterial.ui.content')
+      },
+      get tip() {
+        return t('editorMaterial.ui.defaultValueFormatYyyyMmDdOrHhMmOrYyyyMmDdthhMm')
+      },
     },
     {
       key: 'showLabel',
-      label: '显示左侧标签',
+      get label() {
+        return t('editorMaterial.ui.showLeftLabels')
+      },
       type: 'switch',
       default: true,
-      group: '外观',
-      tip: '显示左侧标签',
+      get group() {
+        return t('editorMaterial.ui.appearance')
+      },
+      get tip() {
+        return t('editorMaterial.ui.showLeftLabels')
+      },
     },
     {
       key: 'labelText',
-      label: '标签文字',
+      get label() {
+        return t('editorMaterial.ui.labelText')
+      },
       type: 'input',
-      default: '日期',
-      group: '外观',
+      default: t('editorMaterial.ui.date'),
+      get group() {
+        return t('editorMaterial.ui.appearance')
+      },
     },
-    { key: 'bgColor', label: '背景颜色', type: 'colorpicker', default: '#1e293b', group: '颜色' },
-    { key: 'textColor', label: '文字颜色', type: 'colorpicker', default: '#e2e8f0', group: '颜色' },
+    {
+      key: 'bgColor',
+      get label() {
+        return t('editorMaterial.ui.backgroundColor2')
+      },
+      type: 'colorpicker',
+      default: '#1e293b',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
+    },
+    {
+      key: 'textColor',
+      get label() {
+        return t('editorMaterial.ui.textColor')
+      },
+      type: 'colorpicker',
+      default: '#e2e8f0',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
+    },
     {
       key: 'borderColor',
-      label: '边框颜色',
+      get label() {
+        return t('editorMaterial.ui.borderColor')
+      },
       type: 'colorpicker',
       default: '#475569',
-      group: '颜色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
     },
     {
       key: 'accentColor',
-      label: '强调色',
+      get label() {
+        return t('editorMaterial.ui.accentColor')
+      },
       type: 'colorpicker',
       default: '#22d3ee',
-      group: '颜色',
-      tip: '聚焦色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
+      get tip() {
+        return t('editorMaterial.ui.focusColor')
+      },
     },
-    { key: 'fontSize', label: '字号', type: 'slider', min: 10, max: 18, default: 13, group: '字体' },
-    { key: 'borderRadius', label: '圆角', type: 'slider', min: 0, max: 20, default: 4, group: '样式' },
+    {
+      key: 'fontSize',
+      get label() {
+        return t('editorMaterial.ui.fontSize')
+      },
+      type: 'slider',
+      min: 10,
+      max: 18,
+      default: 13,
+      get group() {
+        return t('editorMaterial.ui.font')
+      },
+    },
+    {
+      key: 'borderRadius',
+      get label() {
+        return t('editorMaterial.ui.cornerRadius')
+      },
+      type: 'slider',
+      min: 0,
+      max: 20,
+      default: 4,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
   ],
   defaultStyle: {},
 }

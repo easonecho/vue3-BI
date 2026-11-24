@@ -1,6 +1,16 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema, aggregatePropField, topNPropFields } from '../types'
+import {
+  chartBaseSchema,
+  baseSeriesStylesWithAxesColumns,
+  buildSeriesLabelSchema,
+  aggregatePropField,
+  topNPropFields,
+} from '../types'
+
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 折线图默认真实数据 */
 export const LINE_DEFAULT_CATEGORIES = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
@@ -12,7 +22,9 @@ export const LINE_DEFAULT_SERIES = [
 export const lineChartDefinition: ComponentDefinition = {
   type: 'line-chart',
   meta: {
-    name: '折线图',
+    get name() {
+      return t('editorMaterial.meta.lineChart')
+    },
     category: 'chart',
     icon: 'TrendCharts',
     defaultWidth: 400,
@@ -23,29 +35,75 @@ export const lineChartDefinition: ComponentDefinition = {
     ...chartBaseSchema,
     aggregatePropField,
     ...topNPropFields,
-    { key: 'smooth', label: '平滑曲线', type: 'switch', default: true, group: '样式' },
-    { key: 'area', label: '面积填充', type: 'switch', default: false, group: '样式' },
+    {
+      key: 'smooth',
+      get label() {
+        return t('editorMaterial.ui.smoothCurve')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'area',
+      get label() {
+        return t('editorMaterial.ui.areaFill')
+      },
+      type: 'switch',
+      default: false,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
     {
       key: 'pointSize',
-      label: '点大小',
+      get label() {
+        return t('editorMaterial.ui.pointSize')
+      },
       type: 'slider',
       min: 0,
       max: 20,
       default: 6,
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
     {
       key: 'seriesStyles',
-      label: '数据系列样式',
+      get label() {
+        return t('editorMaterial.ui.seriesStyles')
+      },
       type: 'table',
       default: [],
-      group: '数据系列',
-      tip: '根据数据系列名称单独配置颜色、线宽、是否面积、标签等（按名称匹配）',
+      get group() {
+        return t('editorMaterial.ui.dataSeries')
+      },
+      get tip() {
+        return t('editorMaterial.ui.configureColorLineWidthAreaToggleAndLabelsPerSeriesByName')
+      },
       // 🔑 基础列（通用：seriesName/color/labelShow） + 折线图特有 lineWidth / areaStyle
       columns: [
         ...baseSeriesStylesWithAxesColumns,
-        { key: 'lineWidth', label: '线宽', type: 'number', min: 1, max: 10, width: 80 },
-        { key: 'areaStyle', label: '面积填充', type: 'switch', width: 100 },
+        {
+          key: 'lineWidth',
+          get label() {
+            return t('editorMaterial.ui.lineWidth')
+          },
+          type: 'number',
+          min: 1,
+          max: 10,
+          width: 80,
+        },
+        {
+          key: 'areaStyle',
+          get label() {
+            return t('editorMaterial.ui.areaFill')
+          },
+          type: 'switch',
+          width: 100,
+        },
       ],
     },
     // 🔑 系列标签（折线图默认在顶部）
@@ -58,9 +116,29 @@ export const lineChartDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'categoryField', label: '类目字段', type: 'category' },
-    { key: 'valueFields', label: '数值字段', type: 'value', multiple: true },
-    { key: 'drillFields', label: '钻取字段', type: 'category', multiple: true },
+    {
+      key: 'categoryField',
+      get label() {
+        return t('editorMaterial.ui.categoryField')
+      },
+      type: 'category',
+    },
+    {
+      key: 'valueFields',
+      get label() {
+        return t('editorMaterial.ui.valueField')
+      },
+      type: 'value',
+      multiple: true,
+    },
+    {
+      key: 'drillFields',
+      get label() {
+        return t('editorMaterial.ui.drillField')
+      },
+      type: 'category',
+      multiple: true,
+    },
   ],
 }
 

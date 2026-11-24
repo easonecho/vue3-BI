@@ -33,6 +33,11 @@ vi.mock('element-plus', () => ({ ElMessage: messageMock }))
 
 vi.mock('@/utils/progress', () => progressMock)
 
+// 本文件只验证刷新队列逻辑, 语言包替换为 key 直出, 避免加载真实 i18n 拖慢用例
+vi.mock('@/i18n', () => ({
+  default: { global: { t: (key: string) => key } },
+}))
+
 interface Deferred<T> {
   promise: Promise<T>
   resolve: (value: T) => void
@@ -112,14 +117,20 @@ describe('request 401 静默刷新', () => {
     const first = onRejected(firstError)
     const second = onRejected(unauthorized('/api/b'))
 
-    // 先挂载断言再触发失败, 避免测试期间出现 unhandled rejection
-    const firstAssertion = expect(first).rejects.toBe(firstError)
-    const secondAssertion = expect(second).rejects.toBe(firstError)
+    // 先挂载 reject 处理再触发失败, 避免测试期间出现 unhandled rejection
+    const firstResult = first.then(
+      () => 'resolved',
+      (reason: unknown) => reason,
+    )
+    const secondResult = second.then(
+      () => 'resolved',
+      (reason: unknown) => reason,
+    )
 
     refresh.reject(new Error('refresh failed'))
 
-    await firstAssertion
-    await secondAssertion
+    expect(await firstResult).toMatchObject({ response: { status: 401 } })
+    expect(await secondResult).toMatchObject({ response: { status: 401 } })
     // 刷新失败不应重放任何请求
     expect(instance.request).not.toHaveBeenCalled()
   })

@@ -7,10 +7,8 @@
  * ============================================================================
  */
 import { computed, getCurrentInstance, onUnmounted, ref, watch, type Ref } from 'vue'
-import {
-  type DatasetPageParams,
-  type RowCondition,
-} from '@/api/dataset'
+import i18n from '@/i18n'
+import { type DatasetPageParams, type RowCondition } from '@/api/dataset'
 import { fetchPublicDatasetPage } from '@/api/share'
 import { getPublicDashboardContext } from '@/utils/public-dashboard-context'
 import { useLinkageStore } from '@/stores/linkage'
@@ -112,7 +110,7 @@ export function useDatasetPage(
     } catch (e) {
       if (seq !== requestSeq) return
       console.error('[useDatasetPage] 取数失败:', e)
-      error.value = e instanceof Error ? e.message : '数据加载失败'
+      error.value = e instanceof Error ? e.message : i18n.global.t('editorUi.dataset.loadFailed')
       clearState()
     } finally {
       if (seq === requestSeq) loading.value = false

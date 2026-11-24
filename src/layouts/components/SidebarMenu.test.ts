@@ -4,9 +4,13 @@ import { defineComponent } from 'vue'
 import type { MenuTreeNode } from '@/api/menu'
 import SidebarMenu from './SidebarMenu.vue'
 
-vi.mock('vue-i18n', () => ({
-  useI18n: () => ({ t: (key: string) => key }),
-}))
+vi.mock('vue-i18n', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...actual,
+    useI18n: () => ({ t: (key: string) => key }),
+  }
+})
 
 const ElMenuStub = defineComponent({
   name: 'ElMenu',
@@ -18,8 +22,7 @@ const ElMenuStub = defineComponent({
 const ElSubMenuStub = defineComponent({
   name: 'ElSubMenu',
   props: ['index'],
-  template:
-    '<div class="submenu-stub" :data-index="index"><slot name="title" /><slot /></div>',
+  template: '<div class="submenu-stub" :data-index="index"><slot name="title" /><slot /></div>',
 })
 
 const ElMenuItemStub = defineComponent({
@@ -52,12 +55,14 @@ function makeNode(overrides: Partial<MenuTreeNode> = {}): MenuTreeNode {
   }
 }
 
-function mountMenu(props: {
-  menuTree?: MenuTreeNode[]
-  activeMenu?: string
-  isMobile?: boolean
-  asideVisible?: boolean
-} = {}) {
+function mountMenu(
+  props: {
+    menuTree?: MenuTreeNode[]
+    activeMenu?: string
+    isMobile?: boolean
+    asideVisible?: boolean
+  } = {},
+) {
   return mount(SidebarMenu, {
     props: {
       menuTree: props.menuTree ?? [],

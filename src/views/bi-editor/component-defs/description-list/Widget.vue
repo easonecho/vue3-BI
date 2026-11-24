@@ -21,6 +21,10 @@ import { computed } from 'vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 interface DescItem {
   label: string
   value: string | number
@@ -49,7 +53,7 @@ const items = computed<DescItem[]>(() => {
 })
 
 // ============ 字段读取 ============
-const title = computed(() => props.comp.props?.title ?? '设备详情')
+const title = computed(() => props.comp.props?.title ?? t('editorMaterial.ui.deviceDetail'))
 const columns = computed(() => {
   const c = Number(props.comp.props?.columns ?? 2)
   return Math.max(1, Math.min(4, c))
@@ -95,8 +99,9 @@ const valueStyle = computed(() => ({
 
 // 单元格样式：边框 + 斑马纹底色
 function cellStyle(idx: number) {
-  const isLastRow = Math.floor(idx / columns.value) === Math.floor((items.value.length - 1) / columns.value)
-  const isLastCol = (idx % columns.value) === columns.value - 1
+  const isLastRow =
+    Math.floor(idx / columns.value) === Math.floor((items.value.length - 1) / columns.value)
+  const isLastCol = idx % columns.value === columns.value - 1
   const styles: Record<string, string> = {}
   if (bordered.value) {
     styles.borderRight = isLastCol ? 'none' : `1px solid ${borderColor.value}`

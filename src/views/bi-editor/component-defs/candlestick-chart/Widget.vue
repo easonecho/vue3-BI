@@ -15,6 +15,10 @@ import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 // 🔑 模块级注册 K 线图（运行一次,echarts/core 内部去重）
 use([CandlestickChart])
 
@@ -46,7 +50,7 @@ const mappedData = computed(() => {
     categories: rows.value.map((r) => String(r[categoryField] ?? '')),
     series: [
       {
-        name: '日K',
+        name: t('editorMaterial.ui.dailyK'),
         data: rows.value.map((r) => [
           Number(r[openField] ?? 0),
           Number(r[closeField] ?? 0),
@@ -82,10 +86,11 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const categories = mappedData.value?.categories
-    ?? (Array.isArray(mergedProps.categories) ? mergedProps.categories : [])
-  const seriesData = mappedData.value?.series
-    ?? (Array.isArray(mergedProps.series) ? mergedProps.series : [])
+  const categories =
+    mappedData.value?.categories ??
+    (Array.isArray(mergedProps.categories) ? mergedProps.categories : [])
+  const seriesData =
+    mappedData.value?.series ?? (Array.isArray(mergedProps.series) ? mergedProps.series : [])
   const upColor = String(mergedProps.upColor)
   const downColor = String(mergedProps.downColor)
   const seriesStyles = Array.isArray(mergedProps.seriesStyles) ? mergedProps.seriesStyles : []
@@ -151,7 +156,7 @@ function applyChartOption() {
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: true,
       xAxisData: getXAxisData(specificOption),
-      fallbackTitle: 'K线图',
+      fallbackTitle: t('editorMaterial.meta.candlestickChart'),
     })
   })
 }
@@ -162,11 +167,7 @@ onMounted(async () => {
 
 watch(
   // 🔑 性能优化：签名式 watch 替代 deep watch
-  [
-    () => JSON.stringify(props.comp.props),
-    () => JSON.stringify(props.comp.dataConfig),
-    rows,
-  ],
+  [() => JSON.stringify(props.comp.props), () => JSON.stringify(props.comp.dataConfig), rows],
   () => {
     applyChartOption()
   },

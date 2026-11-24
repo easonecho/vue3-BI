@@ -1,10 +1,10 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
-import {
-  chartBaseSchema,
-  baseSeriesStylesNoAxesColumns,
-  buildSeriesLabelSchema,
-} from '../types'
+import { chartBaseSchema, baseSeriesStylesNoAxesColumns, buildSeriesLabelSchema } from '../types'
+
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 主题河流图默认真实数据：7 天 × 3 主题 = 21 个三元组 [date, value, name] */
 export const THEME_RIVER_DEFAULT_DIM = [
@@ -44,7 +44,9 @@ export const THEME_RIVER_DEFAULT_DATA: Array<[string, number, string]> = [
 export const themeRiverChartDefinition: ComponentDefinition = {
   type: 'theme-river-chart',
   meta: {
-    name: '主题河流图',
+    get name() {
+      return t('editorMaterial.meta.themeRiverChart')
+    },
     category: 'chart',
     icon: 'DataLine',
     defaultWidth: 500,
@@ -55,18 +57,28 @@ export const themeRiverChartDefinition: ComponentDefinition = {
     ...chartBaseSchema,
     {
       key: 'boundaryGap',
-      label: '两端留白',
+      get label() {
+        return t('editorMaterial.ui.paddingAtBothEnds')
+      },
       type: 'switch',
       default: false,
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
     {
       key: 'seriesStyles',
-      label: '数据项样式',
+      get label() {
+        return t('editorMaterial.ui.itemStyles')
+      },
       type: 'table',
       default: [],
-      group: '数据系列',
-      tip: '根据主题名称单独配置颜色、是否显示标签（按 name 匹配）',
+      get group() {
+        return t('editorMaterial.ui.dataSeries')
+      },
+      get tip() {
+        return t('editorMaterial.ui.configureColorAndLabelVisibilityPerThemeByName')
+      },
       columns: [...baseSeriesStylesNoAxesColumns],
     },
     // 🔑 系列标签（主题河流图默认在顶部）
@@ -79,9 +91,27 @@ export const themeRiverChartDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'dateField', label: '日期字段', type: 'category' },
-    { key: 'valueField', label: '数值字段', type: 'value' },
-    { key: 'nameField', label: '主题字段', type: 'name' },
+    {
+      key: 'dateField',
+      get label() {
+        return t('editorMaterial.ui.dateField')
+      },
+      type: 'category',
+    },
+    {
+      key: 'valueField',
+      get label() {
+        return t('editorMaterial.ui.valueField')
+      },
+      type: 'value',
+    },
+    {
+      key: 'nameField',
+      get label() {
+        return t('editorMaterial.ui.themeField')
+      },
+      type: 'name',
+    },
   ],
 }
 

@@ -6,17 +6,33 @@
         :src="assetPreview"
         class="asset-preview-img"
       />
-      <video v-else-if="field.assetType === 'video'" :src="assetPreview" muted class="asset-preview-video" />
+      <video
+        v-else-if="field.assetType === 'video'"
+        :src="assetPreview"
+        muted
+        class="asset-preview-video"
+      />
       <span v-else class="asset-preview-decor">{{ field.assetType || 'decor' }}</span>
-      <el-button size="small" link type="danger" @click="emit('update:modelValue', field.multiple ? [] : '')">
-        清除
+      <el-button
+        size="small"
+        link
+        type="danger"
+        @click="emit('update:modelValue', field.multiple ? [] : '')"
+      >
+        {{ t('editorUi.asset.clear') }}
       </el-button>
     </div>
     <el-button size="small" type="primary" plain @click="showAssetPicker = true">
-      {{ assetPreview ? '更换' : '从素材库选择' }}
+      {{ assetPreview ? t('editorUi.asset.change') : t('editorUi.asset.choose') }}
     </el-button>
-    <span v-if="!assetPreview && field.multiple" class="asset-hint">未选择素材</span>
-    <span v-else-if="!assetPreview" class="asset-hint">未选择{{ field.assetType || '素材' }}</span>
+    <span v-if="!assetPreview && field.multiple" class="asset-hint">{{
+      t('editorUi.asset.noneSelected')
+    }}</span>
+    <span v-else-if="!assetPreview" class="asset-hint">{{
+      t('editorUi.asset.noneSelectedType', {
+        type: field.assetType || t('editorUi.asset.assetFallback'),
+      })
+    }}</span>
     <AssetPicker
       v-model="showAssetPicker"
       :asset-type="field.assetType"
@@ -28,6 +44,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { PropField } from '@/views/bi-editor/component-defs/types'
 import AssetPicker from './AssetPicker.vue'
 
@@ -42,6 +59,7 @@ const emit = defineEmits<{
 
 /** 素材选择弹窗显隐 */
 const showAssetPicker = ref(false)
+const { t } = useI18n()
 
 /** 当前选中素材的预览 URL（单选取第一个，多选取第一个用于预览） */
 const assetPreview = computed(() => {

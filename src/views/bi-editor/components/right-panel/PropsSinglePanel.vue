@@ -5,10 +5,10 @@
       <!-- 基础属性 -->
       <el-collapse-item name="basic">
         <template #title>
-          <span class="collapse-title">基础</span>
+          <span class="collapse-title">{{ t('editorUi.props.basic') }}</span>
         </template>
         <div class="form-item">
-          <label>名称</label>
+          <label>{{ t('editorUi.props.name') }}</label>
           <el-input
             :model-value="store.selectedComponent.name"
             @update:model-value="(v: string) => updateField('name', v)"
@@ -19,7 +19,7 @@
       <!-- 位置和尺寸 -->
       <el-collapse-item name="layout">
         <template #title>
-          <span class="collapse-title">位置 &amp; 尺寸</span>
+          <span class="collapse-title">{{ t('editorUi.props.layout') }}</span>
         </template>
         <div class="form-row">
           <div class="form-item">
@@ -43,7 +43,7 @@
         </div>
         <div class="form-row">
           <div class="form-item">
-            <label>宽</label>
+            <label>{{ t('editorUi.props.width') }}</label>
             <el-input-number
               :model-value="store.selectedComponent.width"
               size="small"
@@ -53,7 +53,7 @@
             />
           </div>
           <div class="form-item">
-            <label>高</label>
+            <label>{{ t('editorUi.props.height') }}</label>
             <el-input-number
               :model-value="store.selectedComponent.height"
               size="small"
@@ -68,7 +68,7 @@
       <!-- 🔑 代码配置：展开后显示编辑/导入/导出按钮，点击编辑弹出 Monaco Editor -->
       <el-collapse-item name="code">
         <template #title>
-          <span class="collapse-title">代码配置</span>
+          <span class="collapse-title">{{ t('editorUi.props.code') }}</span>
         </template>
         <ComponentCodeConfig />
       </el-collapse-item>
@@ -76,32 +76,32 @@
       <!-- 层级控制 -->
       <el-collapse-item name="zindex">
         <template #title>
-          <span class="collapse-title">层级</span>
+          <span class="collapse-title">{{ t('editorUi.props.zIndex') }}</span>
         </template>
         <div class="layer-actions">
           <el-button
             size="small"
             :disabled="!store.canBringToFront"
             @click="store.bringToFront(store.selectedComponent!.id)"
-            >置顶</el-button
+            >{{ t('editorUi.props.bringToFront') }}</el-button
           >
           <el-button
             size="small"
             :disabled="!store.canMoveUp"
             @click="store.moveUp(store.selectedComponent!.id)"
-            >上移</el-button
+            >{{ t('editorUi.props.moveUp') }}</el-button
           >
           <el-button
             size="small"
             :disabled="!store.canMoveDown"
             @click="store.moveDown(store.selectedComponent!.id)"
-            >下移</el-button
+            >{{ t('editorUi.props.moveDown') }}</el-button
           >
           <el-button
             size="small"
             :disabled="!store.canSendToBack"
             @click="store.sendToBack(store.selectedComponent!.id)"
-            >置底</el-button
+            >{{ t('editorUi.props.sendToBack') }}</el-button
           >
         </div>
       </el-collapse-item>
@@ -109,7 +109,7 @@
       <!-- 🔑 分组 / 取消分组 -->
       <el-collapse-item name="group">
         <template #title>
-          <span class="collapse-title">分组</span>
+          <span class="collapse-title">{{ t('editorUi.props.group') }}</span>
         </template>
         <GroupActions show-hint />
       </el-collapse-item>
@@ -117,7 +117,7 @@
       <!-- 🔑 对齐 / 分布 -->
       <el-collapse-item name="align">
         <template #title>
-          <span class="collapse-title">对齐 &amp; 分布</span>
+          <span class="collapse-title">{{ t('editorUi.props.align') }}</span>
         </template>
         <AlignActions />
       </el-collapse-item>
@@ -125,21 +125,21 @@
       <!-- 状态控制 -->
       <el-collapse-item name="state">
         <template #title>
-          <span class="collapse-title">状态</span>
+          <span class="collapse-title">{{ t('editorUi.props.state') }}</span>
         </template>
         <div class="form-item">
           <div class="form-check">
             <el-checkbox
               :model-value="store.selectedComponent.visible"
               @update:model-value="(v: boolean) => updateField('visible', v)"
-              >可见</el-checkbox
+              >{{ t('editorUi.props.visible') }}</el-checkbox
             >
           </div>
           <div class="form-check">
             <el-checkbox
               :model-value="store.selectedComponent.locked"
               @update:model-value="(v: boolean) => updateField('locked', v)"
-              >锁定</el-checkbox
+              >{{ t('editorUi.props.locked') }}</el-checkbox
             >
           </div>
         </div>
@@ -168,14 +168,15 @@
     </el-collapse>
 
     <div v-if="!currentDefinition" class="section section--plain">
-      <div class="section-title">组件属性</div>
-      <div class="placeholder-text">此组件暂无可配置的属性</div>
+      <div class="section-title">{{ t('editorUi.props.componentProps') }}</div>
+      <div class="placeholder-text">{{ t('editorUi.props.noProps') }}</div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { PropField } from '@/views/bi-editor/component-defs/types'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import { getDefinition } from '@/views/bi-editor/component-defs'
@@ -185,6 +186,7 @@ import AlignActions from './AlignActions.vue'
 import GroupActions from './GroupActions.vue'
 
 const store = useBiEditorStore()
+const { t } = useI18n()
 
 /** 默认展开的折叠项（内置固定分类 + 所有 Schema group 全展开） */
 const activePropSections = ref<string[]>([])
@@ -199,14 +201,16 @@ const fieldGroups = computed(() => {
   if (!currentDefinition.value) return []
   const groups = new Set<string>()
   for (const field of currentDefinition.value.propsSchema) {
-    groups.add(field.group || '组件属性')
+    groups.add(field.group || t('editorUi.props.componentProps'))
   }
   return Array.from(groups)
 })
 
 function getGroupFields(group: string): PropField[] {
   if (!currentDefinition.value) return []
-  return currentDefinition.value.propsSchema.filter((f) => (f.group || '组件属性') === group)
+  return currentDefinition.value.propsSchema.filter(
+    (f) => (f.group || t('editorUi.props.componentProps')) === group,
+  )
 }
 
 function getProp(key: string): any {

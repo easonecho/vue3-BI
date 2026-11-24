@@ -1,10 +1,16 @@
 import type { ComponentDefinition } from '../types'
 import Widget from './Widget.vue'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const treeTableDefinition: ComponentDefinition = {
   type: 'tree-table',
   meta: {
-    name: '树表格',
+    get name() {
+      return t('editorMaterial.meta.treeTable')
+    },
     category: 'data',
     icon: 'Grid',
     defaultWidth: 500,
@@ -13,23 +19,154 @@ export const treeTableDefinition: ComponentDefinition = {
   widget: Widget,
   propsSchema: [
     // ============ 样式 ============
-    { key: 'showIndex', label: '显示序号', type: 'switch', default: false, group: '样式' },
-    { key: 'bordered', label: '显示边框', type: 'switch', default: true, group: '样式' },
-    { key: 'striped', label: '斑马纹', type: 'switch', default: true, group: '样式' },
-    { key: 'headerColor', label: '表头文字色', type: 'colorpicker', default: '#1f2937', group: '样式' },
-    { key: 'headerBgColor', label: '表头背景色', type: 'colorpicker', default: '#f3f4f6', group: '样式' },
-    { key: 'rowColor', label: '行文字色', type: 'colorpicker', default: '#1f2937', group: '样式' },
-    { key: 'borderColor', label: '边框颜色', type: 'colorpicker', default: '#e5e7eb', group: '样式' },
-    { key: 'fontSize', label: '字号', type: 'number', min: 12, max: 18, default: 13, group: '样式' },
-    { key: 'rowHeight', label: '行高', type: 'number', min: 28, max: 60, default: 36, group: '样式' },
-    { key: 'expandAll', label: '默认展开全部', type: 'switch', default: true, group: '样式' },
-    { key: 'indentSize', label: '缩进像素', type: 'number', min: 8, max: 40, default: 16, group: '样式' },
+    {
+      key: 'showIndex',
+      get label() {
+        return t('editorMaterial.ui.showIndex')
+      },
+      type: 'switch',
+      default: false,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'bordered',
+      get label() {
+        return t('editorMaterial.ui.showBorder')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'striped',
+      get label() {
+        return t('editorMaterial.ui.zebraStripes')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'headerColor',
+      get label() {
+        return t('editorMaterial.ui.headerTextColor')
+      },
+      type: 'colorpicker',
+      default: '#1f2937',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'headerBgColor',
+      get label() {
+        return t('editorMaterial.ui.headerBackgroundColor')
+      },
+      type: 'colorpicker',
+      default: '#f3f4f6',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'rowColor',
+      get label() {
+        return t('editorMaterial.ui.rowTextColor')
+      },
+      type: 'colorpicker',
+      default: '#1f2937',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'borderColor',
+      get label() {
+        return t('editorMaterial.ui.borderColor')
+      },
+      type: 'colorpicker',
+      default: '#e5e7eb',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'fontSize',
+      get label() {
+        return t('editorMaterial.ui.fontSize')
+      },
+      type: 'number',
+      min: 12,
+      max: 18,
+      default: 13,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'rowHeight',
+      get label() {
+        return t('editorMaterial.ui.rowHeight')
+      },
+      type: 'number',
+      min: 28,
+      max: 60,
+      default: 36,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'expandAll',
+      get label() {
+        return t('editorMaterial.ui.expandAllByDefault')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'indentSize',
+      get label() {
+        return t('editorMaterial.ui.indentPixels')
+      },
+      type: 'number',
+      min: 8,
+      max: 40,
+      default: 16,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
   ],
   extraDefaults: {
     columns: [
-      { key: 'name', label: '名称' },
-      { key: 'count', label: '数量' },
-      { key: 'status', label: '状态' },
+      {
+        key: 'name',
+        get label() {
+          return t('editorMaterial.ui.name')
+        },
+      },
+      {
+        key: 'count',
+        get label() {
+          return t('editorMaterial.ui.count2')
+        },
+      },
+      {
+        key: 'status',
+        get label() {
+          return t('editorMaterial.ui.status')
+        },
+      },
     ],
     data: [
       {

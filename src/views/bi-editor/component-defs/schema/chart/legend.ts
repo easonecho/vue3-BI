@@ -1,77 +1,144 @@
 import type { PropField } from '../props'
-import { DEFAULT_FONT_FAMILY, FONT_FAMILY_OPTIONS, FONT_STYLE_OPTIONS, FONT_WEIGHT_OPTIONS } from '../options'
+import {
+  DEFAULT_FONT_FAMILY,
+  FONT_FAMILY_OPTIONS,
+  FONT_STYLE_OPTIONS,
+  FONT_WEIGHT_OPTIONS,
+} from '../options'
+
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 图表图例配置 Schema（chartCommonSchema 的「图例」分组） */
 export const chartLegendSchema: PropField[] = [
   // ============ 图例 ============
-  { key: 'legendShow', label: '显示图例', type: 'switch', default: true, group: '图例' },
+  {
+    key: 'legendShow',
+    get label() {
+      return t('editorMaterial.ui.showLegend')
+    },
+    type: 'switch',
+    default: true,
+    get group() {
+      return t('editorMaterial.ui.legend')
+    },
+  },
   {
     key: 'legendPosition',
-    label: '图例位置',
+    get label() {
+      return t('editorMaterial.ui.legendPosition')
+    },
     type: 'select',
     options: [
-      { label: '顶部', value: 'top' },
-      { label: '底部', value: 'bottom' },
-      { label: '左侧', value: 'left' },
-      { label: '右侧', value: 'right' },
+      {
+        get label() {
+          return t('editorMaterial.ui.top')
+        },
+        value: 'top',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.bottom')
+        },
+        value: 'bottom',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.left3')
+        },
+        value: 'left',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.right3')
+        },
+        value: 'right',
+      },
     ],
     default: 'bottom',
-    group: '图例',
+    get group() {
+      return t('editorMaterial.ui.legend')
+    },
     visibleWhen: { field: 'legendShow', truthy: true },
   },
   {
     key: 'legendItemGap',
-    label: '图例间距',
+    get label() {
+      return t('editorMaterial.ui.legendGap')
+    },
     type: 'slider',
     min: 0,
     max: 60,
     default: 16,
-    group: '图例',
+    get group() {
+      return t('editorMaterial.ui.legend')
+    },
     visibleWhen: { field: 'legendShow', truthy: true },
   },
   {
     key: 'legendFontFamily',
-    label: '字体',
+    get label() {
+      return t('editorMaterial.ui.font')
+    },
     type: 'select',
     options: [...FONT_FAMILY_OPTIONS],
     default: DEFAULT_FONT_FAMILY,
-    group: '图例',
+    get group() {
+      return t('editorMaterial.ui.legend')
+    },
     visibleWhen: { field: 'legendShow', truthy: true },
   },
   {
     key: 'legendFontSize',
-    label: '字号',
+    get label() {
+      return t('editorMaterial.ui.fontSize')
+    },
     type: 'slider',
     min: 10,
     max: 24,
     default: 12,
-    group: '图例',
+    get group() {
+      return t('editorMaterial.ui.legend')
+    },
     visibleWhen: { field: 'legendShow', truthy: true },
   },
   {
     key: 'legendFontWeight',
-    label: '字重',
+    get label() {
+      return t('editorMaterial.ui.fontWeight')
+    },
     type: 'select',
     options: [...FONT_WEIGHT_OPTIONS],
     default: 'normal',
-    group: '图例',
+    get group() {
+      return t('editorMaterial.ui.legend')
+    },
     visibleWhen: { field: 'legendShow', truthy: true },
   },
   {
     key: 'legendFontStyle',
-    label: '样式（斜体）',
+    get label() {
+      return t('editorMaterial.ui.styleItalic')
+    },
     type: 'select',
     options: [...FONT_STYLE_OPTIONS],
     default: 'normal',
-    group: '图例',
+    get group() {
+      return t('editorMaterial.ui.legend')
+    },
     visibleWhen: { field: 'legendShow', truthy: true },
   },
   {
     key: 'legendColor',
-    label: '文字颜色',
+    get label() {
+      return t('editorMaterial.ui.textColor')
+    },
     type: 'colorpicker',
     default: '#6b7280',
-    group: '图例',
+    get group() {
+      return t('editorMaterial.ui.legend')
+    },
     visibleWhen: { field: 'legendShow', truthy: true },
   },
 ]

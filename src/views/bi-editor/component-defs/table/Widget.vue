@@ -32,7 +32,9 @@
           show-overflow
         />
         <template #empty>
-          <span class="widget-table__empty">{{ serverError || '暂无数据' }}</span>
+          <span class="widget-table__empty">{{
+            serverError || t('editorMaterial.ui.noData')
+          }}</span>
         </template>
       </VxeTable>
     </div>
@@ -78,6 +80,10 @@ import {
   type ConditionalRule,
   type DataBarRule,
 } from './conditional-format'
+
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{ comp: ComponentInstance }>()
 
@@ -229,10 +235,7 @@ const conditionalRules = computed<ConditionalRule[]>(() =>
   ),
 )
 const colorScaleRules = computed<ColorScaleRule[]>(() =>
-  readConfigRows<ColorScaleRule>(
-    props.comp.props?.colorScaleShow,
-    props.comp.props?.colorScales,
-  ),
+  readConfigRows<ColorScaleRule>(props.comp.props?.colorScaleShow, props.comp.props?.colorScales),
 )
 const dataBarRules = computed<DataBarRule[]>(() =>
   readConfigRows<DataBarRule>(props.comp.props?.dataBarShow, props.comp.props?.dataBars),
@@ -261,7 +264,11 @@ const dataBarMaxValues = computed<Record<string, number>>(() => {
   return maxValues
 })
 
-function handleSortChange(params: { field?: string; property?: string; order?: 'asc' | 'desc' | null }) {
+function handleSortChange(params: {
+  field?: string
+  property?: string
+  order?: 'asc' | 'desc' | null
+}) {
   sortState.value = {
     field: params.field || params.property || '',
     order: params.order || null,
@@ -273,7 +280,7 @@ function handleSortChange(params: { field?: string; property?: string; order?: '
 function footerMethod(params: { columns: { field?: string }[]; data: Record<string, unknown>[] }) {
   return [
     params.columns.map((col, index) => {
-      if (index === 0) return '合计'
+      if (index === 0) return t('editorMaterial.ui.total')
       if (!col.field) return ''
       const values = params.data
         .map((row) => Number(row[col.field as string]))

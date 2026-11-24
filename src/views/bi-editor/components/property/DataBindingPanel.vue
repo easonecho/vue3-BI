@@ -2,12 +2,12 @@
   <div v-if="store.selectedComponent" class="data-section">
     <div v-if="currentDefinition?.supportsDataBinding" class="section">
       <!-- 数据集选择器 -->
-      <div class="section-title">数据源</div>
+      <div class="section-title">{{ t('editorUi.data.source') }}</div>
       <div class="form-item">
-        <label>数据集</label>
+        <label>{{ t('editorUi.data.dataset') }}</label>
         <el-select
           :model-value="store.selectedComponent.dataSource.datasetId"
-          placeholder="请选择数据集"
+          :placeholder="t('editorUi.data.datasetPlaceholder')"
           filterable
           clearable
           :loading="datasetListLoading"
@@ -26,18 +26,18 @@
       <!-- 字段映射(根据 dataBindingSchema 动态渲染) -->
       <template v-if="store.selectedComponent.dataSource.datasetId">
         <div v-if="dataBindingFields.length > 0" class="section-title" style="margin-top: 16px">
-          字段映射
+          {{ t('editorUi.data.fieldMapping') }}
         </div>
         <div v-if="dataBindingFields.length === 0" class="form-item">
           <span class="placeholder-text" style="padding: 8px 0">
-            表格组件自动展示数据集全部字段,无需手动映射
+            {{ t('editorUi.data.autoAllFields') }}
           </span>
         </div>
         <div v-for="field in dataBindingFields" :key="field.key" class="form-item">
           <label>{{ field.label }}</label>
           <el-select
             :model-value="getFieldMapping(field.key)"
-            :placeholder="`选择${field.label}`"
+            :placeholder="t('editorUi.data.selectField', { label: field.label })"
             :multiple="field.multiple"
             clearable
             @update:model-value="
@@ -59,7 +59,7 @@
               type="primary"
               size="small"
               @click="applyDefaultAggregate(field)"
-              >应用默认聚合</el-button
+              >{{ t('editorUi.data.applyDefaultAggregate') }}</el-button
             >
           </div>
         </div>
@@ -67,9 +67,11 @@
 
       <!-- 联动字段映射：跨数据集 / 字段名不一致时建立联动关系 -->
       <template v-if="store.selectedComponent.dataSource.datasetId">
-        <div class="section-title" style="margin-top: 16px">联动字段映射</div>
+        <div class="section-title" style="margin-top: 16px">
+          {{ t('editorUi.data.linkageMapping') }}
+        </div>
         <div class="linkage-tip">
-          其他图表点击联动时默认按同名字段过滤；源字段名与当前数据集不一致时，在此指定映射关系。
+          {{ t('editorUi.data.linkageTip') }}
         </div>
         <div v-for="row in linkageRows" :key="row.id" class="linkage-row">
           <el-select
@@ -78,7 +80,7 @@
             filterable
             allow-create
             default-first-option
-            placeholder="源图表字段"
+            :placeholder="t('editorUi.data.sourceField')"
             class="linkage-field"
             @change="commitLinkageRows"
           >
@@ -90,29 +92,37 @@
             size="small"
             filterable
             clearable
-            placeholder="当前组件字段"
+            :placeholder="t('editorUi.data.targetField')"
             class="linkage-field"
             @change="commitLinkageRows"
           >
             <el-option v-for="name in datasetFields" :key="name" :label="name" :value="name" />
           </el-select>
-          <el-button link type="danger" size="small" @click="removeLinkageRow(row.id)"
-            >删除</el-button
-          >
+          <el-button link type="danger" size="small" @click="removeLinkageRow(row.id)">{{
+            t('editorUi.data.delete')
+          }}</el-button>
         </div>
         <div class="form-item">
-          <el-button size="small" @click="addLinkageRow">添加映射</el-button>
+          <el-button size="small" @click="addLinkageRow">{{
+            t('editorUi.data.addMapping')
+          }}</el-button>
         </div>
       </template>
 
       <!-- 数据预览 -->
       <template v-if="store.selectedComponent.dataSource.datasetId">
         <div class="section-title" style="margin-top: 16px">
-          数据预览
-          <span v-if="datasetLoading" class="loading-hint">加载中...</span>
+          {{ t('editorUi.data.preview') }}
+          <span v-if="datasetLoading" class="loading-hint">{{ t('common.loading') }}</span>
         </div>
         <div class="data-preview">
-          <el-table v-if="previewRows.length > 0" :data="previewRows" size="small" border max-height="200">
+          <el-table
+            v-if="previewRows.length > 0"
+            :data="previewRows"
+            size="small"
+            border
+            max-height="200"
+          >
             <el-table-column
               v-for="f in previewFields"
               :key="f"
@@ -122,21 +132,26 @@
               show-overflow-tooltip
             />
           </el-table>
-          <el-empty v-else-if="!datasetLoading" description="暂无数据" :image-size="40" />
+          <el-empty
+            v-else-if="!datasetLoading"
+            :description="t('editorUi.data.noData')"
+            :image-size="40"
+          />
         </div>
       </template>
     </div>
 
     <template v-else>
-      <div class="placeholder-text">此组件不支持数据绑定</div>
+      <div class="placeholder-text">{{ t('editorUi.data.unsupported') }}</div>
     </template>
   </div>
 
-  <el-empty v-else description="请选择组件配置数据" :image-size="100" />
+  <el-empty v-else :description="t('editorUi.data.empty')" :image-size="100" />
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import { getDefinition } from '@/views/bi-editor/component-defs'
@@ -153,6 +168,7 @@ import {
 import type { Dataset } from '@/api/types'
 
 const store = useBiEditorStore()
+const { t } = useI18n()
 
 /** 当前组件定义（取 dataBindingSchema / supportsDataBinding） */
 const currentDefinition = computed(() => {
@@ -333,8 +349,12 @@ function fieldOptions(slotType: DataBindingField['type']) {
     .map((name) => {
       const def = semanticDefOf(name)
       const tags: string[] = []
-      if (def?.role) tags.push(def.role === 'measure' ? '度量' : '维度')
-      if (def?.format?.type && FORMAT_LABELS[def.format.type]) tags.push(FORMAT_LABELS[def.format.type])
+      if (def?.role)
+        tags.push(
+          def.role === 'measure' ? t('editorUi.data.measure') : t('editorUi.data.dimension'),
+        )
+      if (def?.format?.type && FORMAT_LABELS[def.format.type])
+        tags.push(FORMAT_LABELS[def.format.type])
       return {
         value: name,
         label: tags.length ? `${name} (${tags.join(' · ')})` : name,
@@ -351,12 +371,17 @@ function semanticHint(slot: DataBindingField): string {
   const def = semanticDefOf(value)
   if (!def) return ''
   const parts: string[] = []
-  if (def.role) parts.push(def.role === 'measure' ? '度量' : '维度')
+  if (def.role)
+    parts.push(def.role === 'measure' ? t('editorUi.data.measure') : t('editorUi.data.dimension'))
   if (def.defaultAggregate && def.defaultAggregate !== 'none') {
-    parts.push(`默认聚合: ${AGGREGATE_LABELS[def.defaultAggregate] ?? def.defaultAggregate}`)
+    parts.push(
+      t('editorUi.data.defaultAggregate', {
+        value: AGGREGATE_LABELS[def.defaultAggregate] ?? def.defaultAggregate,
+      }),
+    )
   }
   if (def.format?.type && FORMAT_LABELS[def.format.type]) {
-    parts.push(`格式: ${FORMAT_LABELS[def.format.type]}`)
+    parts.push(t('editorUi.data.format', { value: FORMAT_LABELS[def.format.type] }))
   }
   return parts.join(' · ')
 }
@@ -378,7 +403,11 @@ function applyDefaultAggregate(slot: DataBindingField) {
   const def = typeof value === 'string' ? semanticDefOf(value) : undefined
   if (!def?.defaultAggregate || def.defaultAggregate === 'none') return
   updateProp('aggregate', def.defaultAggregate)
-  ElMessage.success(`已应用默认聚合: ${AGGREGATE_LABELS[def.defaultAggregate] ?? def.defaultAggregate}`)
+  ElMessage.success(
+    t('editorUi.data.aggregateApplied', {
+      value: AGGREGATE_LABELS[def.defaultAggregate] ?? def.defaultAggregate,
+    }),
+  )
 }
 
 /** 选中已绑定数据集的组件时, 预加载语义层元数据 (模块级只请求一次) */

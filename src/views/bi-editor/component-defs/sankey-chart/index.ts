@@ -2,10 +2,14 @@ import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 import { chartCommonSchema, aggregatePropField, topNPropFields } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 🔑 桑基图默认真实数据（节点 + 流向） */
 export const SANKEY_DEFAULT_NODES = [
-  { name: '收入' },
-  { name: '支出' },
+  { name: t('editorMaterial.series.revenue') },
+  { name: t('editorMaterial.series.expense') },
   { name: '工资', value: 8000 },
   { name: '奖金', value: 3000 },
   { name: '房租', value: 3000 },
@@ -27,7 +31,9 @@ export const SANKEY_DEFAULT_LINKS = [
 export const sankeyChartDefinition: ComponentDefinition = {
   type: 'sankey-chart',
   meta: {
-    name: '桑基图',
+    get name() {
+      return t('editorMaterial.meta.sankeyChart')
+    },
     category: 'chart',
     icon: 'Connection',
     defaultWidth: 500,
@@ -40,38 +46,54 @@ export const sankeyChartDefinition: ComponentDefinition = {
     ...topNPropFields,
     {
       key: 'nodeWidth',
-      label: '节点宽度',
+      get label() {
+        return t('editorMaterial.ui.nodeWidth')
+      },
       type: 'slider',
       min: 5,
       max: 30,
       default: 15,
-      group: '节点',
+      get group() {
+        return t('editorMaterial.ui.node')
+      },
     },
     {
       key: 'nodeGap',
-      label: '节点间距',
+      get label() {
+        return t('editorMaterial.ui.nodeGap')
+      },
       type: 'slider',
       min: 2,
       max: 30,
       default: 10,
-      group: '节点',
+      get group() {
+        return t('editorMaterial.ui.node')
+      },
     },
     {
       key: 'linkColor',
-      label: '连线颜色',
+      get label() {
+        return t('editorMaterial.ui.linkColor')
+      },
       type: 'colorpicker',
       default: '#22d3ee',
-      group: '连线',
+      get group() {
+        return t('editorMaterial.ui.linkLine')
+      },
     },
     {
       key: 'linkOpacity',
-      label: '连线透明度',
+      get label() {
+        return t('editorMaterial.ui.linkOpacity')
+      },
       type: 'slider',
       min: 0,
       max: 1,
       step: 0.05,
       default: 0.5,
-      group: '连线',
+      get group() {
+        return t('editorMaterial.ui.linkLine')
+      },
     },
   ],
   extraDefaults: {
@@ -81,9 +103,27 @@ export const sankeyChartDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'sourceField', label: '来源字段', type: 'category' },
-    { key: 'targetField', label: '目标字段', type: 'category' },
-    { key: 'valueField', label: '数值字段', type: 'value' },
+    {
+      key: 'sourceField',
+      get label() {
+        return t('editorMaterial.ui.sourceField')
+      },
+      type: 'category',
+    },
+    {
+      key: 'targetField',
+      get label() {
+        return t('editorMaterial.ui.targetField')
+      },
+      type: 'category',
+    },
+    {
+      key: 'valueField',
+      get label() {
+        return t('editorMaterial.ui.valueField')
+      },
+      type: 'value',
+    },
   ],
 }
 

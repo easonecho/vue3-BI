@@ -1,5 +1,6 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import i18n from '@/i18n'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import { useLinkageStore } from '@/stores/linkage'
 import { recordRecentDashboard } from '@/utils/recent-dashboards'
@@ -54,7 +55,9 @@ export function usePreviewSession(options: UsePreviewSessionOptions = {}) {
     const id = Number(route.params.id)
     const isTemplate = route.name === 'PreviewTemplate'
     if (!id || Number.isNaN(id)) {
-      loadError.value = isTemplate ? '模板 ID 无效' : '看板 ID 无效'
+      loadError.value = isTemplate
+        ? i18n.global.t('previewPage.templateIdInvalid')
+        : i18n.global.t('previewPage.dashboardIdInvalid')
       return
     }
     loading.value = true
@@ -70,8 +73,8 @@ export function usePreviewSession(options: UsePreviewSessionOptions = {}) {
       lastRefreshAt.value = new Date()
     } catch {
       loadError.value = isTemplate
-        ? '模板加载失败，可能已被删除或无访问权限'
-        : '看板加载失败，可能已被删除或无访问权限'
+        ? i18n.global.t('previewPage.templateLoadFailed')
+        : i18n.global.t('previewPage.dashboardLoadFailed')
     } finally {
       loading.value = false
     }

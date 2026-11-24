@@ -2,6 +2,10 @@ import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 import { chartCommonSchema } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 平行坐标图默认数据：维度定义 + 多条数据线 */
 export const PARALLEL_DEFAULT_DIMENSIONS = [
   { name: 'CPU', max: 100 },
@@ -22,7 +26,9 @@ export const PARALLEL_DEFAULT_DATA = [
 export const parallelChartDefinition: ComponentDefinition = {
   type: 'parallel-chart',
   meta: {
-    name: '平行坐标图',
+    get name() {
+      return t('editorMaterial.meta.parallelChart')
+    },
     category: 'chart',
     icon: 'DataLine',
     defaultWidth: 500,
@@ -33,47 +39,75 @@ export const parallelChartDefinition: ComponentDefinition = {
     ...chartCommonSchema,
     {
       key: 'lineColor',
-      label: '线条颜色',
+      get label() {
+        return t('editorMaterial.ui.lineColor')
+      },
       type: 'colorpicker',
       default: '#22d3ee',
-      group: '样式',
-      tip: '线条颜色',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+      get tip() {
+        return t('editorMaterial.ui.lineColor')
+      },
     },
     {
       key: 'lineOpacity',
-      label: '线条透明度',
+      get label() {
+        return t('editorMaterial.ui.lineOpacity')
+      },
       type: 'slider',
       min: 0.1,
       max: 1,
       step: 0.05,
       default: 0.5,
-      group: '样式',
-      tip: '线条透明度',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+      get tip() {
+        return t('editorMaterial.ui.lineOpacity')
+      },
     },
     {
       key: 'lineWidth',
-      label: '线条宽度',
+      get label() {
+        return t('editorMaterial.ui.lineWidth2')
+      },
       type: 'slider',
       min: 1,
       max: 5,
       default: 1.5,
-      group: '样式',
-      tip: '线条宽度',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+      get tip() {
+        return t('editorMaterial.ui.lineWidth2')
+      },
     },
     {
       key: 'axisColor',
-      label: '平行坐标轴颜色',
+      get label() {
+        return t('editorMaterial.ui.parallelAxisColor')
+      },
       type: 'colorpicker',
       default: '#475569',
-      group: '坐标',
-      tip: '平行坐标轴颜色',
+      get group() {
+        return t('editorMaterial.ui.coordinate')
+      },
+      get tip() {
+        return t('editorMaterial.ui.parallelAxisColor')
+      },
     },
     {
       key: 'labelColor',
-      label: '标签颜色',
+      get label() {
+        return t('editorMaterial.ui.labelColor2')
+      },
       type: 'colorpicker',
       default: '#e2e8f0',
-      group: '标签',
+      get group() {
+        return t('editorMaterial.ui.label')
+      },
     },
   ],
   extraDefaults: {
@@ -82,7 +116,16 @@ export const parallelChartDefinition: ComponentDefinition = {
   },
   defaultStyle: {},
   supportsDataBinding: true,
-  dataBindingSchema: [{ key: 'dimensionFields', label: '指标字段', type: 'value', multiple: true }],
+  dataBindingSchema: [
+    {
+      key: 'dimensionFields',
+      get label() {
+        return t('editorMaterial.ui.metricField')
+      },
+      type: 'value',
+      multiple: true,
+    },
+  ],
 }
 
 export default parallelChartDefinition

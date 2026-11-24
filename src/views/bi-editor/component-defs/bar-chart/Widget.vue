@@ -17,6 +17,10 @@ import { resolveComponentFieldMapping } from '../aggregate-spec'
 import { useLinkageStore } from '@/stores/linkage'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 const linkageStore = useLinkageStore()
@@ -46,7 +50,8 @@ const valueFields = computed<string[]>(() => mapping.value?.metrics ?? [])
 const aggregateRequest = useChartAggregation(props.comp, {
   groupBy: () => categoryField.value,
   metrics: () => valueFields.value,
-  orderBy: () => (categoryField.value ? { field: categoryField.value, direction: 'asc' } : undefined),
+  orderBy: () =>
+    categoryField.value ? { field: categoryField.value, direction: 'asc' } : undefined,
 })
 const { rows } = useDatasetBinding(dataSourceRef, true, aggregateRequest)
 
@@ -91,14 +96,16 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const categories = mappedData.value?.categories
-    ?? (Array.isArray(mergedProps.categories)
+  const categories =
+    mappedData.value?.categories ??
+    (Array.isArray(mergedProps.categories)
       ? mergedProps.categories
       : ['周一', '周二', '周三', '周四', '周五', '周六', '周日'])
-  const seriesData = mappedData.value?.series
-    ?? (Array.isArray(mergedProps.series)
+  const seriesData =
+    mappedData.value?.series ??
+    (Array.isArray(mergedProps.series)
       ? mergedProps.series
-      : [{ name: '数据', data: [120, 200, 150, 80, 70, 110, 130] }])
+      : [{ name: t('editorMaterial.ui.data'), data: [120, 200, 150, 80, 70, 110, 130] }])
   const barWidth = Number(mergedProps.barWidth)
   const barGapPercent = `${Number(mergedProps.barGap)}%`
   const stack = !!mergedProps.stack
@@ -164,7 +171,7 @@ function applyChartOption() {
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: true,
       xAxisData: getXAxisData(specificOption),
-      fallbackTitle: '柱状图',
+      fallbackTitle: t('editorMaterial.meta.barChart'),
     })
   })
 }
@@ -177,11 +184,7 @@ watch(
   // 🔑 性能优化：签名式 watch 替代 deep watch。
   //   原 deep:true 遍历 comp.props + comp.dataConfig + rows 全部元素（rows 可能 1000+ 行）。
   //   改为 JSON.stringify 签名对比小对象 + rows 浅 ref watch（仅引用变更触发）。
-  [
-    () => JSON.stringify(props.comp.props),
-    () => JSON.stringify(props.comp.dataConfig),
-    rows,
-  ],
+  [() => JSON.stringify(props.comp.props), () => JSON.stringify(props.comp.dataConfig), rows],
   () => {
     applyChartOption()
   },
@@ -193,5 +196,4 @@ onUnmounted(() => {
   if (debounceTimer !== null) cancelAnimationFrame(debounceTimer)
   pendingBuilder = null
 })
-
 </script>

@@ -12,6 +12,10 @@ import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 const dataSourceRef = computed(() => props.comp.dataSource)
 const { rows } = useDatasetBinding(dataSourceRef)
@@ -254,7 +258,7 @@ function applyChartOption() {
 
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: false,
-      fallbackTitle: '词云',
+      fallbackTitle: t('editorMaterial.meta.wordCloud'),
     })
   })
 }

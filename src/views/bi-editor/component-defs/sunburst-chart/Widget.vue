@@ -11,6 +11,10 @@ import { deriveDefaultPropsCached } from '../types'
 import { getDefinition } from '../index'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 let initTimer: number | undefined
@@ -50,7 +54,7 @@ function getChartSpecificOption(): {
   const specificOption: ECOption = {
     series: [
       {
-        name: '旭日图',
+        name: t('editorMaterial.meta.sunburstChart'),
         type: 'sunburst',
         data,
         radius: [`${innerRadius}%`, `${outerRadius}%`],
@@ -77,7 +81,7 @@ function applyChartOption() {
     const { specificOption, mergedProps } = getChartSpecificOption()
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: false,
-      fallbackTitle: '旭日图',
+      fallbackTitle: t('editorMaterial.meta.sunburstChart'),
     })
   })
 }
@@ -86,12 +90,9 @@ onMounted(async () => {
   initTimer = window.setTimeout(applyChartOption, 50)
 })
 
-watch(
-  [() => JSON.stringify(props.comp.props)],
-  () => {
-    applyChartOption()
-  },
-)
+watch([() => JSON.stringify(props.comp.props)], () => {
+  applyChartOption()
+})
 
 onUnmounted(() => {
   if (initTimer) clearTimeout(initTimer)

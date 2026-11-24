@@ -1,115 +1,202 @@
 import type { PropField } from '../props'
-import { DEFAULT_FONT_FAMILY, FONT_FAMILY_OPTIONS, FONT_STYLE_OPTIONS, FONT_WEIGHT_OPTIONS } from '../options'
+import {
+  DEFAULT_FONT_FAMILY,
+  FONT_FAMILY_OPTIONS,
+  FONT_STYLE_OPTIONS,
+  FONT_WEIGHT_OPTIONS,
+} from '../options'
+
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 X 轴配置 Schema（chartAxesSchema 的「X 轴」分组） */
 export const chartXAxisSchema: PropField[] = [
   // ============ X 轴 ============
-  { key: 'xAxisShow', label: '显示 X 轴', type: 'switch', default: true, group: 'X 轴' },
+  {
+    key: 'xAxisShow',
+    get label() {
+      return t('editorMaterial.ui.showXAxis')
+    },
+    type: 'switch',
+    default: true,
+    get group() {
+      return t('editorMaterial.ui.xAxis')
+    },
+  },
   {
     key: 'xAxisType',
-    label: 'X 轴类型',
+    get label() {
+      return t('editorMaterial.ui.xAxisType')
+    },
     type: 'select',
     options: [
-      { label: '类目轴（离散分类）', value: 'category' },
-      { label: '数值轴（连续数值）', value: 'value' },
-      { label: '时间轴', value: 'time' },
-      { label: '对数轴', value: 'log' },
+      {
+        get label() {
+          return t('editorMaterial.ui.categoryAxisDiscrete')
+        },
+        value: 'category',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.valueAxisContinuous')
+        },
+        value: 'value',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.timeAxis')
+        },
+        value: 'time',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.logAxis')
+        },
+        value: 'log',
+      },
     ],
     default: 'category',
-    group: 'X 轴',
+    get group() {
+      return t('editorMaterial.ui.xAxis')
+    },
     visibleWhen: { field: 'xAxisShow', truthy: true },
   },
   {
     key: 'xAxisLabelShow',
-    label: '显示刻度标签',
+    get label() {
+      return t('editorMaterial.ui.showTickLabels')
+    },
     type: 'switch',
     default: true,
-    group: 'X 轴',
+    get group() {
+      return t('editorMaterial.ui.xAxis')
+    },
     visibleWhen: { field: 'xAxisShow', truthy: true },
   },
   {
     key: 'xAxisLabelFontFamily',
-    label: '刻度字体',
+    get label() {
+      return t('editorMaterial.ui.tickFont')
+    },
     type: 'select',
     options: [...FONT_FAMILY_OPTIONS],
     default: DEFAULT_FONT_FAMILY,
-    group: 'X 轴',
+    get group() {
+      return t('editorMaterial.ui.xAxis')
+    },
     visibleWhen: { field: 'xAxisShow', truthy: true },
   },
   {
     key: 'xAxisLabelFontSize',
-    label: '刻度字号',
+    get label() {
+      return t('editorMaterial.ui.tickFontSize')
+    },
     type: 'slider',
     min: 10,
     max: 24,
     default: 12,
-    group: 'X 轴',
+    get group() {
+      return t('editorMaterial.ui.xAxis')
+    },
     visibleWhen: { field: 'xAxisShow', truthy: true },
   },
   {
     key: 'xAxisLabelFontWeight',
-    label: '刻度字重',
+    get label() {
+      return t('editorMaterial.ui.tickFontWeight')
+    },
     type: 'select',
     options: [...FONT_WEIGHT_OPTIONS],
     default: 'normal',
-    group: 'X 轴',
+    get group() {
+      return t('editorMaterial.ui.xAxis')
+    },
     visibleWhen: { field: 'xAxisShow', truthy: true },
   },
   {
     key: 'xAxisLabelFontStyle',
-    label: '刻度样式（斜体）',
+    get label() {
+      return t('editorMaterial.ui.tickStyleItalic')
+    },
     type: 'select',
     options: [...FONT_STYLE_OPTIONS],
     default: 'normal',
-    group: 'X 轴',
+    get group() {
+      return t('editorMaterial.ui.xAxis')
+    },
     visibleWhen: { field: 'xAxisShow', truthy: true },
   },
   {
     key: 'xAxisLabelColor',
-    label: '刻度颜色',
+    get label() {
+      return t('editorMaterial.ui.tickColor')
+    },
     type: 'colorpicker',
     default: '#6b7280',
-    group: 'X 轴',
+    get group() {
+      return t('editorMaterial.ui.xAxis')
+    },
     visibleWhen: { field: 'xAxisShow', truthy: true },
   },
   {
     key: 'xAxisAxisLineShow',
-    label: '显示轴线',
+    get label() {
+      return t('editorMaterial.ui.showAxisLine')
+    },
     type: 'switch',
     default: true,
-    group: 'X 轴',
+    get group() {
+      return t('editorMaterial.ui.xAxis')
+    },
     visibleWhen: { field: 'xAxisShow', truthy: true },
   },
   {
     key: 'xAxisAxisLineColor',
-    label: '轴线颜色',
+    get label() {
+      return t('editorMaterial.ui.axisLineColor')
+    },
     type: 'colorpicker',
     default: '#e5e7eb',
-    group: 'X 轴',
+    get group() {
+      return t('editorMaterial.ui.xAxis')
+    },
     visibleWhen: { field: 'xAxisShow', truthy: true },
   },
   {
     key: 'xAxisSplitLineShow',
-    label: '显示网格线',
+    get label() {
+      return t('editorMaterial.ui.showGridLines')
+    },
     type: 'switch',
     default: false,
-    group: 'X 轴',
+    get group() {
+      return t('editorMaterial.ui.xAxis')
+    },
     visibleWhen: { field: 'xAxisShow', truthy: true },
   },
   {
     key: 'xAxisSplitLineColor',
-    label: '网格线颜色',
+    get label() {
+      return t('editorMaterial.ui.gridLineColor')
+    },
     type: 'colorpicker',
     default: '#f3f4f6',
-    group: 'X 轴',
+    get group() {
+      return t('editorMaterial.ui.xAxis')
+    },
     visibleWhen: { field: 'xAxisShow', truthy: true },
   },
   {
     key: 'xAxisInverse',
-    label: '反向坐标轴',
+    get label() {
+      return t('editorMaterial.ui.inverseAxis')
+    },
     type: 'switch',
     default: false,
-    group: 'X 轴',
+    get group() {
+      return t('editorMaterial.ui.xAxis')
+    },
     visibleWhen: { field: 'xAxisShow', truthy: true },
   },
 ]

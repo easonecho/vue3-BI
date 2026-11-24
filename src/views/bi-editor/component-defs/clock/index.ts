@@ -1,10 +1,16 @@
 import type { ComponentDefinition } from '../types'
 import Widget from './Widget.vue'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const clockDefinition: ComponentDefinition = {
   type: 'clock',
   meta: {
-    name: '实时时钟',
+    get name() {
+      return t('editorMaterial.meta.liveClock')
+    },
     category: 'info',
     icon: 'Clock',
     defaultWidth: 200,
@@ -12,36 +18,165 @@ export const clockDefinition: ComponentDefinition = {
   },
   widget: Widget,
   propsSchema: [
-    { key: 'showDate', label: '显示日期', type: 'switch', default: true, group: '显示', tip: '显示日期' },
-    { key: 'showWeek', label: '显示星期', type: 'switch', default: true, group: '显示', tip: '显示星期' },
-    { key: 'showSeconds', label: '显示秒', type: 'switch', default: true, group: '显示', tip: '显示秒' },
-    { key: 'format24', label: '24小时制', type: 'switch', default: true, group: '显示', tip: '24小时制' },
-    { key: 'fontSize', label: '时间字号', type: 'slider', min: 14, max: 60, default: 32, group: '字体' },
-    { key: 'dateFontSize', label: '日期字号', type: 'slider', min: 10, max: 24, default: 14, group: '字体' },
-    { key: 'color', label: '时间颜色', type: 'colorpicker', default: '#ffffff', group: '字体' },
-    { key: 'weekColor', label: '星期颜色', type: 'colorpicker', default: '#94a3b8', group: '字体' },
+    {
+      key: 'showDate',
+      get label() {
+        return t('editorMaterial.ui.showDate')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.show')
+      },
+      get tip() {
+        return t('editorMaterial.ui.showDate')
+      },
+    },
+    {
+      key: 'showWeek',
+      get label() {
+        return t('editorMaterial.ui.showWeekday')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.show')
+      },
+      get tip() {
+        return t('editorMaterial.ui.showWeekday')
+      },
+    },
+    {
+      key: 'showSeconds',
+      get label() {
+        return t('editorMaterial.ui.showSeconds')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.show')
+      },
+      get tip() {
+        return t('editorMaterial.ui.showSeconds')
+      },
+    },
+    {
+      key: 'format24',
+      get label() {
+        return t('editorMaterial.ui.24HourFormat')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.show')
+      },
+      get tip() {
+        return t('editorMaterial.ui.24HourFormat')
+      },
+    },
+    {
+      key: 'fontSize',
+      get label() {
+        return t('editorMaterial.ui.timeFontSize')
+      },
+      type: 'slider',
+      min: 14,
+      max: 60,
+      default: 32,
+      get group() {
+        return t('editorMaterial.ui.font')
+      },
+    },
+    {
+      key: 'dateFontSize',
+      get label() {
+        return t('editorMaterial.ui.dateFontSize')
+      },
+      type: 'slider',
+      min: 10,
+      max: 24,
+      default: 14,
+      get group() {
+        return t('editorMaterial.ui.font')
+      },
+    },
+    {
+      key: 'color',
+      get label() {
+        return t('editorMaterial.ui.timeColor')
+      },
+      type: 'colorpicker',
+      default: '#ffffff',
+      get group() {
+        return t('editorMaterial.ui.font')
+      },
+    },
+    {
+      key: 'weekColor',
+      get label() {
+        return t('editorMaterial.ui.weekdayColor')
+      },
+      type: 'colorpicker',
+      default: '#94a3b8',
+      get group() {
+        return t('editorMaterial.ui.font')
+      },
+    },
     {
       key: 'fontWeight',
-      label: '字重',
+      get label() {
+        return t('editorMaterial.ui.fontWeight')
+      },
       type: 'select',
       options: [
-        { label: '常规', value: 'normal' },
-        { label: '粗体', value: 'bold' },
-        { label: '细体', value: 'lighter' },
+        {
+          get label() {
+            return t('editorMaterial.ui.normal')
+          },
+          value: 'normal',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.bold')
+          },
+          value: 'bold',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.light')
+          },
+          value: 'lighter',
+        },
       ],
       default: 'bold',
-      group: '字体',
+      get group() {
+        return t('editorMaterial.ui.font')
+      },
     },
     {
       key: 'fontFamily',
-      label: '字体',
+      get label() {
+        return t('editorMaterial.ui.font')
+      },
       type: 'select',
       options: [
-        { label: '等宽', value: 'Consolas, "Courier New", monospace' },
-        { label: '默认', value: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+        {
+          get label() {
+            return t('editorMaterial.ui.monospace')
+          },
+          value: 'Consolas, "Courier New", monospace',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.default')
+          },
+          value: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        },
       ],
       default: 'Consolas, "Courier New", monospace',
-      group: '字体',
+      get group() {
+        return t('editorMaterial.ui.font')
+      },
     },
   ],
   defaultStyle: {},

@@ -1,10 +1,16 @@
 import type { ComponentDefinition } from '../types'
 import Widget from './Widget.vue'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const qrcodeDefinition: ComponentDefinition = {
   type: 'qrcode',
   meta: {
-    name: '二维码',
+    get name() {
+      return t('editorMaterial.meta.qrCode')
+    },
     category: 'basic',
     icon: 'Connection',
     defaultWidth: 160,
@@ -14,15 +20,63 @@ export const qrcodeDefinition: ComponentDefinition = {
   propsSchema: [
     {
       key: 'content',
-      label: '内容',
+      get label() {
+        return t('editorMaterial.ui.content')
+      },
       type: 'textarea',
       default: 'https://trae.com',
-      group: '内容',
+      get group() {
+        return t('editorMaterial.ui.content')
+      },
     },
-    { key: 'size', label: '尺寸', type: 'number', min: 80, max: 400, default: 160, group: '样式' },
-    { key: 'fgColor', label: '前景色', type: 'colorpicker', default: '#000000', group: '样式' },
-    { key: 'bgColor', label: '背景色', type: 'colorpicker', default: '#ffffff', group: '样式' },
-    { key: 'margin', label: '边距', type: 'number', min: 0, max: 20, default: 2, group: '样式' },
+    {
+      key: 'size',
+      get label() {
+        return t('editorMaterial.ui.size')
+      },
+      type: 'number',
+      min: 80,
+      max: 400,
+      default: 160,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'fgColor',
+      get label() {
+        return t('editorMaterial.ui.foregroundColor')
+      },
+      type: 'colorpicker',
+      default: '#000000',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'bgColor',
+      get label() {
+        return t('editorMaterial.ui.backgroundColor')
+      },
+      type: 'colorpicker',
+      default: '#ffffff',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'margin',
+      get label() {
+        return t('editorMaterial.ui.margin')
+      },
+      type: 'number',
+      min: 0,
+      max: 20,
+      default: 2,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
   ],
   defaultStyle: {},
   supportsDataBinding: false,

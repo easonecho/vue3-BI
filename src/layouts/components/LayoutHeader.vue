@@ -5,7 +5,7 @@
         v-if="isMobile"
         class="menu-toggle"
         text
-        :aria-label="asideVisible ? '收起菜单' : '展开菜单'"
+        :aria-label="asideVisible ? t('layout.collapseMenu') : t('layout.expandMenu')"
         @click="emit('toggle-aside')"
       >
         <el-icon :size="18"><Expand /></el-icon>
@@ -24,11 +24,11 @@
       <button
         type="button"
         class="search-trigger"
-        aria-label="全局搜索 (Ctrl+K)"
+        :aria-label="t('layout.globalSearchShortcut')"
         @click="emit('open-search')"
       >
         <el-icon><Search /></el-icon>
-        <span v-if="!isMobile" class="search-trigger-text">搜索</span>
+        <span v-if="!isMobile" class="search-trigger-text">{{ t('layout.search') }}</span>
         <kbd v-if="!isMobile">Ctrl K</kbd>
       </button>
       <div v-if="!isMobile" class="clock-area">
@@ -183,7 +183,9 @@ const userStore = useUserStore()
   border-radius: 18px;
   background: var(--bi-component-bg);
   border: 1px solid var(--bi-border-color);
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 
   &:hover {
     border-color: var(--bi-border-accent);

@@ -1,6 +1,12 @@
 import { nextTick, type Ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { ComponentInstance, CanvasState, GuideLine, DashboardLayout } from '@/views/bi-editor/types'
+import i18n from '@/i18n'
+import type {
+  ComponentInstance,
+  CanvasState,
+  GuideLine,
+  DashboardLayout,
+} from '@/views/bi-editor/types'
 import { createDashboard, updateDashboard, getDashboardDetail } from '@/api/dashboard'
 import {
   getDashboardTemplateDetail,
@@ -96,7 +102,7 @@ export function createEditorSession(deps: EditorSessionDeps): EditorSessionApi {
   }
 
   function setDashboardName(name: string) {
-    dashboardName.value = name || '未命名报表'
+    dashboardName.value = name || i18n.global.t('appMessages.editor.untitledDashboard')
   }
 
   /**
@@ -182,10 +188,7 @@ export function createEditorSession(deps: EditorSessionDeps): EditorSessionApi {
           currentDashboardId.value = res.data.id
           dashboardVersion.value = res.data.version ?? 1
         } else {
-          const res = await updateDashboard(
-            currentDashboardId.value,
-            buildPayload(withVersion),
-          )
+          const res = await updateDashboard(currentDashboardId.value, buildPayload(withVersion))
           if (typeof res.data.version === 'number') dashboardVersion.value = res.data.version
         }
       }
@@ -195,12 +198,12 @@ export function createEditorSession(deps: EditorSessionDeps): EditorSessionApi {
       } catch (e) {
         if (!isVersionConflict(e) || currentDashboardId.value === null) throw e
         const overwrite = await ElMessageBox.confirm(
-          '该看板刚刚被其他人修改过，覆盖保存会丢失对方的改动。是否覆盖？',
-          '保存冲突',
+          i18n.global.t('appMessages.editor.saveConflictMessage'),
+          i18n.global.t('appMessages.editor.saveConflictTitle'),
           {
             type: 'warning',
-            confirmButtonText: '覆盖保存',
-            cancelButtonText: '取消',
+            confirmButtonText: i18n.global.t('appMessages.editor.overwrite'),
+            cancelButtonText: i18n.global.t('common.cancel'),
           },
         )
           .then(() => true)
@@ -210,7 +213,7 @@ export function createEditorSession(deps: EditorSessionDeps): EditorSessionApi {
       }
       isDirty.value = false
       clearDraft(draftKey)
-      ElMessage.success('保存成功')
+      ElMessage.success(i18n.global.t('appMessages.editor.saveSuccess'))
     } finally {
       isSaving.value = false
     }
@@ -261,7 +264,7 @@ export function createEditorSession(deps: EditorSessionDeps): EditorSessionApi {
     dashboardVersion.value = null
     isTemplateMode.value = false
     currentTemplateId.value = null
-    dashboardName.value = '未命名报表'
+    dashboardName.value = i18n.global.t('appMessages.editor.untitledDashboard')
     components.value = []
     guides.value = []
     selectedId.value = null
@@ -280,7 +283,7 @@ export function createEditorSession(deps: EditorSessionDeps): EditorSessionApi {
     currentTemplateId.value = null
     currentDashboardId.value = null
     dashboardVersion.value = null
-    dashboardName.value = '未命名模板'
+    dashboardName.value = i18n.global.t('appMessages.editor.untitledTemplate')
     templateDescription.value = ''
     templateCategory.value = undefined
     templateIsPublic.value = true
@@ -350,7 +353,7 @@ export function createEditorSession(deps: EditorSessionDeps): EditorSessionApi {
         currentTemplateId.value = res.data.id
         isDirty.value = false
         clearDraft(draftKey)
-        ElMessage.success('模板保存成功')
+        ElMessage.success(i18n.global.t('appMessages.editor.templateSaveSuccess'))
         return res.data
       } else {
         const res = await updateDashboardTemplate(currentTemplateId.value, {
@@ -363,7 +366,7 @@ export function createEditorSession(deps: EditorSessionDeps): EditorSessionApi {
         })
         isDirty.value = false
         clearDraft(draftKey)
-        ElMessage.success('模板保存成功')
+        ElMessage.success(i18n.global.t('appMessages.editor.templateSaveSuccess'))
         return res.data
       }
     } finally {

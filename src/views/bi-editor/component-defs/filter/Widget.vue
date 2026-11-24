@@ -8,7 +8,7 @@
       :loading="datasetBound && loading"
       :remote="datasetBound"
       :remote-method="handleRemoteSearch"
-      :no-data-text="error || '暂无可选值'"
+      :no-data-text="error || t('editorMaterial.ui.noSelectableValues')"
       filterable
       clearable
       style="width: 100%"
@@ -25,7 +25,7 @@
       :loading="datasetBound && loading"
       :remote="datasetBound"
       :remote-method="handleRemoteSearch"
-      :no-data-text="error || '暂无可选值'"
+      :no-data-text="error || t('editorMaterial.ui.noSelectableValues')"
       filterable
       clearable
       style="width: 100%"
@@ -36,10 +36,10 @@
       <template v-if="allowSelectAll" #footer>
         <div class="filter-widget__bulk">
           <el-button link size="small" :disabled="optionList.length === 0" @click="selectAll">
-            全选
+            {{ t('editorMaterial.ui.selectAll') }}
           </el-button>
           <el-button link size="small" :disabled="optionList.length === 0" @click="invertSelection">
-            反选
+            {{ t('editorMaterial.ui.invertSelection') }}
           </el-button>
           <el-button
             link
@@ -47,7 +47,7 @@
             :disabled="selectedValues.length === 0"
             @click="clearSelection"
           >
-            清空
+            {{ t('editorMaterial.ui.clear') }}
           </el-button>
         </div>
       </template>
@@ -66,15 +66,15 @@
       v-model="dateRange"
       type="daterange"
       :shortcuts="dateShortcuts"
-      range-separator="至"
-      start-placeholder="开始"
-      end-placeholder="结束"
+      :range-separator="t('editorMaterial.ui.to')"
+      :start-placeholder="t('editorMaterial.ui.start')"
+      :end-placeholder="t('editorMaterial.ui.end')"
       value-format="YYYY-MM-DD"
       style="width: 100%"
       @change="onDateRangeChange"
     />
     <div v-if="datasetBound && (truncated || error)" class="filter-widget__hint">
-      {{ error || '候选值过多，仅展示部分结果，可输入关键字搜索' }}
+      {{ error || t('editorMaterial.ui.tooManyCandidates') }}
     </div>
   </div>
 </template>
@@ -83,6 +83,10 @@
 import { computed, ref, watch } from 'vue'
 import { useLinkageStore } from '@/stores/linkage'
 import { useDatasetDistinct, toFilterOptions } from '../../composables/useDatasetDistinct'
+
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   comp: any
@@ -261,12 +265,12 @@ function relativeRange(preset: string): [Date, Date] | null {
 }
 
 const dateShortcuts = [
-  { text: '今天', value: () => relativeRange('today') || [] },
-  { text: '昨天', value: () => relativeRange('yesterday') || [] },
-  { text: '最近 7 天', value: () => relativeRange('last7days') || [] },
-  { text: '最近 30 天', value: () => relativeRange('last30days') || [] },
-  { text: '本月', value: () => relativeRange('thisMonth') || [] },
-  { text: '上月', value: () => relativeRange('lastMonth') || [] },
+  { text: t('editorMaterial.ui.today'), value: () => relativeRange('today') || [] },
+  { text: t('editorMaterial.ui.yesterday'), value: () => relativeRange('yesterday') || [] },
+  { text: t('editorMaterial.ui.last7Days'), value: () => relativeRange('last7days') || [] },
+  { text: t('editorMaterial.ui.last30Days'), value: () => relativeRange('last30days') || [] },
+  { text: t('editorMaterial.ui.thisMonth'), value: () => relativeRange('thisMonth') || [] },
+  { text: t('editorMaterial.ui.lastMonth'), value: () => relativeRange('lastMonth') || [] },
 ]
 
 /** 默认相对区间: 每次打开看板按当天滚动, 已有筛选值时不再覆盖 */

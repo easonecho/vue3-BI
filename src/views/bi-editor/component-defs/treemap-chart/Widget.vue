@@ -14,6 +14,10 @@ import { useChartAggregation } from '../../composables/useChartAggregation'
 import { resolveComponentFieldMapping } from '../aggregate-spec'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 let initTimer: number | undefined
@@ -79,7 +83,7 @@ function getChartSpecificOption(): {
   const specificOption: ECOption = {
     series: [
       {
-        name: '树图',
+        name: t('editorMaterial.meta.treeChart'),
         type: 'treemap',
         data,
         roam: false,
@@ -123,7 +127,7 @@ function applyChartOption() {
     const { specificOption, mergedProps } = getChartSpecificOption()
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: false,
-      fallbackTitle: '树图',
+      fallbackTitle: t('editorMaterial.meta.treeChart'),
     })
   })
 }
@@ -132,12 +136,9 @@ onMounted(async () => {
   initTimer = window.setTimeout(applyChartOption, 50)
 })
 
-watch(
-  [() => JSON.stringify(props.comp.props), () => JSON.stringify(boundData.value)],
-  () => {
-    applyChartOption()
-  },
-)
+watch([() => JSON.stringify(props.comp.props), () => JSON.stringify(boundData.value)], () => {
+  applyChartOption()
+})
 
 onUnmounted(() => {
   if (initTimer) clearTimeout(initTimer)

@@ -1,7 +1,7 @@
 <template>
   <div v-loading="loading" class="material-grid">
     <div v-if="list.length === 0 && !loading" class="empty-state">
-      <el-empty description="暂无素材，请点击右上角上传" />
+      <el-empty :description="t('materialPage.empty')" />
     </div>
     <MaterialCard
       v-for="m in list"
@@ -15,8 +15,11 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { Material } from '@/api/material'
 import MaterialCard from './MaterialCard.vue'
+
+const { t } = useI18n()
 
 defineProps<{
   list: Material[]

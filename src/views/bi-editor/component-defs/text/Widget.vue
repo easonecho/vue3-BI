@@ -6,9 +6,13 @@
 import { computed } from 'vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 
-const displayText = computed(() => props.comp.props?.text || '文本内容')
+const displayText = computed(() => props.comp.props?.text || t('editorMaterial.ui.textContent'))
 const computedStyle = computed(() => ({
   fontSize: `${props.comp.props?.fontSize || 14}px`,
   color: props.comp.props?.color || '#333333',

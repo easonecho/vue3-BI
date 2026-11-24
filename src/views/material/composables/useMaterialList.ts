@@ -1,11 +1,7 @@
 import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import {
-  deleteMaterial,
-  getMaterialList,
-  type Material,
-  type MaterialType,
-} from '@/api/material'
+import i18n from '@/i18n'
+import { deleteMaterial, getMaterialList, type Material, type MaterialType } from '@/api/material'
 import { errorMessage } from '../utils/material-utils'
 
 /**
@@ -37,7 +33,7 @@ export function useMaterialList() {
       list.value = res.data.list
       total.value = res.data.total
     } catch (e) {
-      ElMessage.error(errorMessage(e, '加载素材列表失败'))
+      ElMessage.error(errorMessage(e, i18n.global.t('materialPage.loadListFailed')))
     } finally {
       loading.value = false
     }
@@ -58,14 +54,14 @@ export function useMaterialList() {
   async function handleDelete(m: Material) {
     try {
       await deleteMaterial(m.id)
-      ElMessage.success('删除成功')
+      ElMessage.success(i18n.global.t('materialPage.deleteSuccess'))
       // 若当前页删除后空了，回退一页
       if (list.value.length === 1 && page.value > 1) {
         page.value--
       }
       await loadList()
     } catch (e) {
-      ElMessage.error(errorMessage(e, '删除失败'))
+      ElMessage.error(errorMessage(e, i18n.global.t('materialPage.deleteFailed')))
     }
   }
 

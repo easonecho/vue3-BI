@@ -12,6 +12,10 @@ import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 const dataSourceRef = computed(() => props.comp.dataSource)
 const { rows } = useDatasetBinding(dataSourceRef)
@@ -77,7 +81,7 @@ function getChartSpecificOption(): {
     ? mergedProps.series
     : [
         {
-          name: '产品A',
+          name: t('editorMaterial.series.productA'),
           data: [
             [10, 20, 30],
             [20, 40, 50],
@@ -93,7 +97,7 @@ function getChartSpecificOption(): {
   const firstSeries =
     bound ??
     ((seriesData[0] as { name: string; data: number[][]; sizeMax?: number }) || {
-      name: '数据',
+      name: t('editorMaterial.ui.data'),
       data: [],
       sizeMax: 100,
     })
@@ -146,7 +150,7 @@ function applyChartOption() {
     const { specificOption, mergedProps } = getChartSpecificOption()
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: true,
-      fallbackTitle: '气泡图',
+      fallbackTitle: t('editorMaterial.meta.bubbleChart'),
     })
   })
 }

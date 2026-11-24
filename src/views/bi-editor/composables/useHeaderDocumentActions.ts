@@ -2,6 +2,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { RouteLocationNormalizedLoaded, Router } from 'vue-router'
 import type { useBiEditorStore } from '@/stores/bi-editor'
 import type { DashboardLayout } from '@/views/bi-editor/types'
+import i18n from '@/i18n'
 
 type BiEditorStore = ReturnType<typeof useBiEditorStore>
 
@@ -30,6 +31,7 @@ export function useHeaderDocumentActions(
   deps: HeaderDocumentActionsDeps,
 ): HeaderDocumentActionsApi {
   const { store, route, router, openTemplateDialog } = deps
+  const t = i18n.global.t
 
   async function handleSave() {
     // 🔑 模板编辑模式：打开元数据对话框走 saveTemplate
@@ -54,11 +56,15 @@ export function useHeaderDocumentActions(
     if (store.isTemplateMode) return
     try {
       store.setDashboardId(null)
-      store.setDashboardName(`${store.dashboardName || '未命名看板'} 的副本`)
+      store.setDashboardName(
+        t('editorUi.header.copySuffix', {
+          name: store.dashboardName || t('editorUi.header.untitledDashboard'),
+        }),
+      )
       await store.saveDashboard()
       if (store.currentDashboardId != null) {
         router.replace(`/bi-editor/${store.currentDashboardId}`)
-        ElMessage.success('已另存为新看板 🎉')
+        ElMessage.success(t('editorUi.header.saveAsSuccess'))
       }
     } catch {
       // 同上
@@ -68,12 +74,12 @@ export function useHeaderDocumentActions(
   function handlePreview() {
     // 🔑 未保存的看板没有 id，无法预览
     if (store.currentDashboardId == null) {
-      ElMessage.warning('请先保存看板后再预览')
+      ElMessage.warning(t('editorUi.header.previewNeedsSave'))
       return
     }
     // 🔑 有未保存改动时提示，但仍允许预览
     if (store.isDirty) {
-      ElMessage.info('当前有未保存的修改,预览展示的是已保存版本')
+      ElMessage.info(t('editorUi.header.previewDirtyHint'))
     }
     router.push(`/preview/${store.currentDashboardId}`)
   }
@@ -85,7 +91,10 @@ export function useHeaderDocumentActions(
     })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    const safe = (store.dashboardName || 'vue3-bi 布局').replace(/[\\/:*?"<>|]/g, '_')
+    const safe = (store.dashboardName || t('editorUi.header.jsonExportFileName')).replace(
+      /[\\/:*?"<>|]/g,
+      '_',
+    )
     const ts = new Date()
     const pad = (n: number) => n.toString().padStart(2, '0')
     const stamp = `${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}`
@@ -95,7 +104,7 @@ export function useHeaderDocumentActions(
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-    ElMessage.success('布局 JSON 已导出 📦')
+    ElMessage.success(t('editorUi.header.exportJsonSuccess'))
   }
 
   /**
@@ -116,11 +125,11 @@ export function useHeaderDocumentActions(
     if (!file) return
     try {
       await ElMessageBox.confirm(
-        `导入后将覆盖当前画布的所有组件、画布尺寸、辅助线。\n当前未保存的改动会被覆盖，是否继续？`,
-        '导入布局 JSON',
+        t('editorUi.header.importConfirmMessage'),
+        t('editorUi.header.importConfirmTitle'),
         {
-          confirmButtonText: '确定覆盖导入',
-          cancelButtonText: '取消',
+          confirmButtonText: t('editorUi.header.confirmOverwriteImport'),
+          cancelButtonText: t('common.cancel'),
           type: 'warning',
         },
       )
@@ -130,15 +139,23 @@ export function useHeaderDocumentActions(
     try {
       const text = await file.text()
       const layout: unknown = JSON.parse(text)
-      if (!isDashboardLayout(layout)) throw new Error('JSON 结构非法')
+      if (!isDashboardLayout(layout)) throw new Error(t('editorUi.header.jsonInvalid'))
       store.applyLayout(layout)
       // 🔑 导入后另存为新看板：currentDashboardId = null，下次 save 会产生新记录
       store.setDashboardId(null)
-      store.setDashboardName(`${store.dashboardName || '未命名'}（已导入）`)
-      ElMessage.success(`已从 ${file.name} 导入布局 ✨`)
+      store.setDashboardName(
+        t('editorUi.header.importedSuffix', {
+          name: store.dashboardName || t('editorUi.header.untitled'),
+        }),
+      )
+      ElMessage.success(t('editorUi.header.importSuccess', { file: file.name }))
     } catch (err) {
       console.error('[HeaderToolbar] import JSON failed', err)
-      ElMessage.error(`导入失败：${(err as Error).message || 'JSON 解析错误'}`)
+      ElMessage.error(
+        t('editorUi.header.importFailed', {
+          message: (err as Error).message || t('editorUi.header.jsonParseError'),
+        }),
+      )
     }
   }
 

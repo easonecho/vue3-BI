@@ -8,6 +8,7 @@
  */
 import type { RowCondition } from '@/api/dataset'
 import { buildAggregateFilters } from './aggregate-request'
+import i18n from '@/i18n'
 import {
   resolveLinkField,
   type DrillFilter,
@@ -34,12 +35,24 @@ const OPERATOR_LABELS: Record<string, string> = {
   gte: '≥',
   lt: '<',
   lte: '≤',
-  in: '包含',
-  notIn: '不包含',
-  like: '匹配',
-  between: '区间',
-  isNull: '为空',
-  notNull: '不为空',
+  get in() {
+    return i18n.global.t('editorUi.operator.contains')
+  },
+  get notIn() {
+    return i18n.global.t('editorUi.operator.notContains')
+  },
+  get like() {
+    return i18n.global.t('editorUi.operator.match')
+  },
+  get between() {
+    return i18n.global.t('editorUi.operator.between')
+  },
+  get isNull() {
+    return i18n.global.t('editorUi.operator.isNull')
+  },
+  get notNull() {
+    return i18n.global.t('editorUi.operator.notNull')
+  },
 }
 
 /** 去除重复条件，避免全局筛选与联动/钻取重复下发 */

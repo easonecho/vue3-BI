@@ -1,18 +1,18 @@
 <template>
   <div class="comment-tab">
     <div v-if="!store.currentDashboardId" class="placeholder-text">
-      看板尚未保存，保存后即可添加协作评论
+      {{ t('editorUi.comment.unsaved') }}
     </div>
 
     <template v-else>
       <div class="comment-toolbar">
         <el-radio-group v-model="filterMode" size="small">
-          <el-radio-button value="all">全部</el-radio-button>
+          <el-radio-button value="all">{{ t('editorUi.comment.all') }}</el-radio-button>
           <el-radio-button value="component" :disabled="!store.selectedComponent">
-            当前组件
+            {{ t('editorUi.comment.currentComponent') }}
           </el-radio-button>
         </el-radio-group>
-        <el-tooltip content="刷新评论" placement="bottom">
+        <el-tooltip :content="t('editorUi.comment.refresh')" placement="bottom">
           <el-button text size="small" :loading="loading" @click="loadComments">
             <el-icon><Refresh /></el-icon>
           </el-button>
@@ -21,10 +21,12 @@
 
       <div class="comment-compose">
         <div class="compose-target">
-          <span class="target-label"><el-icon><ChatDotRound /></el-icon> 评论对象</span>
+          <span class="target-label"
+            ><el-icon><ChatDotRound /></el-icon> {{ t('editorUi.comment.target') }}</span
+          >
           <el-tag size="small" effect="plain">{{ targetLabel }}</el-tag>
           <el-checkbox v-if="store.selectedComponent" v-model="dashboardWide" size="small">
-            针对整个看板
+            {{ t('editorUi.comment.dashboardWide') }}
           </el-checkbox>
         </div>
         <el-input
@@ -33,7 +35,7 @@
           :rows="3"
           maxlength="2000"
           show-word-limit
-          placeholder="输入评论，Ctrl+Enter 发表"
+          :placeholder="t('editorUi.comment.placeholder')"
           @keydown.ctrl.enter.prevent="submitComment"
         />
         <div class="compose-actions">
@@ -44,18 +46,22 @@
             :disabled="!draft.trim()"
             @click="submitComment"
           >
-            发表评论
+            {{ t('editorUi.comment.submit') }}
           </el-button>
         </div>
       </div>
 
       <div class="comment-summary">
-        <span>共 {{ total }} 条</span>
-        <el-checkbox v-model="onlyUnresolved" size="small">仅看未解决</el-checkbox>
+        <span>{{ t('editorUi.comment.total', { count: total }) }}</span>
+        <el-checkbox v-model="onlyUnresolved" size="small">{{
+          t('editorUi.comment.onlyUnresolved')
+        }}</el-checkbox>
       </div>
 
-      <div v-if="loading" class="placeholder-text">加载中...</div>
-      <div v-else-if="visibleComments.length === 0" class="placeholder-text">暂无评论</div>
+      <div v-if="loading" class="placeholder-text">{{ t('common.loading') }}</div>
+      <div v-else-if="visibleComments.length === 0" class="placeholder-text">
+        {{ t('editorUi.comment.empty') }}
+      </div>
 
       <div v-else class="comment-list">
         <div
@@ -81,7 +87,7 @@
               show-word-limit
             />
             <div class="edit-actions">
-              <el-button size="small" @click="cancelEdit">取消</el-button>
+              <el-button size="small" @click="cancelEdit">{{ t('common.cancel') }}</el-button>
               <el-button
                 size="small"
                 type="primary"
@@ -89,7 +95,7 @@
                 :disabled="!editDraft.trim()"
                 @click="saveEdit(c)"
               >
-                保存
+                {{ t('common.save') }}
               </el-button>
             </div>
           </div>
@@ -104,27 +110,36 @@
             >
               {{ componentNames.get(c.componentId) }}
             </el-tag>
-            <el-tag v-if="c.componentId && !componentNames.get(c.componentId)" size="small" type="info">
-              组件已删除
+            <el-tag
+              v-if="c.componentId && !componentNames.get(c.componentId)"
+              size="small"
+              type="info"
+            >
+              {{ t('editorUi.comment.deletedComponent') }}
             </el-tag>
             <el-tag v-else-if="!c.componentId" size="small" type="success" effect="plain">
-              看板整体
+              {{ t('editorUi.comment.dashboardTag') }}
             </el-tag>
-            <el-tag v-if="c.resolved" size="small" type="success">已解决</el-tag>
+            <el-tag v-if="c.resolved" size="small" type="success">{{
+              t('editorUi.comment.resolved')
+            }}</el-tag>
 
             <div class="comment-actions">
-              <el-tooltip :content="c.resolved ? '重新打开' : '标记已解决'" placement="top">
+              <el-tooltip
+                :content="c.resolved ? t('editorUi.comment.reopen') : t('editorUi.comment.resolve')"
+                placement="top"
+              >
                 <el-button text size="small" @click="toggleResolved(c)">
                   <el-icon><Check /></el-icon>
                 </el-button>
               </el-tooltip>
               <template v-if="isMine(c)">
-                <el-tooltip content="编辑评论" placement="top">
+                <el-tooltip :content="t('editorUi.comment.edit')" placement="top">
                   <el-button text size="small" @click="startEdit(c)">
                     <el-icon><EditPen /></el-icon>
                   </el-button>
                 </el-tooltip>
-                <el-tooltip content="删除评论" placement="top">
+                <el-tooltip :content="t('editorUi.comment.delete')" placement="top">
                   <el-button text size="small" @click="removeComment(c)">
                     <el-icon><Delete /></el-icon>
                   </el-button>
@@ -140,6 +155,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ChatDotRound, Check, Delete, EditPen, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useBiEditorStore } from '@/stores/bi-editor'
@@ -154,6 +170,7 @@ import {
 
 const store = useBiEditorStore()
 const userStore = useUserStore()
+const { t } = useI18n()
 
 /** 列表筛选: 全部 / 仅当前选中组件 */
 const filterMode = ref<'all' | 'component'>('all')
@@ -182,7 +199,7 @@ const componentNames = computed(() => {
 
 /** 新评论目标提示 */
 const targetLabel = computed(() => {
-  if (dashboardWide.value || !store.selectedComponent) return '整个看板'
+  if (dashboardWide.value || !store.selectedComponent) return t('editorUi.comment.wholeDashboard')
   return store.selectedComponent.name
 })
 
@@ -235,7 +252,7 @@ async function submitComment() {
     comments.value = [res.data, ...comments.value]
     total.value += 1
     draft.value = ''
-    ElMessage.success('评论已发表')
+    ElMessage.success(t('editorUi.comment.published'))
   } catch {
     /* 错误提示由请求拦截器统一处理 */
   } finally {
@@ -286,10 +303,10 @@ async function removeComment(comment: DashboardComment) {
   const dashboardId = store.currentDashboardId
   if (!dashboardId) return
   try {
-    await ElMessageBox.confirm('确定删除该评论？', '提示', {
+    await ElMessageBox.confirm(t('editorUi.comment.deleteConfirm'), t('editorUi.doc.tip'), {
       type: 'warning',
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
+      confirmButtonText: t('common.delete'),
+      cancelButtonText: t('common.cancel'),
     })
   } catch {
     return
@@ -299,7 +316,7 @@ async function removeComment(comment: DashboardComment) {
     comments.value = comments.value.filter((c) => c.id !== comment.id)
     total.value = Math.max(0, total.value - 1)
     if (editingId.value === comment.id) cancelEdit()
-    ElMessage.success('已删除')
+    ElMessage.success(t('editorUi.comment.deleted'))
   } catch {
     /* 错误提示由请求拦截器统一处理 */
   }
@@ -314,7 +331,7 @@ function locateComponent(componentId: string | null) {
 
 function authorName(comment: DashboardComment): string {
   const creator = comment.creator
-  return creator?.nickname || creator?.username || '已注销用户'
+  return creator?.nickname || creator?.username || t('editorUi.comment.unregistered')
 }
 
 function authorInitial(comment: DashboardComment): string {
@@ -330,9 +347,11 @@ function formatCommentTime(iso: string): string {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return iso
   const diff = Date.now() - date.getTime()
-  if (diff < 60_000) return '刚刚'
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} 分钟前`
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)} 小时前`
+  if (diff < 60_000) return t('editorUi.comment.justNow')
+  if (diff < 3_600_000)
+    return t('editorUi.comment.minutesAgo', { count: Math.floor(diff / 60_000) })
+  if (diff < 86_400_000)
+    return t('editorUi.comment.hoursAgo', { count: Math.floor(diff / 3_600_000) })
   const pad = (n: number) => String(n).padStart(2, '0')
   const now = new Date()
   const sameYear = date.getFullYear() === now.getFullYear()

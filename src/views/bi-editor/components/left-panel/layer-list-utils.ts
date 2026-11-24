@@ -15,6 +15,7 @@ import {
 import type { ComponentInstance } from '@/views/bi-editor/types'
 import type { useBiEditorStore } from '@/stores/bi-editor'
 import type { ContextMenuGroups } from '../canvas/ContextMenu.vue'
+import i18n from '@/i18n'
 
 type BiEditorStore = ReturnType<typeof useBiEditorStore>
 
@@ -55,18 +56,19 @@ export function buildLayerContextMenu(
     store.selectComponent(layer.id)
   }
   const comp = store.selectedComponent
+  const t = i18n.global.t
   return [
     [
       {
-        label: '重命名',
+        label: t('editorUi.layer.rename'),
         icon: Edit,
-        shortcut: '双击图层',
+        shortcut: t('editorUi.layer.renameShortcut'),
         disabled: !store.selectedId,
         action: () => comp && startRename(comp),
       },
       { divider: true },
       {
-        label: '剪切',
+        label: t('editorUi.layer.cut'),
         icon: Scissor,
         shortcut: 'Ctrl+X',
         action: () => {
@@ -78,20 +80,20 @@ export function buildLayerContextMenu(
         },
       },
       {
-        label: '复制',
+        label: t('editorUi.layer.copy'),
         icon: DocumentCopy,
         shortcut: 'Ctrl+C',
         action: () => store.copyToClipboard(),
       },
       {
-        label: '复制此组件',
+        label: t('editorUi.layer.duplicateThis'),
         icon: CopyDocument,
         shortcut: 'Ctrl+D',
         disabled: !store.selectedId,
         action: () => store.selectedId && store.duplicateComponent(store.selectedId),
       },
       {
-        label: '删除',
+        label: t('editorUi.layer.delete'),
         icon: Delete,
         shortcut: 'Delete',
         danger: true,
@@ -110,38 +112,38 @@ export function buildLayerContextMenu(
     ],
     [
       {
-        label: '图层置顶',
+        label: t('editorUi.layer.bringToFront'),
         icon: Top,
         disabled: !store.selectedId,
         action: () => store.selectedId && store.bringToFront(store.selectedId),
       },
       {
-        label: '图层上移',
+        label: t('editorUi.layer.moveUp'),
         icon: Promotion,
         disabled: !store.selectedId,
         action: () => store.selectedId && store.moveUp(store.selectedId),
       },
       {
-        label: '图层下移',
+        label: t('editorUi.layer.moveDown'),
         icon: Upload,
         disabled: !store.selectedId,
         action: () => store.selectedId && store.moveDown(store.selectedId),
       },
       {
-        label: '图层置底',
+        label: t('editorUi.layer.sendToBack'),
         icon: Bottom,
         disabled: !store.selectedId,
         action: () => store.selectedId && store.sendToBack(store.selectedId),
       },
       { divider: true },
       {
-        label: '组合',
+        label: t('editorUi.layer.group'),
         icon: Setting,
         disabled: !store.canGroup,
         action: () => store.groupSelection(),
       },
       {
-        label: '取消组合',
+        label: t('editorUi.layer.ungroup'),
         icon: Setting,
         disabled: !store.canUngroup,
         action: () => store.ungroupSelection(),
@@ -149,13 +151,17 @@ export function buildLayerContextMenu(
     ],
     [
       {
-        label: comp?.visible ? '隐藏组件' : '显示组件',
+        label: comp?.visible
+          ? t('editorUi.layer.hideComponent')
+          : t('editorUi.layer.showComponent'),
         icon: HideIcon,
         disabled: !store.selectedId,
         action: () => store.selectedId && store.toggleVisibility(store.selectedId),
       },
       {
-        label: comp?.locked ? '解锁组件' : '锁定组件',
+        label: comp?.locked
+          ? t('editorUi.layer.unlockComponent')
+          : t('editorUi.layer.lockComponent'),
         icon: LockIcon,
         disabled: !store.selectedId,
         action: () => store.selectedId && store.toggleLock(store.selectedId),

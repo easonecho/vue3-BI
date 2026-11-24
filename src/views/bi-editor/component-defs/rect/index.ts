@@ -1,10 +1,16 @@
 import type { ComponentDefinition } from '../types'
 import Widget from './Widget.vue'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const rectDefinition: ComponentDefinition = {
   type: 'rect',
   meta: {
-    name: '矩形',
+    get name() {
+      return t('editorMaterial.ui.rectangle')
+    },
     category: 'basic',
     icon: 'FullScreen',
     defaultWidth: 100,
@@ -12,9 +18,34 @@ export const rectDefinition: ComponentDefinition = {
   },
   widget: Widget,
   propsSchema: [
-    { key: 'borderRadius', label: '圆角', type: 'slider', min: 0, max: 50, default: 0 },
-    { key: 'borderWidth', label: '边框宽度', type: 'slider', min: 0, max: 10, default: 0 },
-    { key: 'borderColor', label: '边框颜色', type: 'colorpicker', default: '#333333' },
+    {
+      key: 'borderRadius',
+      get label() {
+        return t('editorMaterial.ui.cornerRadius')
+      },
+      type: 'slider',
+      min: 0,
+      max: 50,
+      default: 0,
+    },
+    {
+      key: 'borderWidth',
+      get label() {
+        return t('editorMaterial.ui.borderWidth')
+      },
+      type: 'slider',
+      min: 0,
+      max: 10,
+      default: 0,
+    },
+    {
+      key: 'borderColor',
+      get label() {
+        return t('editorMaterial.ui.borderColor')
+      },
+      type: 'colorpicker',
+      default: '#333333',
+    },
   ],
   defaultStyle: { backgroundColor: '#E5E7EB' },
 }

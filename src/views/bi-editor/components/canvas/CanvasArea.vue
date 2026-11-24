@@ -67,8 +67,14 @@
                 v-for="comp in visibleComponents"
                 :key="comp.id"
                 v-memo="[
-                  comp.x, comp.y, comp.width, comp.height, comp.zIndex,
-                  comp.visible, comp.locked, comp.groupId,
+                  comp.x,
+                  comp.y,
+                  comp.width,
+                  comp.height,
+                  comp.zIndex,
+                  comp.visible,
+                  comp.locked,
+                  comp.groupId,
                   readonly ? false : store.selectedId === comp.id,
                   readonly ? false : store.selectedIdSet.has(comp.id),
                   readonly ? false : store.isInSelectedGroup(comp.id),
@@ -78,7 +84,9 @@
                      - 拖拽期间每帧 setDragPreview 改 groupDragPreview，但 v-for 不订阅它 → 不重渲染
                      - 仅 v-memo 失效的组件（主体+同组）re-patch → 子组件 computed 读 groupDragPreview → 应用 transform */
                   readonly ? false : store.activeDragId === comp.id,
-                  readonly ? false : (store.activeDragGroupId !== null && store.activeDragGroupId === comp.groupId),
+                  readonly
+                    ? false
+                    : store.activeDragGroupId !== null && store.activeDragGroupId === comp.groupId,
                   resizeHandles,
                   /* 🔑 配置变更触发生效的关键：
                      - RightPanel 的 updateProp/updateStyle/handleFieldMappingChange 都会通过
@@ -110,7 +118,7 @@
 
     <div v-if="!readonly && store.components.length === 0" class="empty-canvas">
       <el-icon :size="64" color="#9ca3af"><Plus /></el-icon>
-      <p>拖拽组件到画布，或点击左侧组件库添加</p>
+      <p>{{ t('editorUi.canvas.emptyHint') }}</p>
     </div>
 
     <!-- 🔑 右键上下文菜单 -->
@@ -122,6 +130,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Plus } from '@element-plus/icons-vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import CanvasSnapLines from './CanvasSnapLines.vue'
@@ -154,6 +163,7 @@ const emit = defineEmits<{
 }>()
 
 const store = useBiEditorStore()
+const { t } = useI18n()
 
 // ========== Smart Guides ==========
 const { snapLines, clearSnapLines, applySnapLines, snapRectToGuides, resetSnapCache } =
@@ -344,7 +354,9 @@ const canvasSheetStyle = computed(() => ({
   width: `${store.canvas.width}px`,
   height: `${store.canvas.height}px`,
   backgroundColor: store.canvas.backgroundColor,
-  backgroundImage: store.canvas.backgroundImage ? `url(${store.canvas.backgroundImage})` : undefined,
+  backgroundImage: store.canvas.backgroundImage
+    ? `url(${store.canvas.backgroundImage})`
+    : undefined,
   backgroundSize: 'cover',
   backgroundPosition: 'center',
 }))

@@ -3,6 +3,7 @@
  *
  * 预览看板时记录，看板列表页读取展示，仅保存在浏览器本地，不涉及服务端。
  */
+import i18n from '@/i18n'
 
 export interface RecentDashboard {
   id: number
@@ -74,9 +75,7 @@ export function renameRecentDashboard(id: number, name: string): RecentDashboard
   const nextName = name.trim()
   if (!nextName) return readRecentDashboards()
   return writeRecent(
-    readRecentDashboards().map((item) =>
-      item.id === id ? { ...item, name: nextName } : item,
-    ),
+    readRecentDashboards().map((item) => (item.id === id ? { ...item, name: nextName } : item)),
   )
 }
 
@@ -89,10 +88,7 @@ export function recordRecentDashboard(
   if (!Number.isFinite(item.id) || !name) return readRecentDashboards()
 
   const rest = readRecentDashboards().filter((recent) => recent.id !== item.id)
-  const next = [{ id: item.id, name, visitedAt: now }, ...rest].slice(
-    0,
-    RECENT_DASHBOARDS_LIMIT,
-  )
+  const next = [{ id: item.id, name, visitedAt: now }, ...rest].slice(0, RECENT_DASHBOARDS_LIMIT)
   return writeRecent(next)
 }
 
@@ -103,10 +99,13 @@ export function formatRecentTime(visitedAt: number, now = Date.now()): string {
   const hour = 3_600_000
   const day = 86_400_000
 
-  if (diff < minute) return '刚刚'
-  if (diff < hour) return `${Math.floor(diff / minute)}分钟前`
-  if (diff < day) return `${Math.floor(diff / hour)}小时前`
-  if (diff < 7 * day) return `${Math.floor(diff / day)}天前`
+  if (diff < minute) return i18n.global.t('appMessages.recent.justNow')
+  if (diff < hour)
+    return i18n.global.t('appMessages.recent.minutesAgo', { n: Math.floor(diff / minute) })
+  if (diff < day)
+    return i18n.global.t('appMessages.recent.hoursAgo', { n: Math.floor(diff / hour) })
+  if (diff < 7 * day)
+    return i18n.global.t('appMessages.recent.daysAgo', { n: Math.floor(diff / day) })
 
   const date = new Date(visitedAt)
   const pad = (n: number) => String(n).padStart(2, '0')

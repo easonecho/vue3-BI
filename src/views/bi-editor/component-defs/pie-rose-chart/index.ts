@@ -8,6 +8,10 @@ import {
   topNPropFields,
 } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 🔑 玫瑰图默认真实数据（[{name, value}, ...]） */
 export const PIE_ROSE_DEFAULT_DATA = [
   { name: '类别A', value: 40 },
@@ -22,14 +26,26 @@ export const PIE_ROSE_RADIUS_INNER_MAX = 50
 export const PIE_ROSE_RADIUS_INNER_DEFAULT = 10
 
 export const PIE_ROSE_TYPE_OPTIONS = [
-  { label: '半径玫瑰（radius）', value: 'radius' },
-  { label: '面积玫瑰（area）', value: 'area' },
+  {
+    get label() {
+      return t('editorMaterial.ui.radiusRose')
+    },
+    value: 'radius',
+  },
+  {
+    get label() {
+      return t('editorMaterial.ui.areaRose')
+    },
+    value: 'area',
+  },
 ] as const
 
 export const pieRoseChartDefinition: ComponentDefinition = {
   type: 'pie-rose-chart',
   meta: {
-    name: '玫瑰图',
+    get name() {
+      return t('editorMaterial.ui.roseChart')
+    },
     category: 'chart',
     icon: 'PieChart',
     defaultWidth: 360,
@@ -42,28 +58,42 @@ export const pieRoseChartDefinition: ComponentDefinition = {
     ...topNPropFields,
     {
       key: 'roseType',
-      label: '玫瑰模式',
+      get label() {
+        return t('editorMaterial.ui.roseMode')
+      },
       type: 'select',
       options: [...PIE_ROSE_TYPE_OPTIONS],
       default: 'radius',
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
     {
       key: 'radiusInner',
-      label: '内半径 (%)',
+      get label() {
+        return t('editorMaterial.ui.innerRadius')
+      },
       type: 'slider',
       min: PIE_ROSE_RADIUS_INNER_MIN,
       max: PIE_ROSE_RADIUS_INNER_MAX,
       default: PIE_ROSE_RADIUS_INNER_DEFAULT,
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
     {
       key: 'seriesStyles',
-      label: '数据项样式',
+      get label() {
+        return t('editorMaterial.ui.itemStyles')
+      },
       type: 'table',
       default: [],
-      group: '数据系列',
-      tip: '根据数据项名称单独配置颜色、是否显示标签（按 name 匹配）',
+      get group() {
+        return t('editorMaterial.ui.dataSeries')
+      },
+      get tip() {
+        return t('editorMaterial.ui.configureColorAndLabelVisibilityPerItemByName')
+      },
       columns: [...baseSeriesStylesNoAxesColumns],
     },
     // 🔑 系列标签（玫瑰图默认在外部）
@@ -75,9 +105,28 @@ export const pieRoseChartDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'nameField', label: '名称字段', type: 'name' },
-    { key: 'valueField', label: '数值字段', type: 'value' },
-    { key: 'drillFields', label: '钻取字段', type: 'category', multiple: true },
+    {
+      key: 'nameField',
+      get label() {
+        return t('editorMaterial.ui.nameField')
+      },
+      type: 'name',
+    },
+    {
+      key: 'valueField',
+      get label() {
+        return t('editorMaterial.ui.valueField')
+      },
+      type: 'value',
+    },
+    {
+      key: 'drillFields',
+      get label() {
+        return t('editorMaterial.ui.drillField')
+      },
+      type: 'category',
+      multiple: true,
+    },
   ],
 }
 

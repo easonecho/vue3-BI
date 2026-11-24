@@ -5,10 +5,8 @@
  */
 import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import {
-  exportDashboardPdf,
-  exportDashboardPng,
-} from '@/utils/dashboard-export'
+import i18n from '@/i18n'
+import { exportDashboardPdf, exportDashboardPng } from '@/utils/dashboard-export'
 
 export function useDashboardExport(getName: () => string) {
   const exportingType = ref<'png' | 'pdf' | null>(null)
@@ -19,7 +17,7 @@ export function useDashboardExport(getName: () => string) {
     exportingType.value = 'png'
     try {
       const ok = await exportDashboardPng(getName())
-      if (!ok) ElMessage.warning('导出失败，请确认看板已渲染完成')
+      if (!ok) ElMessage.warning(i18n.global.t('previewPage.exportPngFailed'))
     } finally {
       exportingType.value = null
     }
@@ -31,7 +29,7 @@ export function useDashboardExport(getName: () => string) {
     try {
       const ok = await exportDashboardPdf(getName())
       if (!ok) {
-        ElMessage.warning('导出失败，请允许浏览器弹窗并确认看板已渲染完成')
+        ElMessage.warning(i18n.global.t('previewPage.exportPdfFailed'))
       }
     } finally {
       exportingType.value = null

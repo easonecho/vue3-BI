@@ -35,7 +35,7 @@
     <!-- 加载失败提示 -->
     <div v-if="!loading && loadError" class="preview-error">
       <el-empty :description="loadError">
-        <el-button @click="handleBack">返回列表</el-button>
+        <el-button @click="handleBack">{{ t('previewPage.backToList') }}</el-button>
       </el-empty>
     </div>
 
@@ -43,7 +43,7 @@
     <transition name="fade">
       <div v-if="pureMode && !showToolbar" class="pure-hint">
         <el-icon><Menu /></el-icon>
-        <span>移动鼠标显示工具栏</span>
+        <span>{{ t('previewPage.moveMouseShowToolbar') }}</span>
       </div>
     </transition>
   </div>
@@ -51,6 +51,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Menu } from '@element-plus/icons-vue'
 import DashboardScreen from './components/DashboardScreen.vue'
 import PreviewToolbar from './components/PreviewToolbar.vue'
@@ -60,6 +61,7 @@ import { useDashboardExport } from './composables/useDashboardExport'
 import { generateTemplateThumbnail } from './composables/useTemplateThumbnail'
 
 const previewRootRef = ref<HTMLElement | null>(null)
+const { t } = useI18n()
 
 const { store, loading, loadError, refreshing, lastRefreshAt, handleRefresh, handleBack } =
   usePreviewSession({ onTemplateLoaded: generateTemplateThumbnail })

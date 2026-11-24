@@ -1,17 +1,21 @@
 <template>
   <div class="props-section multi-edit">
-    <div class="multi-summary">已选择 <b>{{ multiSelectedIds.length }}</b> 个组件</div>
+    <div class="multi-summary">
+      {{ t('editorUi.props.multiSummary', { count: multiSelectedIds.length }) }}
+    </div>
     <el-collapse v-model="multiActiveSections">
       <!-- 批量状态：可见/锁定 -->
       <el-collapse-item name="state">
-        <template #title><span class="collapse-title">批量状态</span></template>
+        <template #title
+          ><span class="collapse-title">{{ t('editorUi.props.batchState') }}</span></template
+        >
         <div class="form-item">
           <div class="form-check">
             <el-checkbox
               :model-value="sharedState.visible"
               :indeterminate="sharedState.visibleMixed"
               @update:model-value="(v: boolean) => batchSetField('visible', v)"
-              >可见</el-checkbox
+              >{{ t('editorUi.props.visible') }}</el-checkbox
             >
           </div>
           <div class="form-check">
@@ -19,7 +23,7 @@
               :model-value="sharedState.locked"
               :indeterminate="sharedState.lockedMixed"
               @update:model-value="(v: boolean) => batchSetField('locked', v)"
-              >锁定</el-checkbox
+              >{{ t('editorUi.props.locked') }}</el-checkbox
             >
           </div>
         </div>
@@ -27,51 +31,61 @@
 
       <!-- 🔑 分组 / 取消分组 -->
       <el-collapse-item name="group">
-        <template #title><span class="collapse-title">分组</span></template>
+        <template #title
+          ><span class="collapse-title">{{ t('editorUi.props.group') }}</span></template
+        >
         <GroupActions />
       </el-collapse-item>
 
       <!-- 批量对齐 / 分布 -->
       <el-collapse-item name="align">
-        <template #title><span class="collapse-title">对齐 &amp; 分布</span></template>
+        <template #title
+          ><span class="collapse-title">{{ t('editorUi.props.align') }}</span></template
+        >
         <AlignActions />
       </el-collapse-item>
 
       <!-- 批量基础样式：背景色 / 圆角 -->
       <el-collapse-item name="style">
-        <template #title><span class="collapse-title">批量样式</span></template>
+        <template #title
+          ><span class="collapse-title">{{ t('editorUi.props.batchStyle') }}</span></template
+        >
         <div class="form-item">
-          <label>背景色</label>
+          <label>{{ t('editorUi.style.backgroundColor') }}</label>
           <el-color-picker
             :model-value="sharedStyle.backgroundColor"
             @update:model-value="(v: string) => batchSetStyle('backgroundColor', v)"
           />
-          <div v-if="sharedStyle.mixedBg" class="mixed-hint">选中组件背景色不一致</div>
+          <div v-if="sharedStyle.mixedBg" class="mixed-hint">{{ t('editorUi.props.mixedBg') }}</div>
         </div>
         <div class="form-item">
-          <label>边框圆角</label>
+          <label>{{ t('editorUi.style.borderRadius') }}</label>
           <el-input-number
             :model-value="sharedStyle.borderRadius"
             :min="0"
             :max="50"
             @update:model-value="(v: number) => batchSetStyle('borderRadius', v)"
           />
-          <div v-if="sharedStyle.mixedRadius" class="mixed-hint">选中组件圆角不一致</div>
+          <div v-if="sharedStyle.mixedRadius" class="mixed-hint">
+            {{ t('editorUi.props.mixedRadius') }}
+          </div>
         </div>
       </el-collapse-item>
     </el-collapse>
-    <div class="multi-tip">提示：点击画布任意组件可退出多选模式查看单组件完整属性面板</div>
+    <div class="multi-tip">{{ t('editorUi.props.multiTip') }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import AlignActions from './AlignActions.vue'
 import GroupActions from './GroupActions.vue'
 
 const store = useBiEditorStore()
+const { t } = useI18n()
 
 const multiSelectedIds = computed<string[]>(() =>
   store.selectedIds.length > 0 ? [...store.selectedIds] : [],

@@ -1,10 +1,16 @@
 import type { ComponentDefinition } from '../types'
 import Widget from './Widget.vue'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const marqueeDefinition: ComponentDefinition = {
   type: 'marquee',
   meta: {
-    name: '跑马灯',
+    get name() {
+      return t('editorMaterial.meta.marquee')
+    },
     category: 'info',
     icon: 'Notification',
     defaultWidth: 400,
@@ -14,35 +20,99 @@ export const marqueeDefinition: ComponentDefinition = {
   propsSchema: [
     {
       key: 'content',
-      label: '内容',
+      get label() {
+        return t('editorMaterial.ui.content')
+      },
       type: 'textarea',
-      default: '欢迎使用 BI 编辑器，这是一个跑马灯组件示例',
-      group: '内容',
+      default: t('editorMaterial.ui.marqueeDefault'),
+      get group() {
+        return t('editorMaterial.ui.content')
+      },
     },
     {
       key: 'speed',
-      label: '速度 (px/s)',
+      get label() {
+        return t('editorMaterial.ui.speedPxS')
+      },
       type: 'slider',
       min: 10,
       max: 200,
       default: 60,
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
     {
       key: 'direction',
-      label: '方向',
+      get label() {
+        return t('editorMaterial.ui.direction')
+      },
       type: 'select',
       options: [
-        { label: '向左', value: 'left' },
-        { label: '向右', value: 'right' },
+        {
+          get label() {
+            return t('editorMaterial.ui.left')
+          },
+          value: 'left',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.right')
+          },
+          value: 'right',
+        },
       ],
       default: 'left',
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
-    { key: 'pauseOnHover', label: '悬停暂停', type: 'switch', default: true, group: '样式' },
-    { key: 'fontSize', label: '字号', type: 'number', min: 12, max: 48, default: 16, group: '样式' },
-    { key: 'color', label: '文字颜色', type: 'colorpicker', default: '#1f2937', group: '样式' },
-    { key: 'bgColor', label: '背景色', type: 'colorpicker', default: 'transparent', group: '样式' },
+    {
+      key: 'pauseOnHover',
+      get label() {
+        return t('editorMaterial.ui.pauseOnHover2')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'fontSize',
+      get label() {
+        return t('editorMaterial.ui.fontSize')
+      },
+      type: 'number',
+      min: 12,
+      max: 48,
+      default: 16,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'color',
+      get label() {
+        return t('editorMaterial.ui.textColor')
+      },
+      type: 'colorpicker',
+      default: '#1f2937',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'bgColor',
+      get label() {
+        return t('editorMaterial.ui.backgroundColor')
+      },
+      type: 'colorpicker',
+      default: 'transparent',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
   ],
   defaultStyle: {},
   supportsDataBinding: false,

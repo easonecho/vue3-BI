@@ -13,6 +13,10 @@ import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 const dataSourceRef = computed(() => props.comp.dataSource)
 const { rows } = useDatasetBinding(dataSourceRef)
@@ -96,7 +100,9 @@ function getChartSpecificOption(): { specificOption: any; mergedProps: Record<st
     boundGrid?.categories ?? ((mergedProps.categories as string[]) || ['Q1', 'Q2', 'Q3', 'Q4'])
   const series: SeriesItem[] =
     boundGrid?.series ??
-    ((mergedProps.series as SeriesItem[]) || [{ name: '产品A', data: [320, 280, 360, 400] }])
+    ((mergedProps.series as SeriesItem[]) || [
+      { name: t('editorMaterial.series.productA'), data: [320, 280, 360, 400] },
+    ])
 
   // 构建 bar3D 所需的 [xIdx, yIdx, value] 数据矩阵
   const data: Array<[number, number, number]> = []
@@ -150,7 +156,7 @@ function getChartSpecificOption(): { specificOption: any; mergedProps: Record<st
         const v = p.value
         const xName = categories[v[0]] ?? v[0]
         const yName = series[v[1]]?.name ?? v[1]
-        return `${yName} / ${xName}<br/>值: <b>${v[2]}</b>`
+        return `${yName} / ${xName}<br/>${t('editorMaterial.ui.value')}: <b>${v[2]}</b>`
       },
     },
     visualMap,
@@ -228,7 +234,7 @@ function applyChartOption() {
     // 🔑 specificOption 用 as ECOption 断言：echarts-gl 类型未加入 ECOption 联合
     return applyUserChartConfig(baseOption, mergedProps, specificOption as ECOption, {
       hasAxes: false,
-      fallbackTitle: '3D柱状图',
+      fallbackTitle: t('editorMaterial.meta.3dBarChart'),
     })
   })
 }

@@ -13,7 +13,7 @@
           }}</span>
         </div>
       </div>
-      <div v-if="renderRows.length === 0" class="st-empty">暂无数据</div>
+      <div v-if="renderRows.length === 0" class="st-empty">{{ t('editorMaterial.ui.noData') }}</div>
     </div>
   </div>
 </template>
@@ -22,6 +22,10 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
+
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface TableColumn {
   key: string

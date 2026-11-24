@@ -8,17 +8,23 @@ import {
   topNPropFields,
 } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 🔑 面积图默认真实数据 */
 export const AREA_DEFAULT_CATEGORIES = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 export const AREA_DEFAULT_SERIES = [
-  { name: '收入', data: [820, 932, 901, 934, 1290, 1330, 1320] },
-  { name: '支出', data: [320, 432, 401, 534, 790, 830, 920] },
+  { name: t('editorMaterial.series.revenue'), data: [820, 932, 901, 934, 1290, 1330, 1320] },
+  { name: t('editorMaterial.series.expense'), data: [320, 432, 401, 534, 790, 830, 920] },
 ]
 
 const definition: ComponentDefinition = {
   type: 'area-chart',
   meta: {
-    name: '面积图',
+    get name() {
+      return t('editorMaterial.meta.areaChart')
+    },
     category: 'chart',
     icon: 'DataLine',
     defaultWidth: 480,
@@ -29,20 +35,75 @@ const definition: ComponentDefinition = {
     ...chartBaseSchema,
     aggregatePropField,
     ...topNPropFields,
-    { key: 'smooth', label: '平滑曲线', type: 'switch', default: true, group: '样式' },
-    { key: 'areaOpacity', label: '面积透明度', type: 'slider', min: 0, max: 1, step: 0.05, default: 0.35, group: '样式' },
-    { key: 'stack', label: '堆叠', type: 'switch', default: false, group: '样式' },
+    {
+      key: 'smooth',
+      get label() {
+        return t('editorMaterial.ui.smoothCurve')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'areaOpacity',
+      get label() {
+        return t('editorMaterial.ui.areaOpacity')
+      },
+      type: 'slider',
+      min: 0,
+      max: 1,
+      step: 0.05,
+      default: 0.35,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
+    {
+      key: 'stack',
+      get label() {
+        return t('editorMaterial.ui.stack')
+      },
+      type: 'switch',
+      default: false,
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
+    },
     {
       key: 'seriesStyles',
-      label: '数据系列样式',
+      get label() {
+        return t('editorMaterial.ui.seriesStyles')
+      },
       type: 'table',
       default: [],
-      group: '数据系列',
-      tip: '根据数据系列名称单独配置颜色、线宽、面积、标签等（按名称匹配）',
+      get group() {
+        return t('editorMaterial.ui.dataSeries')
+      },
+      get tip() {
+        return t('editorMaterial.ui.configureColorLineWidthAreaAndLabelsPerSeriesByName')
+      },
       columns: [
         ...baseSeriesStylesWithAxesColumns,
-        { key: 'lineWidth', label: '线宽', type: 'number', min: 1, max: 10, width: 80 },
-        { key: 'areaStyle', label: '面积填充', type: 'switch', width: 100 },
+        {
+          key: 'lineWidth',
+          get label() {
+            return t('editorMaterial.ui.lineWidth')
+          },
+          type: 'number',
+          min: 1,
+          max: 10,
+          width: 80,
+        },
+        {
+          key: 'areaStyle',
+          get label() {
+            return t('editorMaterial.ui.areaFill')
+          },
+          type: 'switch',
+          width: 100,
+        },
       ],
     },
     ...buildSeriesLabelSchema('top'),
@@ -54,9 +115,29 @@ const definition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'categoryField', label: '类目字段', type: 'category' },
-    { key: 'valueFields', label: '数值字段', type: 'value', multiple: true },
-    { key: 'drillFields', label: '钻取字段', type: 'category', multiple: true },
+    {
+      key: 'categoryField',
+      get label() {
+        return t('editorMaterial.ui.categoryField')
+      },
+      type: 'category',
+    },
+    {
+      key: 'valueFields',
+      get label() {
+        return t('editorMaterial.ui.valueField')
+      },
+      type: 'value',
+      multiple: true,
+    },
+    {
+      key: 'drillFields',
+      get label() {
+        return t('editorMaterial.ui.drillField')
+      },
+      type: 'category',
+      multiple: true,
+    },
   ],
 }
 

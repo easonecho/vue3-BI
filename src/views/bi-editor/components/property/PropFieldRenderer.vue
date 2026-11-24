@@ -92,7 +92,9 @@
     />
 
     <!-- 未知类型 fallback -->
-    <span v-else class="unsupported">不支持的控件类型: {{ field.type }}</span>
+    <span v-else class="unsupported">{{
+      t('editorUi.field.unsupported', { type: field.type })
+    }}</span>
 
     <span v-if="field.tip" class="field-tip">{{ field.tip }}</span>
   </div>
@@ -100,6 +102,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { PropField } from '@/views/bi-editor/component-defs/types'
 import { isFieldVisible } from '@/views/bi-editor/component-defs/types'
 import PropTableEditor from './PropTableEditor.vue'
@@ -115,6 +118,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', value: any): void
 }>()
+
+const { t } = useI18n()
 
 /** 🔑 根据 visibleWhen 条件决定是否渲染 */
 const visible = computed(() => isFieldVisible(props.field, props.allProps || {}))

@@ -1,13 +1,10 @@
 import type { ComponentDefinition } from './types'
 import type { ComponentCategory } from '@/views/bi-editor/types'
+import i18n from '@/i18n'
 import { deriveDefaultProps, buildInitialSeriesStyles } from './types'
 import { rawDefinitions, componentDefinitions, registerComponentDefinition } from './registry'
 
-export {
-  rawDefinitions,
-  componentDefinitions,
-  registerComponentDefinition,
-} from './registry'
+export { rawDefinitions, componentDefinitions, registerComponentDefinition } from './registry'
 
 /**
  * 🔑 组件定义注册表 — 每个组件类型的单一真相源。
@@ -70,10 +67,18 @@ export const CATEGORY_GROUPS: Record<string, ComponentDefinition[]> = {
 
 /** 分类名称映射 */
 export const CATEGORY_LABELS: Record<string, string> = {
-  basic: '基础组件',
-  chart: '图表组件',
-  data: '数据组件',
-  info: '信息组件',
+  get basic() {
+    return i18n.global.t('editorMaterial.category.basic')
+  },
+  get chart() {
+    return i18n.global.t('editorMaterial.category.chart')
+  },
+  get data() {
+    return i18n.global.t('editorMaterial.category.data')
+  },
+  get info() {
+    return i18n.global.t('editorMaterial.category.info')
+  },
 }
 
 /**

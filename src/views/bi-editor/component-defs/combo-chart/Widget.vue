@@ -16,6 +16,10 @@ import { resolveComponentFieldMapping } from '../aggregate-spec'
 import { useLinkageStore } from '@/stores/linkage'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 const linkageStore = useLinkageStore()
@@ -44,7 +48,8 @@ const lineField = computed(() => mapping.value?.metrics[1] ?? '')
 const aggregateRequest = useChartAggregation(props.comp, {
   groupBy: () => categoryField.value,
   metrics: () => [barField.value, lineField.value].filter((f): f is string => !!f),
-  orderBy: () => (categoryField.value ? { field: categoryField.value, direction: 'asc' } : undefined),
+  orderBy: () =>
+    categoryField.value ? { field: categoryField.value, direction: 'asc' } : undefined,
 })
 const { rows } = useDatasetBinding(dataSourceRef, true, aggregateRequest)
 
@@ -92,18 +97,21 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const categories = mappedData.value?.categories
-    ?? (Array.isArray(mergedProps.categories)
+  const categories =
+    mappedData.value?.categories ??
+    (Array.isArray(mergedProps.categories)
       ? mergedProps.categories
       : ['1月', '2月', '3月', '4月', '5月', '6月', '7月'])
-  const barSeries = mappedData.value?.barSeries
-    ?? (mergedProps.barSeries
+  const barSeries =
+    mappedData.value?.barSeries ??
+    (mergedProps.barSeries
       ? { name: mergedProps.barSeries.name, data: mergedProps.barSeries.data }
-      : { name: '销售额', data: [120, 200, 150, 80, 70, 110, 130] })
-  const lineSeries = mappedData.value?.lineSeries
-    ?? (mergedProps.lineSeries
+      : { name: t('editorMaterial.series.sales'), data: [120, 200, 150, 80, 70, 110, 130] })
+  const lineSeries =
+    mappedData.value?.lineSeries ??
+    (mergedProps.lineSeries
       ? { name: mergedProps.lineSeries.name, data: mergedProps.lineSeries.data }
-      : { name: '增长率(%)', data: [10, 15, 8, 12, 18, 22, 25] })
+      : { name: t('editorMaterial.series.growthRate'), data: [10, 15, 8, 12, 18, 22, 25] })
 
   const barWidth = Number(mergedProps.barWidth)
   const smooth = !!mergedProps.smooth
@@ -118,10 +126,16 @@ function getChartSpecificOption(): {
   const seriesLabelPosition = String(mergedProps.seriesLabelPosition || 'top')
 
   // 查找系列样式
-  const findStyle = (name: string) => seriesStyles.find(
-    (x: { seriesName: string; color: string; lineWidth: number; chartType: string; labelShow: boolean }) =>
-      String(x.seriesName || '').trim() === String(name || '').trim(),
-  )
+  const findStyle = (name: string) =>
+    seriesStyles.find(
+      (x: {
+        seriesName: string
+        color: string
+        lineWidth: number
+        chartType: string
+        labelShow: boolean
+      }) => String(x.seriesName || '').trim() === String(name || '').trim(),
+    )
   const barStyle = findStyle(barSeries.name)
   const lineStyle = findStyle(lineSeries.name)
 
@@ -198,7 +212,7 @@ function applyChartOption() {
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: true,
       xAxisData: getXAxisData(specificOption),
-      fallbackTitle: '双轴组合图',
+      fallbackTitle: t('editorMaterial.meta.comboChart'),
     })
   })
 }
@@ -211,11 +225,7 @@ watch(
   // 🔑 性能优化：签名式 watch 替代 deep watch。
   //   原 deep:true 遍历 comp.props + comp.dataConfig + rows 全部元素（rows 可能 1000+ 行）。
   //   改为 JSON.stringify 签名对比小对象 + rows 浅 ref watch（仅引用变更触发）。
-  [
-    () => JSON.stringify(props.comp.props),
-    () => JSON.stringify(props.comp.dataConfig),
-    rows,
-  ],
+  [() => JSON.stringify(props.comp.props), () => JSON.stringify(props.comp.dataConfig), rows],
   () => {
     applyChartOption()
   },
@@ -227,5 +237,4 @@ onUnmounted(() => {
   if (debounceTimer !== null) cancelAnimationFrame(debounceTimer)
   pendingBuilder = null
 })
-
 </script>

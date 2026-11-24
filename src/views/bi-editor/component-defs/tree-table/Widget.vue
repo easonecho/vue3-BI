@@ -4,27 +4,15 @@
       <thead>
         <tr :style="headerRowStyle">
           <th v-if="showIndex" :style="indexThStyle">#</th>
-          <th
-            v-for="(col, ci) in columns"
-            :key="col.key"
-            :style="thStyle(ci === 0)"
-          >
+          <th v-for="(col, ci) in columns" :key="col.key" :style="thStyle(ci === 0)">
             {{ col.label }}
           </th>
         </tr>
       </thead>
       <tbody>
-        <tr
-          v-for="row in flatRows"
-          :key="row.__id"
-          :style="rowStyle(row)"
-        >
+        <tr v-for="row in flatRows" :key="row.__id" :style="rowStyle(row)">
           <td v-if="showIndex" :style="indexTdStyle">{{ row.__index + 1 }}</td>
-          <td
-            v-for="(col, ci) in columns"
-            :key="col.key"
-            :style="tdStyle(ci === 0, row.__level)"
-          >
+          <td v-for="(col, ci) in columns" :key="col.key" :style="tdStyle(ci === 0, row.__level)">
             <template v-if="ci === 0">
               <span
                 v-if="row.__hasChildren"
@@ -45,7 +33,7 @@
         </tr>
         <tr v-if="flatRows.length === 0">
           <td :colspan="columns.length + (showIndex ? 1 : 0)" class="widget-tree-table__empty">
-            暂无数据
+            {{ t('editorMaterial.ui.noData') }}
           </td>
         </tr>
       </tbody>
@@ -56,6 +44,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
+
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface TreeNode {
   id: number | string
@@ -168,9 +160,13 @@ watch(expandAll, (val) => {
 })
 
 // 数据变化时清空展开状态缓存（新数据需要重新初始化）
-watch(rawData, () => {
-  expandedMap.value = {}
-}, { deep: false })
+watch(
+  rawData,
+  () => {
+    expandedMap.value = {}
+  },
+  { deep: false },
+)
 
 // ============ 样式 ============
 const containerStyle = computed(() => ({

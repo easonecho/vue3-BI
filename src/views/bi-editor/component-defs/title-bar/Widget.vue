@@ -7,7 +7,9 @@
     />
     <div class="widget-title-bar__center">
       <div class="widget-title-bar__title" :style="titleStyle">{{ title }}</div>
-      <div v-if="subtitle" class="widget-title-bar__subtitle" :style="subtitleStyle">{{ subtitle }}</div>
+      <div v-if="subtitle" class="widget-title-bar__subtitle" :style="subtitleStyle">
+        {{ subtitle }}
+      </div>
     </div>
     <div
       v-if="showDecor"
@@ -21,9 +23,13 @@
 import { computed } from 'vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 
-const title = computed(() => props.comp.props?.title ?? '数据可视化大屏')
+const title = computed(() => props.comp.props?.title ?? t('editorMaterial.ui.dashboardTitle'))
 const subtitle = computed(() => props.comp.props?.subtitle ?? 'DATA VISUALIZATION')
 const showDecor = computed(() => props.comp.props?.showDecor ?? true)
 const decorColor = computed(() => props.comp.props?.decorColor ?? '#22d3ee')

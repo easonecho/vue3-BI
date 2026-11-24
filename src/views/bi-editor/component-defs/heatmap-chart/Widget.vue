@@ -13,6 +13,10 @@ import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 let initTimer: number | undefined
@@ -79,12 +83,19 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const xCategories = mappedData.value?.xCategories
-    ?? (Array.isArray(mergedProps.heatmapX) ? mergedProps.heatmapX : ['周一', '周二', '周三', '周四', '周五', '周六', '周日'])
-  const yCategories = mappedData.value?.yCategories
-    ?? (Array.isArray(mergedProps.heatmapY) ? mergedProps.heatmapY : ['0点', '4点', '8点', '12点', '16点', '20点'])
-  const points: [number, number, number][] = mappedData.value?.points
-    ?? (Array.isArray(mergedProps.heatmapData) ? mergedProps.heatmapData : [])
+  const xCategories =
+    mappedData.value?.xCategories ??
+    (Array.isArray(mergedProps.heatmapX)
+      ? mergedProps.heatmapX
+      : ['周一', '周二', '周三', '周四', '周五', '周六', '周日'])
+  const yCategories =
+    mappedData.value?.yCategories ??
+    (Array.isArray(mergedProps.heatmapY)
+      ? mergedProps.heatmapY
+      : ['0点', '4点', '8点', '12点', '16点', '20点'])
+  const points: [number, number, number][] =
+    mappedData.value?.points ??
+    (Array.isArray(mergedProps.heatmapData) ? mergedProps.heatmapData : [])
 
   const labelShow = !!mergedProps.labelShow
   const visualMapShow = !!mergedProps.visualMapShow
@@ -128,7 +139,7 @@ function getChartSpecificOption(): {
     },
     series: [
       {
-        name: '热力图',
+        name: t('editorMaterial.meta.heatmap'),
         type: 'heatmap',
         data: points,
         label: {
@@ -158,7 +169,7 @@ function applyChartOption() {
     // 🔑 热力图的 xAxis/yAxis 由组件特有 option 控制（splitArea 等），不走通用 axes
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: true,
-      fallbackTitle: '热力图',
+      fallbackTitle: t('editorMaterial.meta.heatmap'),
     })
   })
 }
@@ -171,11 +182,7 @@ watch(
   // 🔑 性能优化：签名式 watch 替代 deep watch。
   //   原 deep:true 遍历 comp.props + comp.dataConfig + rows 全部元素（rows 可能 1000+ 行）。
   //   改为 JSON.stringify 签名对比小对象 + rows 浅 ref watch（仅引用变更触发）。
-  [
-    () => JSON.stringify(props.comp.props),
-    () => JSON.stringify(props.comp.dataConfig),
-    rows,
-  ],
+  [() => JSON.stringify(props.comp.props), () => JSON.stringify(props.comp.dataConfig), rows],
   () => {
     applyChartOption()
   },
@@ -187,5 +194,4 @@ onUnmounted(() => {
   if (debounceTimer !== null) cancelAnimationFrame(debounceTimer)
   pendingBuilder = null
 })
-
 </script>

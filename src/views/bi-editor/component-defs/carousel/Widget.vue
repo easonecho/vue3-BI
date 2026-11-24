@@ -19,7 +19,7 @@
           @error="onImgError(i)"
         />
         <div v-else class="widget-carousel__placeholder">
-          <span>图片加载失败</span>
+          <span>{{ t('editorMaterial.ui.imageLoadFailed') }}</span>
         </div>
       </div>
     </div>
@@ -57,6 +57,10 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 
 const images = computed<string[]>(() => {
@@ -83,9 +87,12 @@ function startAuto() {
   stopAuto()
   if (!autoplay.value) return
   if (images.value.length <= 1) return
-  timer = window.setInterval(() => {
-    next()
-  }, Math.max(1000, interval.value))
+  timer = window.setInterval(
+    () => {
+      next()
+    },
+    Math.max(1000, interval.value),
+  )
 }
 
 function stopAuto() {

@@ -1,115 +1,445 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const tableDefinition: ComponentDefinition = {
   type: 'table',
-  meta: { name: '表格', category: 'data', icon: 'Grid', defaultWidth: 500, defaultHeight: 240 },
+  meta: {
+    get name() {
+      return t('editorMaterial.meta.table')
+    },
+    category: 'data',
+    icon: 'Grid',
+    defaultWidth: 500,
+    defaultHeight: 240,
+  },
   // 🔑 异步加载：表格依赖 vxe-table（体积较大），改为懒加载，避免进入首屏入口包
   widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
-    { key: 'border', label: '显示边框', type: 'switch', default: true, group: '外观' },
-    { key: 'stripe', label: '斑马纹', type: 'switch', default: true, group: '外观' },
-    { key: 'showHeader', label: '显示表头', type: 'switch', default: true, group: '外观' },
-    { key: 'round', label: '圆角', type: 'switch', default: false, group: '外观' },
-    { key: 'fontSize', label: '字号', type: 'slider', min: 10, max: 20, default: 12, group: '外观' },
-    { key: 'headerBg', label: '表头背景', type: 'colorpicker', default: '#f9fafb', group: '表头' },
-    { key: 'headerColor', label: '表头文字', type: 'colorpicker', default: '#374151', group: '表头' },
-    { key: 'color', label: '单元格文字', type: 'colorpicker', default: '#374151', group: '外观' },
-    { key: 'sortable', label: '列排序', type: 'switch', default: true, group: '交互' },
+    {
+      key: 'border',
+      get label() {
+        return t('editorMaterial.ui.showBorder')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.appearance')
+      },
+    },
+    {
+      key: 'stripe',
+      get label() {
+        return t('editorMaterial.ui.zebraStripes')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.appearance')
+      },
+    },
+    {
+      key: 'showHeader',
+      get label() {
+        return t('editorMaterial.ui.showHeader')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.appearance')
+      },
+    },
+    {
+      key: 'round',
+      get label() {
+        return t('editorMaterial.ui.cornerRadius')
+      },
+      type: 'switch',
+      default: false,
+      get group() {
+        return t('editorMaterial.ui.appearance')
+      },
+    },
+    {
+      key: 'fontSize',
+      get label() {
+        return t('editorMaterial.ui.fontSize')
+      },
+      type: 'slider',
+      min: 10,
+      max: 20,
+      default: 12,
+      get group() {
+        return t('editorMaterial.ui.appearance')
+      },
+    },
+    {
+      key: 'headerBg',
+      get label() {
+        return t('editorMaterial.ui.headerBackground')
+      },
+      type: 'colorpicker',
+      default: '#f9fafb',
+      get group() {
+        return t('editorMaterial.ui.tableHeader')
+      },
+    },
+    {
+      key: 'headerColor',
+      get label() {
+        return t('editorMaterial.ui.headerText')
+      },
+      type: 'colorpicker',
+      default: '#374151',
+      get group() {
+        return t('editorMaterial.ui.tableHeader')
+      },
+    },
+    {
+      key: 'color',
+      get label() {
+        return t('editorMaterial.ui.cellText')
+      },
+      type: 'colorpicker',
+      default: '#374151',
+      get group() {
+        return t('editorMaterial.ui.appearance')
+      },
+    },
+    {
+      key: 'sortable',
+      get label() {
+        return t('editorMaterial.ui.columnSorting')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.interaction')
+      },
+    },
     {
       key: 'pageSize',
-      label: '每页行数',
+      get label() {
+        return t('editorMaterial.ui.rowsPerPage')
+      },
       type: 'select',
       default: 20,
-      group: '交互',
+      get group() {
+        return t('editorMaterial.ui.interaction')
+      },
       options: [
-        { label: '不分页', value: 0 },
-        { label: '10 行', value: 10 },
-        { label: '20 行', value: 20 },
-        { label: '50 行', value: 50 },
-        { label: '100 行', value: 100 },
+        {
+          get label() {
+            return t('editorMaterial.ui.noPagination')
+          },
+          value: 0,
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.10Rows')
+          },
+          value: 10,
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.20Rows')
+          },
+          value: 20,
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.50Rows')
+          },
+          value: 50,
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.100Rows')
+          },
+          value: 100,
+        },
       ],
     },
-    { key: 'showSummary', label: '合计行(当前页)', type: 'switch', default: false, group: '交互' },
+    {
+      key: 'showSummary',
+      get label() {
+        return t('editorMaterial.ui.totalRowCurrentPage')
+      },
+      type: 'switch',
+      default: false,
+      get group() {
+        return t('editorMaterial.ui.interaction')
+      },
+    },
     // ========== 条件格式 ==========
-    { key: 'conditionalRuleShow', label: '阈值规则', type: 'switch', default: false, group: '条件格式' },
+    {
+      key: 'conditionalRuleShow',
+      get label() {
+        return t('editorMaterial.ui.thresholdRules')
+      },
+      type: 'switch',
+      default: false,
+      get group() {
+        return t('editorMaterial.ui.conditionalFormat')
+      },
+    },
     {
       key: 'conditionalRules',
-      label: '规则列表',
+      get label() {
+        return t('editorMaterial.ui.ruleList')
+      },
       type: 'table',
       default: [],
-      group: '条件格式',
+      get group() {
+        return t('editorMaterial.ui.conditionalFormat')
+      },
       visibleWhen: { field: 'conditionalRuleShow', truthy: true },
-      tip: '按字段匹配条件，命中后设置单元格背景色/文字色；规则从上到下优先',
+      get tip() {
+        return t(
+          'editorMaterial.ui.setCellBackgroundTextColorWhenAFieldMatchesRulesApplyTopToBottom',
+        )
+      },
       columns: [
-        { key: 'field', label: '字段', type: 'input', width: 90, placeholder: '列字段名' },
+        {
+          key: 'field',
+          get label() {
+            return t('editorMaterial.ui.field')
+          },
+          type: 'input',
+          width: 90,
+          get placeholder() {
+            return t('editorMaterial.ui.columnFieldName')
+          },
+        },
         {
           key: 'operator',
-          label: '条件',
+          get label() {
+            return t('editorMaterial.ui.condition')
+          },
           type: 'select',
           width: 76,
           options: [
-            { label: '大于', value: 'gt' },
-            { label: '大于等于', value: 'gte' },
-            { label: '小于', value: 'lt' },
-            { label: '小于等于', value: 'lte' },
-            { label: '等于', value: 'eq' },
-            { label: '不等于', value: 'ne' },
-            { label: '介于', value: 'between' },
-            { label: '包含', value: 'contains' },
+            {
+              get label() {
+                return t('editorMaterial.ui.greaterThan')
+              },
+              value: 'gt',
+            },
+            {
+              get label() {
+                return t('editorMaterial.ui.greaterThanOrEqual')
+              },
+              value: 'gte',
+            },
+            {
+              get label() {
+                return t('editorMaterial.ui.lessThan')
+              },
+              value: 'lt',
+            },
+            {
+              get label() {
+                return t('editorMaterial.ui.lessThanOrEqual')
+              },
+              value: 'lte',
+            },
+            {
+              get label() {
+                return t('editorMaterial.ui.equal')
+              },
+              value: 'eq',
+            },
+            {
+              get label() {
+                return t('editorMaterial.ui.notEqual')
+              },
+              value: 'ne',
+            },
+            {
+              get label() {
+                return t('editorMaterial.ui.between')
+              },
+              value: 'between',
+            },
+            {
+              get label() {
+                return t('editorMaterial.ui.contains')
+              },
+              value: 'contains',
+            },
           ],
         },
-        { key: 'value', label: '值', type: 'input', width: 64 },
-        { key: 'value2', label: '值2', type: 'input', width: 64, placeholder: '介于' },
-        { key: 'backgroundColor', label: '背景', type: 'colorpicker', width: 64 },
-        { key: 'textColor', label: '文字', type: 'colorpicker', width: 64 },
-        { key: 'bold', label: '加粗', type: 'switch', width: 52 },
+        {
+          key: 'value',
+          get label() {
+            return t('editorMaterial.ui.value2')
+          },
+          type: 'input',
+          width: 64,
+        },
+        {
+          key: 'value2',
+          get label() {
+            return t('editorMaterial.ui.value22')
+          },
+          type: 'input',
+          width: 64,
+          get placeholder() {
+            return t('editorMaterial.ui.between')
+          },
+        },
+        {
+          key: 'backgroundColor',
+          get label() {
+            return t('editorMaterial.ui.background')
+          },
+          type: 'colorpicker',
+          width: 64,
+        },
+        {
+          key: 'textColor',
+          get label() {
+            return t('editorMaterial.ui.text2')
+          },
+          type: 'colorpicker',
+          width: 64,
+        },
+        {
+          key: 'bold',
+          get label() {
+            return t('editorMaterial.ui.bold2')
+          },
+          type: 'switch',
+          width: 52,
+        },
       ],
     },
-    { key: 'colorScaleShow', label: '色阶', type: 'switch', default: false, group: '条件格式' },
+    {
+      key: 'colorScaleShow',
+      get label() {
+        return t('editorMaterial.ui.colorScale')
+      },
+      type: 'switch',
+      default: false,
+      get group() {
+        return t('editorMaterial.ui.conditionalFormat')
+      },
+    },
     {
       key: 'colorScales',
-      label: '色阶列表',
+      get label() {
+        return t('editorMaterial.ui.colorScaleList')
+      },
       type: 'table',
       default: [],
-      group: '条件格式',
+      get group() {
+        return t('editorMaterial.ui.conditionalFormat')
+      },
       visibleWhen: { field: 'colorScaleShow', truthy: true },
-      tip: '按当前页该字段的最小/最大值插值背景色',
+      get tip() {
+        return t(
+          'editorMaterial.ui.interpolateBackgroundColorByTheMinMaxOfThisFieldOnTheCurrentPage',
+        )
+      },
       columns: [
-        { key: 'field', label: '字段', type: 'input', width: 100, placeholder: '列字段名' },
-        { key: 'minColor', label: '最小值色', type: 'colorpicker', width: 80 },
-        { key: 'maxColor', label: '最大值色', type: 'colorpicker', width: 80 },
+        {
+          key: 'field',
+          get label() {
+            return t('editorMaterial.ui.field')
+          },
+          type: 'input',
+          width: 100,
+          get placeholder() {
+            return t('editorMaterial.ui.columnFieldName')
+          },
+        },
+        {
+          key: 'minColor',
+          get label() {
+            return t('editorMaterial.ui.minColor')
+          },
+          type: 'colorpicker',
+          width: 80,
+        },
+        {
+          key: 'maxColor',
+          get label() {
+            return t('editorMaterial.ui.maxColor')
+          },
+          type: 'colorpicker',
+          width: 80,
+        },
       ],
     },
-    { key: 'dataBarShow', label: '数据条', type: 'switch', default: false, group: '条件格式' },
+    {
+      key: 'dataBarShow',
+      get label() {
+        return t('editorMaterial.ui.dataBar')
+      },
+      type: 'switch',
+      default: false,
+      get group() {
+        return t('editorMaterial.ui.conditionalFormat')
+      },
+    },
     {
       key: 'dataBars',
-      label: '数据条列表',
+      get label() {
+        return t('editorMaterial.ui.dataBarList')
+      },
       type: 'table',
       default: [],
-      group: '条件格式',
+      get group() {
+        return t('editorMaterial.ui.conditionalFormat')
+      },
       visibleWhen: { field: 'dataBarShow', truthy: true },
-      tip: '在单元格内绘制长度按数值比例变化的数据条',
+      get tip() {
+        return t('editorMaterial.ui.drawADataBarInTheCellWithLengthProportionalToTheValue')
+      },
       columns: [
-        { key: 'field', label: '字段', type: 'input', width: 100, placeholder: '列字段名' },
-        { key: 'color', label: '颜色', type: 'colorpicker', width: 72 },
+        {
+          key: 'field',
+          get label() {
+            return t('editorMaterial.ui.field')
+          },
+          type: 'input',
+          width: 100,
+          get placeholder() {
+            return t('editorMaterial.ui.columnFieldName')
+          },
+        },
+        {
+          key: 'color',
+          get label() {
+            return t('editorMaterial.ui.color')
+          },
+          type: 'colorpicker',
+          width: 72,
+        },
         {
           key: 'maxValue',
-          label: '量程',
+          get label() {
+            return t('editorMaterial.ui.range')
+          },
           type: 'number',
           width: 68,
           min: 0,
           step: 1,
-          placeholder: '0=自动',
+          get placeholder() {
+            return t('editorMaterial.ui.0Auto')
+          },
         },
       ],
     },
   ],
   extraDefaults: {
     columns: [
-      { key: 'name', title: '名称', width: 120 },
-      { key: 'value', title: '数值', width: 100, align: 'right' },
-      { key: 'ratio', title: '占比', width: 100, align: 'right' },
+      { key: 'name', title: t('editorMaterial.ui.name'), width: 120 },
+      { key: 'value', title: t('editorMaterial.ui.value'), width: 100, align: 'right' },
+      { key: 'ratio', title: t('editorMaterial.ui.ratioLabel'), width: 100, align: 'right' },
     ],
     data: [
       { name: '指标 A', value: 1280, ratio: '32%' },

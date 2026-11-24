@@ -1,17 +1,18 @@
 import type { MaterialType } from '@/api/material'
+import i18n from '@/i18n'
 
 /** el-tag 可用的样式类型（素材分类映射） */
 export type MaterialTagType = 'primary' | 'success' | 'warning'
 
-/** 素材类型 → 中文展示文案 */
+/** 素材类型 → 展示文案 */
 export function typeLabel(t: string): string {
   switch (t) {
     case 'video':
-      return '视频'
+      return i18n.global.t('materialPage.typeVideo')
     case 'image':
-      return '图片'
+      return i18n.global.t('materialPage.typeImage')
     case 'decor':
-      return '装饰'
+      return i18n.global.t('materialPage.typeDecor')
     default:
       return t
   }

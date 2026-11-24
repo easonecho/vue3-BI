@@ -5,6 +5,7 @@
  */
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
+import i18n from '@/i18n'
 import { doneProgress, startProgress } from '@/utils/progress'
 
 /**
@@ -84,7 +85,7 @@ const TOAST_INTERVAL = 2000
 const toastSeen = new Map<string, ReturnType<typeof setTimeout>>()
 
 function showToast(message: string): void {
-  const key = message || '请求失败'
+  const key = message || i18n.global.t('appMessages.request.failed')
   if (toastSeen.has(key)) return
   // 到期后清理记录, 允许同一文案再次弹出
   toastSeen.set(
@@ -247,7 +248,7 @@ request.interceptors.response.use(
     if (res.code === 0) {
       return res as unknown as AxiosResponse<ApiResult>
     }
-    showToast(res.message || '请求失败')
+    showToast(res.message || i18n.global.t('appMessages.request.failed'))
     return Promise.reject(new Error(res.message || 'Error'))
   },
   async (error) => {
@@ -303,7 +304,7 @@ request.interceptors.response.use(
             }
           }
           // refresh 失败或无 refresh token: 走登出流程
-          showToast('登录已过期，请重新登录')
+          showToast(i18n.global.t('auth.loginExpired'))
           removeToken()
           // 避免 pinia 循环依赖, 用事件通知应用层跳转登录页
           if (typeof window !== 'undefined') {
@@ -312,21 +313,24 @@ request.interceptors.response.use(
           break
         }
         case 403:
-          showToast('没有权限访问该资源')
+          showToast(i18n.global.t('appMessages.request.forbidden'))
           break
         case 404:
-          showToast('请求的资源不存在')
+          showToast(i18n.global.t('appMessages.request.notFound'))
           break
         case 500:
-          showToast('服务器内部错误')
+          showToast(i18n.global.t('appMessages.request.serverError'))
           break
         default:
-          showToast(response.data?.message || `请求错误 (${response.status})`)
+          showToast(
+            response.data?.message ||
+              i18n.global.t('appMessages.request.statusError', { status: response.status }),
+          )
       }
     } else if (error.message?.includes('timeout')) {
-      showToast('请求超时，请检查网络')
+      showToast(i18n.global.t('appMessages.request.timeout'))
     } else {
-      showToast('网络异常，请检查网络连接')
+      showToast(i18n.global.t('appMessages.request.network'))
     }
     return Promise.reject(error)
   },

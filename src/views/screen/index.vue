@@ -1,23 +1,18 @@
 <template>
-  <div
-    v-loading="loading"
-    class="screen-page"
-    @mousemove="revealToolbar"
-    @mouseleave="hideToolbar"
-  >
+  <div v-loading="loading" class="screen-page" @mousemove="revealToolbar" @mouseleave="hideToolbar">
     <!-- 大屏渲染层：复用编辑器 layout，按设计稿尺寸 scale 自适应 -->
     <DashboardScreen v-if="dashboardId && !loading && !loadError" />
 
     <!-- 未指定看板：选择后进入大屏 -->
     <div v-if="!dashboardId && !loading" class="screen-picker">
       <div class="picker-card">
-        <div class="picker-title">数据大屏</div>
-        <p class="picker-desc">选择一个看板，以全屏自适应方式展示</p>
+        <div class="picker-title">{{ t('previewPage.screen.title') }}</div>
+        <p class="picker-desc">{{ t('previewPage.screen.pickerDesc') }}</p>
         <el-select
           v-model="selectedId"
           class="picker-select"
           filterable
-          placeholder="请选择看板"
+          :placeholder="t('previewPage.screen.pickerPlaceholder')"
         >
           <el-option
             v-for="item in dashboardOptions"
@@ -27,7 +22,7 @@
           />
         </el-select>
         <el-button type="primary" :disabled="!selectedId" @click="enterScreen">
-          进入大屏
+          {{ t('previewPage.screen.enter') }}
         </el-button>
       </div>
     </div>
@@ -35,7 +30,7 @@
     <!-- 加载失败 -->
     <div v-if="loadError" class="screen-error">
       <el-empty :description="loadError">
-        <el-button @click="back">返回列表</el-button>
+        <el-button @click="back">{{ t('previewPage.screen.backToList') }}</el-button>
       </el-empty>
     </div>
 
@@ -57,6 +52,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, FullScreen } from '@element-plus/icons-vue'
 import { getDashboardList } from '@/api/dashboard'
@@ -64,6 +60,7 @@ import { useBiEditorStore } from '@/stores/bi-editor'
 import { useLinkageStore } from '@/stores/linkage'
 import DashboardScreen from '@/views/preview/components/DashboardScreen.vue'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const store = useBiEditorStore()
@@ -83,8 +80,8 @@ const dashboardId = computed(() => {
 })
 
 const toolbarTitle = computed(() => {
-  if (!dashboardId.value) return '数据大屏'
-  return store.dashboardName || '数据大屏'
+  if (!dashboardId.value) return t('previewPage.screen.title')
+  return store.dashboardName || t('previewPage.screen.title')
 })
 
 let clockTimer: number | undefined
@@ -157,7 +154,7 @@ async function handleRoute() {
   try {
     await store.loadDashboard(dashboardId.value)
   } catch {
-    loadError.value = '看板加载失败，可能已被删除或无访问权限'
+    loadError.value = t('previewPage.dashboardLoadFailed')
   } finally {
     loading.value = false
   }

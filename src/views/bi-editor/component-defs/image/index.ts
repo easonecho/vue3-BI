@@ -1,10 +1,16 @@
 import type { ComponentDefinition } from '../types'
 import Widget from './Widget.vue'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const imageDefinition: ComponentDefinition = {
   type: 'image',
   meta: {
-    name: '图片',
+    get name() {
+      return t('editorMaterial.meta.image')
+    },
     category: 'basic',
     icon: 'Picture',
     defaultWidth: 160,
@@ -14,27 +20,74 @@ export const imageDefinition: ComponentDefinition = {
   propsSchema: [
     {
       key: 'src',
-      label: '图片素材',
+      get label() {
+        return t('editorMaterial.ui.imageAsset')
+      },
       type: 'asset',
       assetType: 'image',
       default: '',
-      tip: '从素材库选择图片',
+      get tip() {
+        return t('editorMaterial.ui.selectAnImageFromTheAssetLibrary')
+      },
     },
-    { key: 'alt', label: '替代文本', type: 'input', default: '' },
+    {
+      key: 'alt',
+      get label() {
+        return t('editorMaterial.ui.altText')
+      },
+      type: 'input',
+      default: '',
+    },
     {
       key: 'objectFit',
-      label: '填充方式',
+      get label() {
+        return t('editorMaterial.ui.fillMode')
+      },
       type: 'select',
       options: [
-        { label: '拉伸填充', value: 'fill' },
-        { label: '包含（保持比例完整显示）', value: 'contain' },
-        { label: '覆盖（保持比例裁剪）', value: 'cover' },
-        { label: '不处理', value: 'none' },
-        { label: '等比缩小', value: 'scale-down' },
+        {
+          get label() {
+            return t('editorMaterial.ui.stretchFill')
+          },
+          value: 'fill',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.containKeepAspectRatio')
+          },
+          value: 'contain',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.coverCropWhileKeepingAspectRatio')
+          },
+          value: 'cover',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.doNothing')
+          },
+          value: 'none',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.scaleDownProportionally')
+          },
+          value: 'scale-down',
+        },
       ],
       default: 'contain',
     },
-    { key: 'borderRadius', label: '圆角', type: 'slider', min: 0, max: 50, default: 0 },
+    {
+      key: 'borderRadius',
+      get label() {
+        return t('editorMaterial.ui.cornerRadius')
+      },
+      type: 'slider',
+      min: 0,
+      max: 50,
+      default: 0,
+    },
   ],
   defaultStyle: {},
 }

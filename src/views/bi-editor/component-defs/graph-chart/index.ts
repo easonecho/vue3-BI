@@ -2,12 +2,12 @@ import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 import { chartCommonSchema } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 🔑 关系图默认分类 */
-export const GRAPH_DEFAULT_CATEGORIES = [
-  { name: '核心' },
-  { name: '上游' },
-  { name: '下游' },
-]
+export const GRAPH_DEFAULT_CATEGORIES = [{ name: '核心' }, { name: '上游' }, { name: '下游' }]
 
 /** 🔑 关系图默认节点（关联网络） */
 export const GRAPH_DEFAULT_NODES = [
@@ -31,7 +31,9 @@ export const GRAPH_DEFAULT_LINKS = [
 export const graphChartDefinition: ComponentDefinition = {
   type: 'graph-chart',
   meta: {
-    name: '关系图',
+    get name() {
+      return t('editorMaterial.meta.graphChart')
+    },
     category: 'chart',
     icon: 'Share',
     defaultWidth: 500,
@@ -42,39 +44,74 @@ export const graphChartDefinition: ComponentDefinition = {
     ...chartCommonSchema,
     {
       key: 'layout',
-      label: '布局方式',
+      get label() {
+        return t('editorMaterial.ui.layoutMode')
+      },
       type: 'select',
       options: [
-        { label: '力导向', value: 'force' },
-        { label: '圆形', value: 'circular' },
-        { label: '固定位置', value: 'none' },
+        {
+          get label() {
+            return t('editorMaterial.ui.forceDirected')
+          },
+          value: 'force',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.circle')
+          },
+          value: 'circular',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.fixedPosition')
+          },
+          value: 'none',
+        },
       ],
       default: 'force',
-      group: '布局',
+      get group() {
+        return t('editorMaterial.ui.layout')
+      },
     },
     {
       key: 'draggable',
-      label: '节点拖拽',
+      get label() {
+        return t('editorMaterial.ui.nodeDragging')
+      },
       type: 'switch',
       default: false,
-      group: '交互',
-      tip: '节点可拖拽调整位置（编辑模式下建议关闭，否则拖拽会同时拖节点和移动组件）',
+      get group() {
+        return t('editorMaterial.ui.interaction')
+      },
+      get tip() {
+        return t(
+          'editorMaterial.ui.nodesCanBeDraggedToRepositionDisableInEditModeOtherwiseDraggingMovesBothNodeAndComponent',
+        )
+      },
     },
     {
       key: 'nodeSize',
-      label: '节点大小',
+      get label() {
+        return t('editorMaterial.ui.nodeSize')
+      },
       type: 'slider',
       min: 5,
       max: 50,
       default: 20,
-      group: '节点',
+      get group() {
+        return t('editorMaterial.ui.node')
+      },
     },
     {
       key: 'linkColor',
-      label: '连线颜色',
+      get label() {
+        return t('editorMaterial.ui.linkColor')
+      },
       type: 'colorpicker',
       default: '#475569',
-      group: '连线',
+      get group() {
+        return t('editorMaterial.ui.linkLine')
+      },
     },
   ],
   extraDefaults: {

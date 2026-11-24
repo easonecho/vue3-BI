@@ -1,10 +1,16 @@
 import type { ComponentDefinition } from '../types'
 import Widget from './Widget.vue'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const flipNumberDefinition: ComponentDefinition = {
   type: 'flip-number',
   meta: {
-    name: '数字翻牌器',
+    get name() {
+      return t('editorMaterial.meta.flipNumber')
+    },
     category: 'info',
     icon: 'Odometer',
     defaultWidth: 160,
@@ -12,26 +18,158 @@ export const flipNumberDefinition: ComponentDefinition = {
   },
   widget: Widget,
   propsSchema: [
-    { key: 'value', label: '目标数值', type: 'number', default: 0, group: '数据', tip: '目标数值' },
-    { key: 'decimals', label: '小数位数', type: 'slider', min: 0, max: 3, default: 0, group: '数据', tip: '小数位数' },
-    { key: 'prefix', label: '前缀', type: 'input', default: '', group: '数据', tip: '前缀，如 ¥' },
-    { key: 'suffix', label: '后缀', type: 'input', default: '', group: '数据', tip: '后缀，如 %' },
-    { key: 'duration', label: '动画时长', type: 'slider', min: 500, max: 5000, step: 100, default: 1500, group: '动画', tip: '翻牌动画时长(ms)' },
-    { key: 'separator', label: '千分位分隔符', type: 'switch', default: true, group: '格式', tip: '千分位分隔符' },
-    { key: 'fontSize', label: '字号', type: 'slider', min: 20, max: 96, default: 40, group: '字体' },
-    { key: 'color', label: '颜色', type: 'colorpicker', default: '#22d3ee', group: '字体' },
+    {
+      key: 'value',
+      get label() {
+        return t('editorMaterial.ui.targetValue')
+      },
+      type: 'number',
+      default: 0,
+      get group() {
+        return t('editorMaterial.ui.data')
+      },
+      get tip() {
+        return t('editorMaterial.ui.targetValue')
+      },
+    },
+    {
+      key: 'decimals',
+      get label() {
+        return t('editorMaterial.ui.decimalPlaces')
+      },
+      type: 'slider',
+      min: 0,
+      max: 3,
+      default: 0,
+      get group() {
+        return t('editorMaterial.ui.data')
+      },
+      get tip() {
+        return t('editorMaterial.ui.decimalPlaces')
+      },
+    },
+    {
+      key: 'prefix',
+      get label() {
+        return t('editorMaterial.ui.prefix')
+      },
+      type: 'input',
+      default: '',
+      get group() {
+        return t('editorMaterial.ui.data')
+      },
+      get tip() {
+        return t('editorMaterial.ui.prefixEG')
+      },
+    },
+    {
+      key: 'suffix',
+      get label() {
+        return t('editorMaterial.ui.suffix')
+      },
+      type: 'input',
+      default: '',
+      get group() {
+        return t('editorMaterial.ui.data')
+      },
+      get tip() {
+        return t('editorMaterial.ui.suffixEG')
+      },
+    },
+    {
+      key: 'duration',
+      get label() {
+        return t('editorMaterial.ui.animationDuration')
+      },
+      type: 'slider',
+      min: 500,
+      max: 5000,
+      step: 100,
+      default: 1500,
+      get group() {
+        return t('editorMaterial.ui.animation')
+      },
+      get tip() {
+        return t('editorMaterial.ui.flipAnimationDurationMs')
+      },
+    },
+    {
+      key: 'separator',
+      get label() {
+        return t('editorMaterial.ui.thousandsSeparator')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.format')
+      },
+      get tip() {
+        return t('editorMaterial.ui.thousandsSeparator')
+      },
+    },
+    {
+      key: 'fontSize',
+      get label() {
+        return t('editorMaterial.ui.fontSize')
+      },
+      type: 'slider',
+      min: 20,
+      max: 96,
+      default: 40,
+      get group() {
+        return t('editorMaterial.ui.font')
+      },
+    },
+    {
+      key: 'color',
+      get label() {
+        return t('editorMaterial.ui.color')
+      },
+      type: 'colorpicker',
+      default: '#22d3ee',
+      get group() {
+        return t('editorMaterial.ui.font')
+      },
+    },
     {
       key: 'fontWeight',
-      label: '字重',
+      get label() {
+        return t('editorMaterial.ui.fontWeight')
+      },
       type: 'select',
       options: [
-        { label: '常规', value: 'normal' },
-        { label: '粗体', value: 'bold' },
+        {
+          get label() {
+            return t('editorMaterial.ui.normal')
+          },
+          value: 'normal',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.bold')
+          },
+          value: 'bold',
+        },
       ],
       default: 'bold',
-      group: '字体',
+      get group() {
+        return t('editorMaterial.ui.font')
+      },
     },
-    { key: 'flipColor', label: '翻牌阴影色', type: 'colorpicker', default: '#0e7490', group: '动画', tip: '翻牌时阴影色' },
+    {
+      key: 'flipColor',
+      get label() {
+        return t('editorMaterial.ui.flipShadowColor2')
+      },
+      type: 'colorpicker',
+      default: '#0e7490',
+      get group() {
+        return t('editorMaterial.ui.animation')
+      },
+      get tip() {
+        return t('editorMaterial.ui.flipShadowColor')
+      },
+    },
   ],
   defaultStyle: {},
 }

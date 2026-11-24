@@ -1,5 +1,9 @@
 import type { PropField } from '../props'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /**
  * 🔑 图表注释：在图上叠加文本注释或标记点。
  *
@@ -9,82 +13,130 @@ import type { PropField } from '../props'
 export const chartAnnotationSchema: PropField[] = [
   {
     key: 'annotationShow',
-    label: '显示注释',
+    get label() {
+      return t('editorMaterial.ui.showAnnotation')
+    },
     type: 'switch',
     default: false,
-    group: '注释',
-    tip: '在图表上叠加文本注释或数据标记点',
+    get group() {
+      return t('editorMaterial.ui.annotation')
+    },
+    get tip() {
+      return t('editorMaterial.ui.overlayTextAnnotationsOrDataMarkPointsOnTheChart')
+    },
   },
   {
     key: 'annotationType',
-    label: '注释类型',
+    get label() {
+      return t('editorMaterial.ui.annotationType')
+    },
     type: 'select',
     default: 'markPoint',
-    group: '注释',
+    get group() {
+      return t('editorMaterial.ui.annotation')
+    },
     visibleWhen: { field: 'annotationShow', truthy: true },
     options: [
-      { label: '标记点', value: 'markPoint' },
-      { label: '文本注释', value: 'text' },
+      {
+        get label() {
+          return t('editorMaterial.ui.markPoint')
+        },
+        value: 'markPoint',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.textAnnotation')
+        },
+        value: 'text',
+      },
     ],
   },
   {
     key: 'annotationText',
-    label: '注释文本',
+    get label() {
+      return t('editorMaterial.ui.annotationText')
+    },
     type: 'input',
     default: '',
-    placeholder: '如：本月峰值',
-    group: '注释',
+    get placeholder() {
+      return t('editorMaterial.ui.eGThisMonthPeak')
+    },
+    get group() {
+      return t('editorMaterial.ui.annotation')
+    },
     visibleWhen: { field: 'annotationShow', truthy: true },
   },
   {
     key: 'annotationValue',
-    label: '标记值(标记点)',
+    get label() {
+      return t('editorMaterial.ui.markValueMarkPoint')
+    },
     type: 'number',
     default: 0,
     step: 1,
-    group: '注释',
+    get group() {
+      return t('editorMaterial.ui.annotation')
+    },
     visibleWhen: { field: 'annotationShow', truthy: true },
-    tip: '标记点定位到 Y 轴该数值；0 表示自动标记该系列最大值',
+    get tip() {
+      return t('editorMaterial.ui.positionTheMarkPointAtThisYValue0MarksTheSeriesMaxAutomatically')
+    },
   },
   {
     key: 'annotationLeft',
-    label: '水平位置%(文本)',
+    get label() {
+      return t('editorMaterial.ui.horizontalPositionText')
+    },
     type: 'number',
     default: 70,
     min: 0,
     max: 100,
     step: 1,
-    group: '注释',
+    get group() {
+      return t('editorMaterial.ui.annotation')
+    },
     visibleWhen: { field: 'annotationShow', truthy: true },
   },
   {
     key: 'annotationTop',
-    label: '垂直位置%(文本)',
+    get label() {
+      return t('editorMaterial.ui.verticalPositionText')
+    },
     type: 'number',
     default: 12,
     min: 0,
     max: 100,
     step: 1,
-    group: '注释',
+    get group() {
+      return t('editorMaterial.ui.annotation')
+    },
     visibleWhen: { field: 'annotationShow', truthy: true },
   },
   {
     key: 'annotationColor',
-    label: '注释颜色',
+    get label() {
+      return t('editorMaterial.ui.annotationColor')
+    },
     type: 'colorpicker',
     default: '#ef4444',
-    group: '注释',
+    get group() {
+      return t('editorMaterial.ui.annotation')
+    },
     visibleWhen: { field: 'annotationShow', truthy: true },
   },
   {
     key: 'annotationFontSize',
-    label: '注释字号',
+    get label() {
+      return t('editorMaterial.ui.annotationFontSize')
+    },
     type: 'number',
     default: 12,
     min: 8,
     max: 32,
     step: 1,
-    group: '注释',
+    get group() {
+      return t('editorMaterial.ui.annotation')
+    },
     visibleWhen: { field: 'annotationShow', truthy: true },
   },
 ]

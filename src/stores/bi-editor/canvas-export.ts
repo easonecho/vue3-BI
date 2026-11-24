@@ -1,4 +1,5 @@
 import type { Ref } from 'vue'
+import i18n from '@/i18n'
 
 export interface CanvasExportDeps {
   dashboardName: Ref<string>
@@ -49,7 +50,9 @@ export function createCanvasExport(deps: CanvasExportDeps): CanvasExportApi {
     try {
       const dataUrl = await exportPngCallback()
       if (!dataUrl) return false
-      const safeName = (dashboardName.value || '看板').replace(/[\\/:*?"<>|]/g, '_')
+      const safeName = (
+        dashboardName.value || i18n.global.t('appMessages.editor.defaultName')
+      ).replace(/[\\/:*?"<>|]/g, '_')
       const ts = new Date()
       const pad = (n: number) => n.toString().padStart(2, '0')
       const stamp = `${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}_${pad(
@@ -83,8 +86,13 @@ export function createCanvasExport(deps: CanvasExportDeps): CanvasExportApi {
         return false
       }
       const escapeHtml = (s: string) =>
-        s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
-      const title = escapeHtml(dashboardName.value || '看板')
+        s.replace(
+          /[&<>"]/g,
+          (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] ?? c,
+        )
+      const title = escapeHtml(
+        dashboardName.value || i18n.global.t('appMessages.editor.defaultName'),
+      )
       win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
         <style>
           @page { size: auto; margin: 0; }

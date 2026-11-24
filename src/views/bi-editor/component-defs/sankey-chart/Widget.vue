@@ -14,6 +14,10 @@ import { useChartAggregation } from '../../composables/useChartAggregation'
 import { resolveComponentFieldMapping } from '../aggregate-spec'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 let initTimer: number | undefined
@@ -88,10 +92,8 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const nodes =
-    boundNodes.value ?? (Array.isArray(mergedProps.nodes) ? mergedProps.nodes : [])
-  const links =
-    boundLinks.value ?? (Array.isArray(mergedProps.links) ? mergedProps.links : [])
+  const nodes = boundNodes.value ?? (Array.isArray(mergedProps.nodes) ? mergedProps.nodes : [])
+  const links = boundLinks.value ?? (Array.isArray(mergedProps.links) ? mergedProps.links : [])
   const nodeWidth = Number(mergedProps.nodeWidth || 15)
   const nodeGap = Number(mergedProps.nodeGap || 10)
   const linkColor = String(mergedProps.linkColor || '#22d3ee')
@@ -100,7 +102,7 @@ function getChartSpecificOption(): {
   const specificOption: ECOption = {
     series: [
       {
-        name: '桑基图',
+        name: t('editorMaterial.meta.sankeyChart'),
         type: 'sankey',
         data: nodes,
         links,
@@ -129,7 +131,7 @@ function applyChartOption() {
     const { specificOption, mergedProps } = getChartSpecificOption()
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: false,
-      fallbackTitle: '桑基图',
+      fallbackTitle: t('editorMaterial.meta.sankeyChart'),
     })
   })
 }

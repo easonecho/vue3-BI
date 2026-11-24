@@ -15,6 +15,10 @@ import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 // 🔑 模块级注册树图（运行一次,echarts/core 内部去重）
 use([TreeChart])
 
@@ -123,7 +127,7 @@ function getChartSpecificOption(): {
   const specificOption: ECOption = {
     series: [
       {
-        name: '树图',
+        name: t('editorMaterial.meta.treeChart'),
         type: 'tree',
         data: [treeData],
         top: '8%',
@@ -166,7 +170,7 @@ function applyChartOption() {
     const { specificOption, mergedProps } = getChartSpecificOption()
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: false,
-      fallbackTitle: '树图',
+      fallbackTitle: t('editorMaterial.meta.treeChart'),
     })
   })
 }
@@ -177,11 +181,7 @@ onMounted(async () => {
 
 watch(
   // 🔑 性能优化：签名式 watch 替代 deep watch
-  [
-    () => JSON.stringify(props.comp.props),
-    () => JSON.stringify(props.comp.dataConfig),
-    rows,
-  ],
+  [() => JSON.stringify(props.comp.props), () => JSON.stringify(props.comp.dataConfig), rows],
   () => {
     applyChartOption()
   },

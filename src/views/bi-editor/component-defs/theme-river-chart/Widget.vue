@@ -16,6 +16,10 @@ import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 // 🔑 模块级注册主题河流图 + 单坐标轴组件（运行一次,echarts/core 内部去重）
 use([ThemeRiverChart, SingleAxisComponent])
 
@@ -79,10 +83,10 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const singleAxisDim = mappedData.value?.singleAxisDim
-    ?? (Array.isArray(mergedProps.singleAxisDim) ? mergedProps.singleAxisDim : [])
-  const data = mappedData.value?.data
-    ?? (Array.isArray(mergedProps.data) ? mergedProps.data : [])
+  const singleAxisDim =
+    mappedData.value?.singleAxisDim ??
+    (Array.isArray(mergedProps.singleAxisDim) ? mergedProps.singleAxisDim : [])
+  const data = mappedData.value?.data ?? (Array.isArray(mergedProps.data) ? mergedProps.data : [])
   const boundaryGap = !!mergedProps.boundaryGap
   const seriesStyles = Array.isArray(mergedProps.seriesStyles) ? mergedProps.seriesStyles : []
 
@@ -159,7 +163,7 @@ function applyChartOption() {
     const { specificOption, mergedProps } = getChartSpecificOption()
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: false,
-      fallbackTitle: '主题河流图',
+      fallbackTitle: t('editorMaterial.meta.themeRiverChart'),
     })
   })
 }
@@ -170,11 +174,7 @@ onMounted(async () => {
 
 watch(
   // 🔑 性能优化：签名式 watch 替代 deep watch
-  [
-    () => JSON.stringify(props.comp.props),
-    () => JSON.stringify(props.comp.dataConfig),
-    rows,
-  ],
+  [() => JSON.stringify(props.comp.props), () => JSON.stringify(props.comp.dataConfig), rows],
   () => {
     applyChartOption()
   },

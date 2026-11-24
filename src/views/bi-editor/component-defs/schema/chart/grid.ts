@@ -1,49 +1,73 @@
 import type { PropField } from '../props'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 🔑 图表画布内边距配置 Schema（chartCommonSchema 的「画布内边距」分组） */
 export const chartGridSchema: PropField[] = [
   // ============ Grid 画布内边距 ============
   {
     key: 'gridLeft',
-    label: '左边距',
+    get label() {
+      return t('editorMaterial.ui.leftMargin')
+    },
     type: 'slider',
     min: 0,
     max: 120,
     default: 40,
-    group: '画布内边距',
+    get group() {
+      return t('editorMaterial.ui.canvasPadding')
+    },
   },
   {
     key: 'gridRight',
-    label: '右边距',
+    get label() {
+      return t('editorMaterial.ui.rightMargin')
+    },
     type: 'slider',
     min: 0,
     max: 120,
     default: 20,
-    group: '画布内边距',
+    get group() {
+      return t('editorMaterial.ui.canvasPadding')
+    },
   },
   {
     key: 'gridTop',
-    label: '上边距',
+    get label() {
+      return t('editorMaterial.ui.topMargin')
+    },
     type: 'slider',
     min: 0,
     max: 120,
     default: 40,
-    group: '画布内边距',
+    get group() {
+      return t('editorMaterial.ui.canvasPadding')
+    },
   },
   {
     key: 'gridBottom',
-    label: '下边距',
+    get label() {
+      return t('editorMaterial.ui.bottomMargin')
+    },
     type: 'slider',
     min: 0,
     max: 120,
     default: 30,
-    group: '画布内边距',
+    get group() {
+      return t('editorMaterial.ui.canvasPadding')
+    },
   },
   {
     key: 'gridContainLabel',
-    label: '包含刻度标签',
+    get label() {
+      return t('editorMaterial.ui.includeTickLabels')
+    },
     type: 'switch',
     default: true,
-    group: '画布内边距',
+    get group() {
+      return t('editorMaterial.ui.canvasPadding')
+    },
   },
 ]

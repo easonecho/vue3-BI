@@ -2,10 +2,14 @@ import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 import { chartBaseSchema } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 气泡图默认真实数据：每个数据点 [x, y, size] */
 export const BUBBLE_DEFAULT_SERIES = [
   {
-    name: '产品A',
+    name: t('editorMaterial.series.productA'),
     data: [
       [10, 20, 30],
       [20, 40, 50],
@@ -22,7 +26,9 @@ export const BUBBLE_DEFAULT_SERIES = [
 export const bubbleChartDefinition: ComponentDefinition = {
   type: 'bubble-chart',
   meta: {
-    name: '气泡图',
+    get name() {
+      return t('editorMaterial.meta.bubbleChart')
+    },
     category: 'chart',
     icon: 'Aim',
     defaultWidth: 400,
@@ -33,50 +39,80 @@ export const bubbleChartDefinition: ComponentDefinition = {
     ...chartBaseSchema,
     {
       key: 'symbolSizeMin',
-      label: '最小气泡大小',
+      get label() {
+        return t('editorMaterial.ui.minBubbleSize')
+      },
       type: 'slider',
       min: 5,
       max: 30,
       default: 8,
-      group: '气泡',
-      tip: '最小气泡大小',
+      get group() {
+        return t('editorMaterial.ui.bubble')
+      },
+      get tip() {
+        return t('editorMaterial.ui.minBubbleSize')
+      },
     },
     {
       key: 'symbolSizeMax',
-      label: '最大气泡大小',
+      get label() {
+        return t('editorMaterial.ui.maxBubbleSize')
+      },
       type: 'slider',
       min: 30,
       max: 80,
       default: 50,
-      group: '气泡',
-      tip: '最大气泡大小',
+      get group() {
+        return t('editorMaterial.ui.bubble')
+      },
+      get tip() {
+        return t('editorMaterial.ui.maxBubbleSize')
+      },
     },
     {
       key: 'bubbleColor',
-      label: '气泡主色',
+      get label() {
+        return t('editorMaterial.ui.bubbleMainColor')
+      },
       type: 'colorpicker',
       default: '#22d3ee',
-      group: '颜色',
-      tip: '气泡主色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
+      get tip() {
+        return t('editorMaterial.ui.bubbleMainColor')
+      },
     },
     {
       key: 'bubbleColor2',
-      label: '高值色',
+      get label() {
+        return t('editorMaterial.ui.highValueColor')
+      },
       type: 'colorpicker',
       default: '#a5f3fc',
-      group: '颜色',
-      tip: '高值色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
+      get tip() {
+        return t('editorMaterial.ui.highValueColor')
+      },
     },
     {
       key: 'opacity',
-      label: '透明度',
+      get label() {
+        return t('editorMaterial.ui.opacity')
+      },
       type: 'slider',
       min: 0.1,
       max: 1,
       step: 0.05,
       default: 0.7,
-      group: '气泡',
-      tip: '透明度',
+      get group() {
+        return t('editorMaterial.ui.bubble')
+      },
+      get tip() {
+        return t('editorMaterial.ui.opacity')
+      },
     },
   ],
   extraDefaults: {
@@ -85,9 +121,27 @@ export const bubbleChartDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'xField', label: 'X 轴字段', type: 'value' },
-    { key: 'yField', label: 'Y 轴字段', type: 'value' },
-    { key: 'sizeField', label: '气泡大小字段', type: 'value' },
+    {
+      key: 'xField',
+      get label() {
+        return t('editorMaterial.ui.xAxisField')
+      },
+      type: 'value',
+    },
+    {
+      key: 'yField',
+      get label() {
+        return t('editorMaterial.ui.yAxisField')
+      },
+      type: 'value',
+    },
+    {
+      key: 'sizeField',
+      get label() {
+        return t('editorMaterial.ui.bubbleSizeField')
+      },
+      type: 'value',
+    },
   ],
 }
 

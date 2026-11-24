@@ -2,6 +2,10 @@ import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 import { chartCommonSchema, aggregatePropField, topNPropFields } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 🔑 树图默认真实数据（层级占比） */
 export const TREEMAP_DEFAULT_DATA = [
   {
@@ -39,7 +43,9 @@ export const TREEMAP_DEFAULT_DATA = [
 export const treemapChartDefinition: ComponentDefinition = {
   type: 'treemap-chart',
   meta: {
-    name: '树图',
+    get name() {
+      return t('editorMaterial.meta.treeChart')
+    },
     category: 'chart',
     icon: 'Grid',
     defaultWidth: 400,
@@ -52,40 +58,72 @@ export const treemapChartDefinition: ComponentDefinition = {
     ...topNPropFields,
     {
       key: 'visualDimension',
-      label: '视觉维度',
+      get label() {
+        return t('editorMaterial.ui.visualDimension')
+      },
       type: 'select',
       options: [
-        { label: '数值', value: 'value' },
-        { label: '名称', value: 'name' },
+        {
+          get label() {
+            return t('editorMaterial.ui.value')
+          },
+          value: 'value',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.name')
+          },
+          value: 'name',
+        },
       ],
       default: 'value',
-      group: '视觉',
+      get group() {
+        return t('editorMaterial.ui.visual')
+      },
     },
     {
       key: 'colorFrom',
-      label: '颜色范围起始',
+      get label() {
+        return t('editorMaterial.ui.colorRangeStart')
+      },
       type: 'colorpicker',
       default: '#67e8f9',
-      group: '颜色',
-      tip: '颜色范围起始',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
+      get tip() {
+        return t('editorMaterial.ui.colorRangeStart')
+      },
     },
     {
       key: 'colorTo',
-      label: '颜色范围结束',
+      get label() {
+        return t('editorMaterial.ui.colorRangeEnd')
+      },
       type: 'colorpicker',
       default: '#0e7490',
-      group: '颜色',
-      tip: '颜色范围结束',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
+      get tip() {
+        return t('editorMaterial.ui.colorRangeEnd')
+      },
     },
     {
       key: 'leafDepth',
-      label: '下钻层数',
+      get label() {
+        return t('editorMaterial.ui.drillLevels')
+      },
       type: 'slider',
       min: 1,
       max: 5,
       default: 2,
-      group: '交互',
-      tip: '下钻到第几层',
+      get group() {
+        return t('editorMaterial.ui.interaction')
+      },
+      get tip() {
+        return t('editorMaterial.ui.drillToLevel')
+      },
     },
   ],
   extraDefaults: {
@@ -94,8 +132,20 @@ export const treemapChartDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'categoryField', label: '类目字段', type: 'category' },
-    { key: 'valueField', label: '数值字段', type: 'value' },
+    {
+      key: 'categoryField',
+      get label() {
+        return t('editorMaterial.ui.categoryField')
+      },
+      type: 'category',
+    },
+    {
+      key: 'valueField',
+      get label() {
+        return t('editorMaterial.ui.valueField')
+      },
+      type: 'value',
+    },
   ],
 }
 

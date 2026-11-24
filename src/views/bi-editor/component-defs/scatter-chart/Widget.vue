@@ -13,6 +13,10 @@ import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 let initTimer: number | undefined
@@ -41,7 +45,7 @@ const mappedData = computed(() => {
   if (!seriesField) {
     return [
       {
-        name: '数据',
+        name: t('editorMaterial.ui.data'),
         data: rows.value.map((r) => [Number(r[xField] ?? 0), Number(r[yField] ?? 0)]),
       },
     ]
@@ -82,12 +86,13 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const seriesData = mappedData.value
-    ?? (Array.isArray(mergedProps.series)
+  const seriesData =
+    mappedData.value ??
+    (Array.isArray(mergedProps.series)
       ? mergedProps.series
       : [
           {
-            name: '数据',
+            name: t('editorMaterial.ui.data'),
             data: [
               [10.0, 8.04],
               [8.07, 6.95],
@@ -160,7 +165,7 @@ function applyChartOption() {
     const { specificOption, mergedProps } = getChartSpecificOption()
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: true,
-      fallbackTitle: '散点图',
+      fallbackTitle: t('editorMaterial.meta.scatterChart'),
     })
   })
 }
@@ -173,11 +178,7 @@ watch(
   // 🔑 性能优化：签名式 watch 替代 deep watch。
   //   原 deep:true 遍历 comp.props + comp.dataConfig + rows 全部元素（rows 可能 1000+ 行）。
   //   改为 JSON.stringify 签名对比小对象 + rows 浅 ref watch（仅引用变更触发）。
-  [
-    () => JSON.stringify(props.comp.props),
-    () => JSON.stringify(props.comp.dataConfig),
-    rows,
-  ],
+  [() => JSON.stringify(props.comp.props), () => JSON.stringify(props.comp.dataConfig), rows],
   () => {
     applyChartOption()
   },
@@ -189,5 +190,4 @@ onUnmounted(() => {
   if (debounceTimer !== null) cancelAnimationFrame(debounceTimer)
   pendingBuilder = null
 })
-
 </script>

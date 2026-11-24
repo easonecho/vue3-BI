@@ -28,13 +28,13 @@ import { useLang } from '@/i18n/composables'
 const { t } = useI18n()
 const { locale, setLocale } = useLang()
 
-const localeOptions = [
-  { value: 'zh-CN', label: '中文' },
-  { value: 'en-US', label: 'English' },
-]
+const localeOptions = computed(() => [
+  { value: 'zh-CN', label: t('layout.langZh') },
+  { value: 'en-US', label: t('layout.langEn') },
+])
 
 const currentLabel = computed(() => {
-  const opt = localeOptions.find((o) => o.value === locale.value)
+  const opt = localeOptions.value.find((o) => o.value === locale.value)
   return opt ? opt.label : locale.value
 })
 
@@ -54,7 +54,10 @@ function handleCommand(val: string) {
   background: var(--bi-component-bg);
   border: 1px solid var(--bi-border-color);
   cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
   color: var(--bi-text-secondary);
   font-size: 12px;
 

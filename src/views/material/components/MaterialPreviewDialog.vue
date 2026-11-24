@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    :title="material?.name || '素材预览'"
+    :title="material?.name || t('materialPage.previewTitle')"
     width="800px"
     append-to-body
     destroy-on-close
@@ -22,36 +22,42 @@
       />
       <div v-else class="preview-decor">
         <el-icon><Box /></el-icon>
-        <span>装饰素材</span>
+        <span>{{ t('materialPage.decorMaterial') }}</span>
       </div>
       <div class="preview-info">
         <el-descriptions :column="2" border size="small">
-          <el-descriptions-item label="名称">{{ material.name }}</el-descriptions-item>
-          <el-descriptions-item label="类型">
+          <el-descriptions-item :label="t('materialPage.labelName')">{{
+            material.name
+          }}</el-descriptions-item>
+          <el-descriptions-item :label="t('materialPage.labelType')">
             {{ typeLabel(material.type) }}
           </el-descriptions-item>
-          <el-descriptions-item label="原始文件名">
+          <el-descriptions-item :label="t('materialPage.originalName')">
             {{ material.originalName }}
           </el-descriptions-item>
-          <el-descriptions-item label="大小">
+          <el-descriptions-item :label="t('materialPage.labelSize')">
             {{ formatSize(material.size) }}
           </el-descriptions-item>
-          <el-descriptions-item label="MIME">
+          <el-descriptions-item :label="t('materialPage.labelMime')">
             {{ material.mimeType }}
           </el-descriptions-item>
-          <el-descriptions-item label="上传时间">
+          <el-descriptions-item :label="t('materialPage.uploadedAt')">
             {{ formatTime(material.createdAt) }}
           </el-descriptions-item>
-          <el-descriptions-item v-if="material.description" label="描述" :span="2">
+          <el-descriptions-item
+            v-if="material.description"
+            :label="t('materialPage.labelDescription')"
+            :span="2"
+          >
             {{ material.description }}
           </el-descriptions-item>
         </el-descriptions>
       </div>
     </div>
     <template #footer>
-      <el-button @click="visible = false">关闭</el-button>
+      <el-button @click="visible = false">{{ t('materialPage.close') }}</el-button>
       <el-button type="primary" @click="download">
-        <el-icon><Download /></el-icon>下载
+        <el-icon><Download /></el-icon>{{ t('materialPage.download') }}
       </el-button>
     </template>
   </el-dialog>
@@ -59,8 +65,11 @@
 
 <script setup lang="ts">
 import { Download, Box } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import type { Material } from '@/api/material'
 import { formatSize, formatTime, typeLabel } from '../utils/material-utils'
+
+const { t } = useI18n()
 
 const props = defineProps<{ material: Material | null }>()
 

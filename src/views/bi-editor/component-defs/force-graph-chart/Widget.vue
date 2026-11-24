@@ -15,6 +15,10 @@ import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 // 🔑 模块级注册关系图（运行一次,echarts/core 内部去重）
 use([GraphChart])
 
@@ -87,12 +91,10 @@ function getChartSpecificOption(): {
 
   // 🔑 数据绑定优先,否则用静态 categories/nodes/links
   const mapped = mappedData.value
-  const categories = mapped?.categories
-    ?? (Array.isArray(mergedProps.categories) ? mergedProps.categories : [])
-  const nodes = mapped?.nodes
-    ?? (Array.isArray(mergedProps.nodes) ? mergedProps.nodes : [])
-  const links = mapped?.links
-    ?? (Array.isArray(mergedProps.links) ? mergedProps.links : [])
+  const categories =
+    mapped?.categories ?? (Array.isArray(mergedProps.categories) ? mergedProps.categories : [])
+  const nodes = mapped?.nodes ?? (Array.isArray(mergedProps.nodes) ? mergedProps.nodes : [])
+  const links = mapped?.links ?? (Array.isArray(mergedProps.links) ? mergedProps.links : [])
 
   const layout = String(mergedProps.layout || 'force') as 'force' | 'circular' | 'none'
   const symbolSize = Number(mergedProps.symbolSize || 20)
@@ -119,7 +121,7 @@ function getChartSpecificOption(): {
   const specificOption: ECOption = {
     series: [
       {
-        name: '力导向图',
+        name: t('editorMaterial.meta.forceGraph'),
         type: 'graph',
         layout,
         data: nodes.map((n: any) => ({
@@ -180,7 +182,7 @@ function applyChartOption() {
     const { specificOption, mergedProps } = getChartSpecificOption()
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: false,
-      fallbackTitle: '力导向图',
+      fallbackTitle: t('editorMaterial.meta.forceGraph'),
     })
   })
 }
@@ -191,11 +193,7 @@ onMounted(async () => {
 
 watch(
   // 🔑 性能优化：签名式 watch 替代 deep watch
-  [
-    () => JSON.stringify(props.comp.props),
-    () => JSON.stringify(props.comp.dataConfig),
-    rows,
-  ],
+  [() => JSON.stringify(props.comp.props), () => JSON.stringify(props.comp.dataConfig), rows],
   () => {
     applyChartOption()
   },

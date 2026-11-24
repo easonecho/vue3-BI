@@ -4,14 +4,25 @@ import { defineComponent } from 'vue'
 import LayoutHeader from './LayoutHeader.vue'
 import type { BreadcrumbItem } from '../layout-menu-utils'
 
-const { userStoreMock } = vi.hoisted(() => ({
+const { userStoreMock, layoutMessages } = vi.hoisted(() => ({
   userStoreMock: {
-    userInfo: null as { nickname?: string | null; username?: string | null; avatar?: string | null } | null,
+    userInfo: null as {
+      nickname?: string | null
+      username?: string | null
+      avatar?: string | null
+    } | null,
   },
+  // 仅映射模板中已接入 i18n 的布局文案，其余 key 原样返回以保持断言稳定
+  layoutMessages: {
+    'layout.collapseMenu': '收起菜单',
+    'layout.expandMenu': '展开菜单',
+    'layout.globalSearchShortcut': '全局搜索 (Ctrl+K)',
+    'layout.search': '搜索',
+  } as Record<string, string>,
 }))
 
 vi.mock('vue-i18n', () => ({
-  useI18n: () => ({ t: (key: string) => key }),
+  useI18n: () => ({ t: (key: string) => layoutMessages[key] ?? key }),
 }))
 
 vi.mock('@/stores/user', () => ({
@@ -157,7 +168,9 @@ describe('LayoutHeader 面包屑与交互', () => {
 
   it('下拉菜单包含进入编辑器/数据大屏/退出登录', () => {
     const wrapper = mountHeader()
-    const commands = wrapper.findAll('.dropdown-item-stub').map((item) => item.attributes('data-command'))
+    const commands = wrapper
+      .findAll('.dropdown-item-stub')
+      .map((item) => item.attributes('data-command'))
 
     expect(commands).toEqual(['editor', 'screen', 'logout'])
   })

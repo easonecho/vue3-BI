@@ -21,12 +21,13 @@
     </div>
 
     <!-- 竖屏提示：大屏画布在手机竖屏下过小，引导横屏查看 -->
-    <div class="rotate-hint">横屏查看效果更佳</div>
+    <div class="rotate-hint">{{ t('previewPage.rotateHint') }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import ComponentRenderer from '@/views/bi-editor/components/canvas/ComponentRenderer.vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
@@ -35,6 +36,7 @@ import {
   isDashboardVerticallyScrollable,
 } from '@/views/preview/utils/dashboard-fit'
 
+const { t } = useI18n()
 const store = useBiEditorStore()
 const wrapperRef = ref<HTMLElement | null>(null)
 
@@ -100,9 +102,7 @@ function getCompStyle(comp: ComponentInstance) {
 
 // 可见组件按 zIndex 升序排列（zIndex 小的在底层）
 const visibleSortedComponents = computed<ComponentInstance[]>(() =>
-  store.components
-    .filter((c) => c.visible)
-    .sort((a, b) => a.zIndex - b.zIndex),
+  store.components.filter((c) => c.visible).sort((a, b) => a.zIndex - b.zIndex),
 )
 
 onMounted(() => {

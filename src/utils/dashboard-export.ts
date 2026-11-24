@@ -8,6 +8,7 @@
  *   - 分享页 CanvasArea(readonly): .canvas-sheet
  * ============================================================================
  */
+import i18n from '@/i18n'
 
 /** 导出目标选择器：按优先级匹配预览页 / 分享页画布 */
 export const EXPORT_TARGET_SELECTOR = '.dashboard-canvas, .canvas-sheet'
@@ -19,8 +20,9 @@ export function resolveExportTarget(): HTMLElement | null {
 
 /** 文件名安全化：去掉 Windows/Unix 非法字符，空名称回退为「看板」 */
 export function sanitizeExportName(name: string): string {
-  const safe = (name || '看板').replace(/[\\/:*?"<>|]/g, '_').trim()
-  return safe || '看板'
+  const fallback = i18n.global.t('appMessages.editor.defaultName')
+  const safe = (name || fallback).replace(/[\\/:*?"<>|]/g, '_').trim()
+  return safe || fallback
 }
 
 /** 导出时间戳：YYYYMMDD_HHmmss */
@@ -47,7 +49,7 @@ function escapeHtml(s: string): string {
  * 不引入服务端 PDF 依赖，保持与编辑器导出能力一致。
  */
 export function buildPdfHtml(dataUrl: string, title: string): string {
-  const safeTitle = escapeHtml(title || '看板')
+  const safeTitle = escapeHtml(title || i18n.global.t('appMessages.editor.defaultName'))
   return `<!doctype html><html><head><meta charset="utf-8"><title>${safeTitle}</title>
     <style>
       @page { size: auto; margin: 0; }
@@ -73,9 +75,7 @@ function triggerDownload(dataUrl: string, filename: string) {
  * 画布在页面上可能被 transform: scale 缩放，但节点自身宽高仍是设计稿尺寸，
  * 显式传入 width/height 保证导出原尺寸清晰度。
  */
-export async function captureDashboardPng(
-  target?: HTMLElement | null,
-): Promise<string | null> {
+export async function captureDashboardPng(target?: HTMLElement | null): Promise<string | null> {
   const el = target ?? resolveExportTarget()
   if (!el) return null
   try {
@@ -100,10 +100,7 @@ export async function exportDashboardPng(
 ): Promise<boolean> {
   const dataUrl = await captureDashboardPng(target)
   if (!dataUrl) return false
-  triggerDownload(
-    dataUrl,
-    `${sanitizeExportName(name)}_${formatExportStamp(new Date())}.png`,
-  )
+  triggerDownload(dataUrl, `${sanitizeExportName(name)}_${formatExportStamp(new Date())}.png`)
   return true
 }
 

@@ -15,6 +15,10 @@ import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 // 🔑 模块级注册箱线图（运行一次,echarts/core 内部去重）
 use([BoxplotChart])
 
@@ -45,7 +49,7 @@ const mappedData = computed(() => {
     categories: rows.value.map((r) => String(r[categoryField] ?? '')),
     series: [
       {
-        name: '分布',
+        name: t('editorMaterial.ui.distribution'),
         data: rows.value.map((r) => valueFields.map((f) => Number(r[f] ?? 0))),
       },
     ],
@@ -76,10 +80,11 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const categories = mappedData.value?.categories
-    ?? (Array.isArray(mergedProps.categories) ? mergedProps.categories : [])
-  const seriesData = mappedData.value?.series
-    ?? (Array.isArray(mergedProps.series) ? mergedProps.series : [])
+  const categories =
+    mappedData.value?.categories ??
+    (Array.isArray(mergedProps.categories) ? mergedProps.categories : [])
+  const seriesData =
+    mappedData.value?.series ?? (Array.isArray(mergedProps.series) ? mergedProps.series : [])
   const boxWidth = Number(mergedProps.boxWidth)
   const seriesStyles = Array.isArray(mergedProps.seriesStyles) ? mergedProps.seriesStyles : []
 
@@ -140,7 +145,7 @@ function applyChartOption() {
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: true,
       xAxisData: getXAxisData(specificOption),
-      fallbackTitle: '箱线图',
+      fallbackTitle: t('editorMaterial.meta.boxPlot'),
     })
   })
 }
@@ -151,11 +156,7 @@ onMounted(async () => {
 
 watch(
   // 🔑 性能优化：签名式 watch 替代 deep watch
-  [
-    () => JSON.stringify(props.comp.props),
-    () => JSON.stringify(props.comp.dataConfig),
-    rows,
-  ],
+  [() => JSON.stringify(props.comp.props), () => JSON.stringify(props.comp.dataConfig), rows],
   () => {
     applyChartOption()
   },

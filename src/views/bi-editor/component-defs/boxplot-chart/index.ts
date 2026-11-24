@@ -2,6 +2,10 @@ import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const BOXPLOT_MIN_WIDTH = 5
 export const BOXPLOT_MAX_WIDTH = 50
 export const BOXPLOT_DEFAULT_WIDTH = 20
@@ -10,7 +14,7 @@ export const BOXPLOT_DEFAULT_WIDTH = 20
 export const BOXPLOT_DEFAULT_CATEGORIES = ['类别1', '类别2', '类别3', '类别4', '类别5']
 export const BOXPLOT_DEFAULT_SERIES = [
   {
-    name: '分布',
+    name: t('editorMaterial.ui.distribution'),
     data: [
       [10, 20, 30, 40, 50],
       [15, 25, 35, 45, 60],
@@ -24,7 +28,9 @@ export const BOXPLOT_DEFAULT_SERIES = [
 export const boxplotChartDefinition: ComponentDefinition = {
   type: 'boxplot-chart',
   meta: {
-    name: '箱线图',
+    get name() {
+      return t('editorMaterial.meta.boxPlot')
+    },
     category: 'chart',
     icon: 'DataLine',
     defaultWidth: 480,
@@ -35,20 +41,30 @@ export const boxplotChartDefinition: ComponentDefinition = {
     ...chartBaseSchema,
     {
       key: 'boxWidth',
-      label: '箱体宽度',
+      get label() {
+        return t('editorMaterial.ui.boxWidth')
+      },
       type: 'slider',
       min: BOXPLOT_MIN_WIDTH,
       max: BOXPLOT_MAX_WIDTH,
       default: BOXPLOT_DEFAULT_WIDTH,
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
     {
       key: 'seriesStyles',
-      label: '数据系列样式',
+      get label() {
+        return t('editorMaterial.ui.seriesStyles')
+      },
       type: 'table',
       default: [],
-      group: '数据系列',
-      tip: '根据系列名称单独配置颜色、是否显示标签（按名称匹配）',
+      get group() {
+        return t('editorMaterial.ui.dataSeries')
+      },
+      get tip() {
+        return t('editorMaterial.ui.configureColorAndLabelVisibilityPerSeriesByName3')
+      },
       columns: [...baseSeriesStylesWithAxesColumns],
     },
     // 🔑 系列标签（箱线图默认在顶部）
@@ -61,8 +77,21 @@ export const boxplotChartDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'categoryField', label: '类目字段', type: 'category' },
-    { key: 'valueFields', label: '数值字段', type: 'value', multiple: true },
+    {
+      key: 'categoryField',
+      get label() {
+        return t('editorMaterial.ui.categoryField')
+      },
+      type: 'category',
+    },
+    {
+      key: 'valueFields',
+      get label() {
+        return t('editorMaterial.ui.valueField')
+      },
+      type: 'value',
+      multiple: true,
+    },
   ],
 }
 

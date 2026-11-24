@@ -3,8 +3,8 @@
     <!-- 画布尺寸 -->
     <div class="cs-section">
       <div class="cs-section-head">
-        <span class="cs-section-title">画布尺寸</span>
-        <span class="cs-section-hint">宽 × 高 (px)</span>
+        <span class="cs-section-title">{{ t('editorUi.canvasSettings.size') }}</span>
+        <span class="cs-section-hint">{{ t('editorUi.canvasSettings.sizeHint') }}</span>
       </div>
       <div class="cs-size-row">
         <el-input-number
@@ -46,10 +46,10 @@
     <!-- 画布外观 -->
     <div class="cs-section">
       <div class="cs-section-head">
-        <span class="cs-section-title">外观</span>
+        <span class="cs-section-title">{{ t('editorUi.canvasSettings.appearance') }}</span>
       </div>
       <div class="cs-field-row">
-        <label class="cs-field-label">背景色</label>
+        <label class="cs-field-label">{{ t('editorUi.canvasSettings.backgroundColor') }}</label>
         <div class="cs-field-control">
           <el-color-picker
             :model-value="store.canvas.backgroundColor || '#ffffff'"
@@ -58,26 +58,28 @@
         </div>
       </div>
       <div class="cs-field-row cs-field-col">
-        <label class="cs-field-label">背景图</label>
+        <label class="cs-field-label">{{ t('editorUi.canvasSettings.backgroundImage') }}</label>
         <el-input
           :model-value="store.canvas.backgroundImage"
           size="small"
-          placeholder="图片 URL，留空不使用"
+          :placeholder="t('editorUi.canvasSettings.bgImagePlaceholder')"
           clearable
           @update:model-value="(v: string) => updateCanvasField('backgroundImage', v)"
         />
       </div>
-      <div class="cs-bg-preview" :style="canvasPreviewStyle">预览</div>
+      <div class="cs-bg-preview" :style="canvasPreviewStyle">
+        {{ t('editorUi.canvasSettings.preview') }}
+      </div>
     </div>
 
     <!-- 视图 & 吸附 -->
     <div class="cs-section">
       <div class="cs-section-head">
-        <span class="cs-section-title">视图与吸附</span>
+        <span class="cs-section-title">{{ t('editorUi.canvasSettings.viewSnap') }}</span>
       </div>
       <div class="cs-toggles">
         <div class="cs-toggle">
-          <span class="cs-toggle-label">显示标尺</span>
+          <span class="cs-toggle-label">{{ t('editorUi.canvasSettings.showRuler') }}</span>
           <el-switch
             :model-value="store.canvas.showRuler"
             size="small"
@@ -85,7 +87,7 @@
           />
         </div>
         <div class="cs-toggle">
-          <span class="cs-toggle-label">显示网格</span>
+          <span class="cs-toggle-label">{{ t('editorUi.canvasSettings.showGrid') }}</span>
           <el-switch
             :model-value="store.canvas.showGrid"
             size="small"
@@ -93,7 +95,7 @@
           />
         </div>
         <div class="cs-toggle">
-          <span class="cs-toggle-label">网格吸附</span>
+          <span class="cs-toggle-label">{{ t('editorUi.canvasSettings.snapToGrid') }}</span>
           <el-switch
             :model-value="store.canvas.snapToGrid"
             size="small"
@@ -101,7 +103,7 @@
           />
         </div>
         <div class="cs-toggle">
-          <span class="cs-toggle-label">辅助线</span>
+          <span class="cs-toggle-label">{{ t('editorUi.canvasSettings.guides') }}</span>
           <el-switch
             :model-value="store.canvas.showGuides"
             size="small"
@@ -110,7 +112,7 @@
         </div>
       </div>
       <div class="cs-field-row">
-        <label class="cs-field-label">网格大小</label>
+        <label class="cs-field-label">{{ t('editorUi.canvasSettings.gridSize') }}</label>
         <div class="cs-field-control">
           <el-input-number
             :model-value="store.canvas.gridSize"
@@ -129,18 +131,20 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useBiEditorStore } from '@/stores/bi-editor'
 
 const store = useBiEditorStore()
+const { t } = useI18n()
 
-const canvasPresets = [
+const canvasPresets = computed(() => [
   { w: 1920, h: 1080, label: 'Full HD' },
   { w: 1600, h: 900, label: 'HD+' },
-  { w: 1440, h: 900, label: '笔记本' },
-  { w: 1366, h: 768, label: '标准' },
+  { w: 1440, h: 900, label: t('editorUi.canvasSettings.presetLaptop') },
+  { w: 1366, h: 768, label: t('editorUi.canvasSettings.presetStandard') },
   { w: 1280, h: 720, label: 'HD' },
   { w: 1024, h: 768, label: '4:3' },
-]
+])
 
 function updateCanvasField<K extends keyof (typeof store)['canvas']>(
   key: K,

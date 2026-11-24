@@ -1,6 +1,11 @@
 <template>
   <div class="widget-status-badge" :style="containerStyle">
-    <span v-if="showDot" class="widget-status-badge__dot" :class="{ 'is-pulse': dotPulse }" :style="dotStyle" />
+    <span
+      v-if="showDot"
+      class="widget-status-badge__dot"
+      :class="{ 'is-pulse': dotPulse }"
+      :style="dotStyle"
+    />
     <el-icon v-if="iconComp" :size="iconSize" :color="iconColor" class="widget-status-badge__icon">
       <component :is="iconComp" />
     </el-icon>
@@ -13,10 +18,14 @@ import { computed } from 'vue'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 
 // ============ 字段读取 ============
-const text = computed(() => props.comp.props?.text ?? '运行中')
+const text = computed(() => props.comp.props?.text ?? t('editorMaterial.ui.running'))
 const status = computed(() => props.comp.props?.status ?? 'success')
 const iconName = computed(() => String(props.comp.props?.iconName ?? ''))
 const showDot = computed(() => props.comp.props?.showDot ?? true)

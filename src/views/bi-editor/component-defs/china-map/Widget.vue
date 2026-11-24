@@ -16,6 +16,10 @@ import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import { registerMap } from 'echarts/core'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 const dataSourceRef = computed(() => props.comp.dataSource)
 const { rows } = useDatasetBinding(dataSourceRef)
@@ -159,7 +163,7 @@ function applyChartOption() {
 
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: false,
-      fallbackTitle: '中国地图',
+      fallbackTitle: t('editorMaterial.meta.chinaMap'),
     })
   })
 }
@@ -170,7 +174,7 @@ onMounted(async () => {
     await ensureChinaMap()
     initTimer = window.setTimeout(applyChartOption, 50)
   } catch {
-    mapError.value = '地图数据加载失败，请检查网络连接'
+    mapError.value = t('editorMaterial.ui.mapLoadFailed')
   }
 })
 

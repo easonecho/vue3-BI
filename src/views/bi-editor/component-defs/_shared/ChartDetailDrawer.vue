@@ -1,9 +1,6 @@
-/**
- * 图表明细抽屉（drill-through）
- *
- * 按当前图表的所有过滤条件（全局筛选 / 联动 / 钻取）分页查询原始数据行。
- * 复用服务端分页接口，SQL 数据集不会一次性拉全量；公开分享页走匿名分页接口。
- */
+/** * 图表明细抽屉（drill-through） * * 按当前图表的所有过滤条件（全局筛选 / 联动 /
+钻取）分页查询原始数据行。 * 复用服务端分页接口，SQL
+数据集不会一次性拉全量；公开分享页走匿名分页接口。 */
 <template>
   <el-drawer
     :model-value="visible"
@@ -16,7 +13,9 @@
     <div class="detail-body">
       <div class="detail-toolbar">
         <div class="detail-summary">
-          <span class="detail-count">共 {{ countText }} 行</span>
+          <span class="detail-count">{{
+            t('editorMaterial.ui.detailRows', { count: countText })
+          }}</span>
           <el-tag
             v-for="label in visibleSummaries"
             :key="label"
@@ -30,7 +29,9 @@
             +{{ hiddenFilterCount }}
           </el-tag>
         </div>
-        <el-button size="small" :loading="loading" @click="reload">刷新</el-button>
+        <el-button size="small" :loading="loading" @click="reload">{{
+          t('editorMaterial.ui.refresh')
+        }}</el-button>
       </div>
 
       <el-alert
@@ -45,7 +46,7 @@
         v-if="truncated"
         class="detail-alert"
         type="warning"
-        title="数据量超过服务端物化上限，仅能查看部分明细"
+        :title="t('editorMaterial.ui.limitWarning')"
         show-icon
         :closable="false"
       />
@@ -71,19 +72,23 @@
             <template #default="{ row }">{{ formatCell(row[col]) }}</template>
           </el-table-column>
           <template #empty>
-            <el-empty v-if="!loading" description="暂无明细数据" :image-size="60" />
+            <el-empty
+              v-if="!loading"
+              :description="t('editorMaterial.ui.noDetailData')"
+              :image-size="60"
+            />
           </template>
         </el-table>
       </div>
 
       <div class="detail-footer">
-        <span class="detail-page">第 {{ page }} 页</span>
+        <span class="detail-page">{{ t('editorMaterial.ui.pageNo', { page }) }}</span>
         <div class="detail-page-actions">
           <el-button size="small" :disabled="page <= 1 || loading" @click="goPage(page - 1)">
-            上一页
+            {{ t('editorMaterial.ui.prevPage') }}
           </el-button>
           <el-button size="small" :disabled="!hasMore || loading" @click="goPage(page + 1)">
-            下一页
+            {{ t('editorMaterial.ui.nextPage') }}
           </el-button>
         </div>
       </div>
@@ -98,6 +103,10 @@ import { fetchPublicDatasetPage } from '@/api/share'
 import { getPublicDashboardContext } from '@/utils/public-dashboard-context'
 import { summarizeDetailFilters } from '@/views/bi-editor/composables/drill-through'
 import { requestDatasetPage } from '@/views/bi-editor/composables/dataset-batch'
+
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = withDefaults(
   defineProps<{
@@ -131,7 +140,11 @@ const sortState = ref<{ field: string; order: 'asc' | 'desc' } | null>(null)
 /** 请求序号：快速翻页/关闭时丢弃过期响应 */
 let requestSeq = 0
 
-const drawerTitle = computed(() => (props.title ? `${props.title} · 数据明细` : '数据明细'))
+const drawerTitle = computed(() =>
+  props.title
+    ? `${props.title} · ${t('editorMaterial.ui.dataDetail')}`
+    : t('editorMaterial.ui.dataDetail'),
+)
 
 const filterSummaries = computed(() => summarizeDetailFilters(props.filters ?? []))
 const visibleSummaries = computed(() => filterSummaries.value.slice(0, 6))
@@ -177,9 +190,7 @@ async function load() {
     offset: (page.value - 1) * pageSize.value,
     limit: pageSize.value,
     filters: props.filters ?? [],
-    ...(sortState.value
-      ? { sortBy: sortState.value.field, sortOrder: sortState.value.order }
-      : {}),
+    ...(sortState.value ? { sortBy: sortState.value.field, sortOrder: sortState.value.order } : {}),
   }
 
   try {
@@ -201,7 +212,7 @@ async function load() {
     total.value = typeof result.total === 'number' ? result.total : null
   } catch (e) {
     if (seq !== requestSeq) return
-    error.value = e instanceof Error ? e.message : '明细加载失败'
+    error.value = e instanceof Error ? e.message : t('editorMaterial.ui.detailLoadFailed')
     rows.value = []
     columns.value = []
     hasMore.value = false

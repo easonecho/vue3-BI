@@ -1,10 +1,16 @@
 import type { ComponentDefinition } from '../types'
 import Widget from './Widget.vue'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const scrollTableDefinition: ComponentDefinition = {
   type: 'scroll-table',
   meta: {
-    name: '轮播表格',
+    get name() {
+      return t('editorMaterial.meta.scrollingTable')
+    },
     category: 'data',
     icon: 'List',
     defaultWidth: 500,
@@ -12,85 +18,175 @@ export const scrollTableDefinition: ComponentDefinition = {
   },
   widget: Widget,
   propsSchema: [
-    { key: 'showHeader', label: '显示表头', type: 'switch', default: true, group: '外观' },
-    { key: 'stripe', label: '斑马纹', type: 'switch', default: true, group: '外观' },
-    { key: 'border', label: '显示边框', type: 'switch', default: true, group: '外观' },
+    {
+      key: 'showHeader',
+      get label() {
+        return t('editorMaterial.ui.showHeader')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.appearance')
+      },
+    },
+    {
+      key: 'stripe',
+      get label() {
+        return t('editorMaterial.ui.zebraStripes')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.appearance')
+      },
+    },
+    {
+      key: 'border',
+      get label() {
+        return t('editorMaterial.ui.showBorder')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.appearance')
+      },
+    },
     {
       key: 'fontSize',
-      label: '字号',
+      get label() {
+        return t('editorMaterial.ui.fontSize')
+      },
       type: 'slider',
       min: 10,
       max: 18,
       default: 12,
-      group: '字体',
+      get group() {
+        return t('editorMaterial.ui.font')
+      },
     },
-    { key: 'headerBg', label: '表头背景', type: 'colorpicker', default: '#1e293b', group: '表头' },
+    {
+      key: 'headerBg',
+      get label() {
+        return t('editorMaterial.ui.headerBackground')
+      },
+      type: 'colorpicker',
+      default: '#1e293b',
+      get group() {
+        return t('editorMaterial.ui.tableHeader')
+      },
+    },
     {
       key: 'headerColor',
-      label: '表头文字',
+      get label() {
+        return t('editorMaterial.ui.headerText')
+      },
       type: 'colorpicker',
       default: '#67e8f9',
-      group: '表头',
+      get group() {
+        return t('editorMaterial.ui.tableHeader')
+      },
     },
-    { key: 'rowColor', label: '行文字', type: 'colorpicker', default: '#e2e8f0', group: '行' },
+    {
+      key: 'rowColor',
+      get label() {
+        return t('editorMaterial.ui.rowText')
+      },
+      type: 'colorpicker',
+      default: '#e2e8f0',
+      get group() {
+        return t('editorMaterial.ui.row')
+      },
+    },
     {
       key: 'rowBgColor',
-      label: '行背景',
+      get label() {
+        return t('editorMaterial.ui.rowBackground')
+      },
       type: 'colorpicker',
       default: 'rgba(15,23,42,0.6)',
-      group: '行',
+      get group() {
+        return t('editorMaterial.ui.row')
+      },
     },
     {
       key: 'rowHoverBg',
-      label: '行悬停背景',
+      get label() {
+        return t('editorMaterial.ui.rowHoverBackground')
+      },
       type: 'colorpicker',
       default: 'rgba(34,211,238,0.15)',
-      group: '行',
+      get group() {
+        return t('editorMaterial.ui.row')
+      },
     },
     {
       key: 'autoScroll',
-      label: '自动滚动',
+      get label() {
+        return t('editorMaterial.ui.autoScroll')
+      },
       type: 'switch',
       default: true,
-      group: '轮播',
-      tip: '自动滚动',
+      get group() {
+        return t('editorMaterial.ui.carousel')
+      },
+      get tip() {
+        return t('editorMaterial.ui.autoScroll')
+      },
     },
     {
       key: 'interval',
-      label: '滚动间隔',
+      get label() {
+        return t('editorMaterial.ui.scrollInterval')
+      },
       type: 'slider',
       min: 1000,
       max: 10000,
       step: 500,
       default: 2000,
-      group: '轮播',
-      tip: '滚动间隔(ms)',
+      get group() {
+        return t('editorMaterial.ui.carousel')
+      },
+      get tip() {
+        return t('editorMaterial.ui.scrollIntervalMs')
+      },
     },
     {
       key: 'step',
-      label: '滚动行数',
+      get label() {
+        return t('editorMaterial.ui.scrollRows')
+      },
       type: 'slider',
       min: 1,
       max: 5,
       default: 1,
-      group: '轮播',
-      tip: '每次滚动行数',
+      get group() {
+        return t('editorMaterial.ui.carousel')
+      },
+      get tip() {
+        return t('editorMaterial.ui.rowsPerScroll')
+      },
     },
     {
       key: 'pauseOnHover',
-      label: '悬停暂停',
+      get label() {
+        return t('editorMaterial.ui.pauseOnHover2')
+      },
       type: 'switch',
       default: true,
-      group: '轮播',
-      tip: '鼠标悬停暂停',
+      get group() {
+        return t('editorMaterial.ui.carousel')
+      },
+      get tip() {
+        return t('editorMaterial.ui.pauseOnHover')
+      },
     },
   ],
   extraDefaults: {
     columns: [
-      { key: 'time', title: '时间', width: 160 },
-      { key: 'level', title: '级别', width: 80 },
-      { key: 'source', title: '来源', width: 120 },
-      { key: 'message', title: '告警信息' },
+      { key: 'time', title: t('editorMaterial.ui.time'), width: 160 },
+      { key: 'level', title: t('editorMaterial.ui.level'), width: 80 },
+      { key: 'source', title: t('editorMaterial.ui.sourceLabel'), width: 120 },
+      { key: 'message', title: t('editorMaterial.ui.alertMessage') },
     ],
     data: [
       {

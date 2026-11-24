@@ -11,6 +11,10 @@ import { deriveDefaultPropsCached } from '../types'
 import { getDefinition } from '../index'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 let initTimer: number | undefined
@@ -53,7 +57,7 @@ function getChartSpecificOption(): {
   const specificOption: ECOption = {
     series: [
       {
-        name: '关系图',
+        name: t('editorMaterial.meta.graphChart'),
         type: 'graph',
         layout,
         data: nodes.map((n: any) => ({
@@ -98,7 +102,7 @@ function applyChartOption() {
     const { specificOption, mergedProps } = getChartSpecificOption()
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: false,
-      fallbackTitle: '关系图',
+      fallbackTitle: t('editorMaterial.meta.graphChart'),
     })
   })
 }
@@ -107,12 +111,9 @@ onMounted(async () => {
   initTimer = window.setTimeout(applyChartOption, 50)
 })
 
-watch(
-  [() => JSON.stringify(props.comp.props)],
-  () => {
-    applyChartOption()
-  },
-)
+watch([() => JSON.stringify(props.comp.props)], () => {
+  applyChartOption()
+})
 
 onUnmounted(() => {
   if (initTimer) clearTimeout(initTimer)

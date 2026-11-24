@@ -16,6 +16,10 @@ import { resolveComponentFieldMapping } from '../aggregate-spec'
 import { useLinkageStore } from '@/stores/linkage'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 const linkageStore = useLinkageStore()
@@ -84,8 +88,9 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const pieData = mappedData.value
-    ?? (Array.isArray(mergedProps.pieData)
+  const pieData =
+    mappedData.value ??
+    (Array.isArray(mergedProps.pieData)
       ? mergedProps.pieData.map((item: { name: string; value: number }) => ({
           name: item.name,
           value: item.value,
@@ -128,7 +133,7 @@ function getChartSpecificOption(): {
   const specificOption: ECOption = {
     series: [
       {
-        name: '玫瑰图',
+        name: t('editorMaterial.ui.roseChart'),
         type: 'pie',
         radius: radiusArr,
         roseType,
@@ -193,7 +198,7 @@ function applyChartOption() {
     const { specificOption, mergedProps } = getChartSpecificOption()
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: false,
-      fallbackTitle: '玫瑰图',
+      fallbackTitle: t('editorMaterial.ui.roseChart'),
     })
   })
 }
@@ -204,11 +209,7 @@ onMounted(async () => {
 
 watch(
   // 🔑 性能优化：签名式 watch 替代 deep watch
-  [
-    () => JSON.stringify(props.comp.props),
-    () => JSON.stringify(props.comp.dataConfig),
-    rows,
-  ],
+  [() => JSON.stringify(props.comp.props), () => JSON.stringify(props.comp.dataConfig), rows],
   () => {
     applyChartOption()
   },

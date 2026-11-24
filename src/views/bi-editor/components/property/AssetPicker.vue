@@ -12,22 +12,28 @@
       <div class="picker-toolbar">
         <el-input
           v-model="keyword"
-          placeholder="搜索素材名称"
+          :placeholder="t('editorUi.asset.searchPlaceholder')"
           clearable
           size="small"
           style="width: 200px"
           @keyup.enter="loadMaterials"
           @clear="loadMaterials"
         />
-        <el-button size="small" type="primary" plain @click="loadMaterials">搜索</el-button>
-        <el-button v-if="hasMore" size="small" link @click="loadMore">加载更多</el-button>
-        <span class="picker-count">{{ multiple ? `已选 ${selectedUrls.length} 个` : '' }}</span>
+        <el-button size="small" type="primary" plain @click="loadMaterials">{{
+          t('editorUi.asset.search')
+        }}</el-button>
+        <el-button v-if="hasMore" size="small" link @click="loadMore">{{
+          t('editorUi.asset.loadMore')
+        }}</el-button>
+        <span class="picker-count">{{
+          multiple ? t('editorUi.asset.selectedCount', { count: selectedUrls.length }) : ''
+        }}</span>
       </div>
 
       <!-- 素材网格 -->
       <div v-loading="loading" class="picker-grid">
         <div v-if="materials.length === 0 && !loading" class="picker-empty">
-          暂无{{ typeLabel }}素材，请先在「素材管理」页上传
+          {{ t('editorUi.asset.empty', { type: typeLabel }) }}
         </div>
         <div
           v-for="m in materials"
@@ -42,12 +48,7 @@
               :alt="m.name"
               loading="lazy"
             />
-            <video
-              v-else-if="m.type === 'video' && m.url"
-              :src="m.url"
-              muted
-              preload="metadata"
-            />
+            <video v-else-if="m.type === 'video' && m.url" :src="m.url" muted preload="metadata" />
             <div v-else class="asset-placeholder">{{ m.type.toUpperCase() }}</div>
           </div>
           <div class="asset-name" :title="m.name">{{ m.name }}</div>
@@ -57,9 +58,13 @@
     </div>
 
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
+      <el-button @click="visible = false">{{ t('common.cancel') }}</el-button>
       <el-button type="primary" :disabled="selectedUrls.length === 0" @click="handleConfirm">
-        确定{{ multiple ? `(${selectedUrls.length})` : '' }}
+        {{
+          multiple
+            ? t('editorUi.asset.confirmCount', { count: selectedUrls.length })
+            : t('editorUi.asset.confirm')
+        }}
       </el-button>
     </template>
   </el-dialog>
@@ -67,6 +72,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { getMaterialList, type Material, type MaterialType } from '@/api/material'
 
@@ -85,6 +91,7 @@ const visible = computed({
   get: () => props.modelValue,
   set: (v) => emit('update:modelValue', v),
 })
+const { t } = useI18n()
 
 const materials = ref<Material[]>([])
 const loading = ref(false)
@@ -99,17 +106,17 @@ const hasMore = computed(() => materials.value.length < total.value)
 const typeLabel = computed(() => {
   switch (props.assetType) {
     case 'video':
-      return '视频'
+      return t('editorUi.asset.video')
     case 'image':
-      return '图片'
+      return t('editorUi.asset.image')
     case 'decor':
-      return '装饰'
+      return t('editorUi.asset.decor')
     default:
       return ''
   }
 })
 
-const dialogTitle = computed(() => `选择${typeLabel.value}素材`)
+const dialogTitle = computed(() => t('editorUi.asset.dialogTitle', { type: typeLabel.value }))
 
 async function loadMaterials() {
   loading.value = true
@@ -124,7 +131,7 @@ async function loadMaterials() {
     materials.value = res.data.list
     total.value = res.data.total
   } catch {
-    ElMessage.error('加载素材列表失败')
+    ElMessage.error(t('editorUi.asset.loadFailed'))
   } finally {
     loading.value = false
   }

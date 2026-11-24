@@ -3,11 +3,7 @@
     <span v-if="showLabel" class="widget-dropdown-filter__label" :style="labelStyle">
       {{ labelText }}
     </span>
-    <select
-      v-model="selectedValue"
-      class="widget-dropdown-filter__select"
-      :style="selectStyle"
-    >
+    <select v-model="selectedValue" class="widget-dropdown-filter__select" :style="selectStyle">
       <option value="" disabled>{{ placeholder }}</option>
       <option v-for="opt in optionList" :key="opt" :value="opt" :style="optionStyle">
         {{ opt }}
@@ -20,13 +16,19 @@
 import { computed, ref, watch } from 'vue'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 
-const placeholder = computed(() => props.comp.props?.placeholder ?? '请选择')
+const placeholder = computed(
+  () => props.comp.props?.placeholder ?? t('editorMaterial.ui.pleaseSelect'),
+)
 const optionsText = computed(() => props.comp.props?.options ?? '')
 const defaultValue = computed(() => props.comp.props?.defaultValue ?? '')
 const showLabel = computed(() => props.comp.props?.showLabel ?? true)
-const labelText = computed(() => props.comp.props?.labelText ?? '筛选')
+const labelText = computed(() => props.comp.props?.labelText ?? t('editorMaterial.ui.filterLabel'))
 const bgColor = computed(() => props.comp.props?.bgColor ?? '#1e293b')
 const textColor = computed(() => props.comp.props?.textColor ?? '#e2e8f0')
 const borderColor = computed(() => props.comp.props?.borderColor ?? '#475569')

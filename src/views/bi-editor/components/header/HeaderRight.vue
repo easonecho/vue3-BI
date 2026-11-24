@@ -1,11 +1,11 @@
 <template>
   <div class="header-right">
-    <el-tooltip content="导出布局 JSON（备份）" placement="bottom">
+    <el-tooltip :content="t('editorUi.header.exportJsonTip')" placement="bottom">
       <el-button @click="handleExportJson">
         <el-icon><Download /></el-icon>
       </el-button>
     </el-tooltip>
-    <el-tooltip content="导入布局 JSON（恢复）" placement="bottom">
+    <el-tooltip :content="t('editorUi.header.importJsonTip')" placement="bottom">
       <el-button @click="triggerImportJson">
         <el-icon><Upload /></el-icon>
       </el-button>
@@ -19,27 +19,31 @@
     />
     <el-button v-if="!store.isTemplateMode" @click="handlePreview">
       <el-icon><View /></el-icon>
-      <span>预览</span>
+      <span>{{ t('editorUi.header.preview') }}</span>
     </el-button>
     <el-button :loading="store.isExportingPng" @click="handleExportPng">
       <el-icon><Picture /></el-icon>
-      <span>导出 PNG</span>
+      <span>{{ t('editorUi.header.exportPng') }}</span>
     </el-button>
-    <el-tooltip content="导出 PDF（浏览器打印，可选另存为 PDF）" placement="bottom">
+    <el-tooltip :content="t('editorUi.header.exportPdfTip')" placement="bottom">
       <el-button :loading="store.isExportingPng" @click="handleExportPdf">
         <el-icon><Printer /></el-icon>
-        <span>导出 PDF</span>
+        <span>{{ t('editorUi.header.exportPdf') }}</span>
       </el-button>
     </el-tooltip>
-    <el-tooltip v-if="!store.isTemplateMode" content="另存为 (Ctrl+Shift+S)" placement="bottom">
+    <el-tooltip
+      v-if="!store.isTemplateMode"
+      :content="t('editorUi.header.saveAsTip')"
+      placement="bottom"
+    >
       <el-button :loading="store.isSaving" @click="handleSaveAs">
         <el-icon><Collection /></el-icon>
       </el-button>
     </el-tooltip>
-    <el-tooltip content="保存 (Ctrl+S)" placement="bottom">
+    <el-tooltip :content="t('editorUi.header.saveTip')" placement="bottom">
       <el-button type="primary" :loading="store.isSaving" @click="handleSave">
         <el-icon><FolderChecked /></el-icon>
-        <span>保存</span>
+        <span>{{ t('editorUi.header.save') }}</span>
       </el-button>
     </el-tooltip>
   </div>
@@ -48,6 +52,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   Upload,
   Download,
@@ -66,20 +71,16 @@ const emit = defineEmits<{ 'open-template-dialog': [] }>()
 const store = useBiEditorStore()
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const importJsonInputRef = ref<HTMLInputElement | null>(null)
 
-const {
-  handleSave,
-  handleSaveAs,
-  handlePreview,
-  handleExportJson,
-  onImportJsonFile,
-} = useHeaderDocumentActions({
-  store,
-  route,
-  router,
-  openTemplateDialog: () => emit('open-template-dialog'),
-})
+const { handleSave, handleSaveAs, handlePreview, handleExportJson, onImportJsonFile } =
+  useHeaderDocumentActions({
+    store,
+    route,
+    router,
+    openTemplateDialog: () => emit('open-template-dialog'),
+  })
 
 const { handleExportPng, handleExportPdf } = useHeaderExport(store)
 
@@ -88,8 +89,12 @@ function triggerImportJson() {
 }
 
 // 🔑 全局快捷键：Ctrl+S / Ctrl+Shift+S（由 useCanvas 派发 CustomEvent）
-function onSaveEvent() { void handleSave() }
-function onSaveAsEvent() { void handleSaveAs() }
+function onSaveEvent() {
+  void handleSave()
+}
+function onSaveAsEvent() {
+  void handleSaveAs()
+}
 onMounted(() => {
   window.addEventListener('bi-editor:save', onSaveEvent)
   window.addEventListener('bi-editor:save-as', onSaveAsEvent)

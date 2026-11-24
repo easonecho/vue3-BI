@@ -1,53 +1,200 @@
 import type { PropField } from '../props'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 🔑 图表动画配置 Schema（chartCommonSchema 的「动画」分组） */
 export const chartAnimationSchema: PropField[] = [
   // ============ 动画 Animation ============
-  { key: 'animationShow', label: '开启动画', type: 'switch', default: true, group: '动画' },
+  {
+    key: 'animationShow',
+    get label() {
+      return t('editorMaterial.ui.enableAnimation')
+    },
+    type: 'switch',
+    default: true,
+    get group() {
+      return t('editorMaterial.ui.animation')
+    },
+  },
   {
     key: 'animationDuration',
-    label: '动画时长 (ms)',
+    get label() {
+      return t('editorMaterial.ui.animationDurationMs')
+    },
     type: 'slider',
     min: 0,
     max: 3000,
     step: 100,
     default: 600,
-    group: '动画',
+    get group() {
+      return t('editorMaterial.ui.animation')
+    },
     visibleWhen: { field: 'animationShow', truthy: true },
   },
   {
     key: 'animationEasing',
-    label: '缓动效果',
+    get label() {
+      return t('editorMaterial.ui.easing')
+    },
     type: 'select',
     options: [
-      { label: '线性', value: 'linear' },
-      { label: '二次方-渐入', value: 'quadraticIn' },
-      { label: '二次方-渐出', value: 'quadraticOut' },
-      { label: '二次方-渐入渐出', value: 'quadraticInOut' },
-      { label: '三次方-渐入', value: 'cubicIn' },
-      { label: '三次方-渐出', value: 'cubicOut' },
-      { label: '三次方-渐入渐出', value: 'cubicInOut' },
-      { label: '正弦-渐入', value: 'sinusoidalIn' },
-      { label: '正弦-渐出', value: 'sinusoidalOut' },
-      { label: '正弦-渐入渐出', value: 'sinusoidalInOut' },
-      { label: '指数-渐入', value: 'exponentialIn' },
-      { label: '指数-渐出', value: 'exponentialOut' },
-      { label: '指数-渐入渐出', value: 'exponentialInOut' },
-      { label: '圆形-渐入', value: 'circularIn' },
-      { label: '圆形-渐出', value: 'circularOut' },
-      { label: '圆形-渐入渐出', value: 'circularInOut' },
-      { label: '弹性-渐入', value: 'elasticIn' },
-      { label: '弹性-渐出', value: 'elasticOut' },
-      { label: '弹性-渐入渐出', value: 'elasticInOut' },
-      { label: '回弹-渐入', value: 'backIn' },
-      { label: '回弹-渐出', value: 'backOut' },
-      { label: '回弹-渐入渐出', value: 'backInOut' },
-      { label: '弹跳-渐入', value: 'bounceIn' },
-      { label: '弹跳-渐出', value: 'bounceOut' },
-      { label: '弹跳-渐入渐出', value: 'bounceInOut' },
+      {
+        get label() {
+          return t('editorMaterial.ui.linear')
+        },
+        value: 'linear',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.quadraticin')
+        },
+        value: 'quadraticIn',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.quadraticout')
+        },
+        value: 'quadraticOut',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.quadraticinout')
+        },
+        value: 'quadraticInOut',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.cubicin')
+        },
+        value: 'cubicIn',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.cubicout')
+        },
+        value: 'cubicOut',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.cubicinout')
+        },
+        value: 'cubicInOut',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.sinusoidalin')
+        },
+        value: 'sinusoidalIn',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.sinusoidalout')
+        },
+        value: 'sinusoidalOut',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.sinusoidalinout')
+        },
+        value: 'sinusoidalInOut',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.exponentialin')
+        },
+        value: 'exponentialIn',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.exponentialout')
+        },
+        value: 'exponentialOut',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.exponentialinout')
+        },
+        value: 'exponentialInOut',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.circularin')
+        },
+        value: 'circularIn',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.circularout')
+        },
+        value: 'circularOut',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.circularinout')
+        },
+        value: 'circularInOut',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.elasticin')
+        },
+        value: 'elasticIn',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.elasticout')
+        },
+        value: 'elasticOut',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.elasticinout')
+        },
+        value: 'elasticInOut',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.backin')
+        },
+        value: 'backIn',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.backout')
+        },
+        value: 'backOut',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.backinout')
+        },
+        value: 'backInOut',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.bouncein')
+        },
+        value: 'bounceIn',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.bounceout')
+        },
+        value: 'bounceOut',
+      },
+      {
+        get label() {
+          return t('editorMaterial.ui.bounceinout')
+        },
+        value: 'bounceInOut',
+      },
     ],
     default: 'cubicOut',
-    group: '动画',
+    get group() {
+      return t('editorMaterial.ui.animation')
+    },
     visibleWhen: { field: 'animationShow', truthy: true },
   },
 ]

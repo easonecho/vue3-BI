@@ -15,6 +15,10 @@ import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 // 🔑 模块级注册折线图（运行一次,echarts/core 内部去重）
 use([LineChart])
 
@@ -74,7 +78,11 @@ function applyAlpha(color: string, alphaPct: number): string {
   const hexMatch = color.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)
   if (hexMatch) {
     let hex = hexMatch[1]
-    if (hex.length === 3) hex = hex.split('').map((c) => c + c).join('')
+    if (hex.length === 3)
+      hex = hex
+        .split('')
+        .map((c) => c + c)
+        .join('')
     const r = parseInt(hex.substring(0, 2), 16)
     const g = parseInt(hex.substring(2, 4), 16)
     const b = parseInt(hex.substring(4, 6), 16)
@@ -95,10 +103,11 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const categories = mappedData.value?.categories
-    ?? (Array.isArray(mergedProps.categories) ? mergedProps.categories : [])
-  const seriesData = mappedData.value?.series
-    ?? (Array.isArray(mergedProps.series) ? mergedProps.series : [])
+  const categories =
+    mappedData.value?.categories ??
+    (Array.isArray(mergedProps.categories) ? mergedProps.categories : [])
+  const seriesData =
+    mappedData.value?.series ?? (Array.isArray(mergedProps.series) ? mergedProps.series : [])
 
   const bandColor = String(mergedProps.bandColor)
   const actualColor = String(mergedProps.actualColor)
@@ -118,9 +127,8 @@ function getChartSpecificOption(): {
 
   // 🔑 取 seriesData 中的 4 条线:实际值 / 预测值 / 上界 / 下界（按 name 匹配）
   const findSeries = (name: string) =>
-    seriesData.find(
-      (s: { name: string }) => String(s.name || '').trim() === name,
-    ) as { name: string; data: number[] } | undefined
+    seriesData.find((s: { name: string }) => String(s.name || '').trim() === name) as
+      { name: string; data: number[] } | undefined
 
   const actualSeries = findSeries('实际值')
   const forecastSeries = findSeries('预测值')
@@ -236,7 +244,7 @@ function applyChartOption() {
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: true,
       xAxisData: getXAxisData(specificOption),
-      fallbackTitle: '置信区间图',
+      fallbackTitle: t('editorMaterial.meta.confidenceBandChart'),
     })
   })
 }
@@ -247,11 +255,7 @@ onMounted(async () => {
 
 watch(
   // 🔑 性能优化：签名式 watch 替代 deep watch
-  [
-    () => JSON.stringify(props.comp.props),
-    () => JSON.stringify(props.comp.dataConfig),
-    rows,
-  ],
+  [() => JSON.stringify(props.comp.props), () => JSON.stringify(props.comp.dataConfig), rows],
   () => {
     applyChartOption()
   },

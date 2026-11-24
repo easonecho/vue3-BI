@@ -13,6 +13,10 @@ import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{ comp: ComponentInstance }>()
 const baseChartRef = ref<InstanceType<typeof BaseChart> | null>(null)
 let initTimer: number | undefined
@@ -43,10 +47,7 @@ const mappedData = computed(() => {
   const indicator = rows.value.map((r) => {
     const name = nameField ? String(r[nameField] ?? '') : ''
     // 计算该行的最大值作为 max
-    const max = Math.max(
-      ...valueFields.map((f) => Number(r[f] ?? 0)),
-      0,
-    )
+    const max = Math.max(...valueFields.map((f) => Number(r[f] ?? 0)), 0)
     return { name, max: Math.ceil(max * 1.2) || 100 }
   })
 
@@ -83,8 +84,9 @@ function getChartSpecificOption(): {
   const schemaDefaults = deriveDefaultPropsCached(def)
   const mergedProps = { ...schemaDefaults, ...props?.comp?.props }
 
-  const indicator = mappedData.value?.indicator
-    ?? (Array.isArray(mergedProps.radarIndicator)
+  const indicator =
+    mappedData.value?.indicator ??
+    (Array.isArray(mergedProps.radarIndicator)
       ? mergedProps.radarIndicator
       : [
           { name: '销售', max: 6500 },
@@ -94,8 +96,9 @@ function getChartSpecificOption(): {
           { name: '研发', max: 52000 },
           { name: '市场', max: 25000 },
         ])
-  const seriesData = mappedData.value?.series
-    ?? (Array.isArray(mergedProps.radarSeries)
+  const seriesData =
+    mappedData.value?.series ??
+    (Array.isArray(mergedProps.radarSeries)
       ? mergedProps.radarSeries
       : [
           { name: '预算分配', value: [4200, 8000, 20000, 28000, 32000, 18000] },
@@ -132,7 +135,7 @@ function getChartSpecificOption(): {
     },
     series: [
       {
-        name: '雷达图',
+        name: t('editorMaterial.meta.radarChart'),
         type: 'radar',
         data: seriesData.map((s: { name: string; value: number[] }, idx: number) => {
           const style = seriesStyles.find(
@@ -169,7 +172,7 @@ function applyChartOption() {
     const { specificOption, mergedProps } = getChartSpecificOption()
     return applyUserChartConfig(baseOption, mergedProps, specificOption, {
       hasAxes: false,
-      fallbackTitle: '雷达图',
+      fallbackTitle: t('editorMaterial.meta.radarChart'),
     })
   })
 }
@@ -182,11 +185,7 @@ watch(
   // 🔑 性能优化：签名式 watch 替代 deep watch。
   //   原 deep:true 遍历 comp.props + comp.dataConfig + rows 全部元素（rows 可能 1000+ 行）。
   //   改为 JSON.stringify 签名对比小对象 + rows 浅 ref watch（仅引用变更触发）。
-  [
-    () => JSON.stringify(props.comp.props),
-    () => JSON.stringify(props.comp.dataConfig),
-    rows,
-  ],
+  [() => JSON.stringify(props.comp.props), () => JSON.stringify(props.comp.dataConfig), rows],
   () => {
     applyChartOption()
   },
@@ -198,5 +197,4 @@ onUnmounted(() => {
   if (debounceTimer !== null) cancelAnimationFrame(debounceTimer)
   pendingBuilder = null
 })
-
 </script>

@@ -2,6 +2,10 @@ import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 import { chartBaseSchema, buildSeriesLabelSchema } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 🔑 MACD 指标图默认数据：20 天,DIF 在 -1 到 1 之间波动,DEA 是 DIF 的均线,MACD = (DIF - DEA) * 2 */
 function buildMacdDefaults(): {
   categories: string[]
@@ -65,7 +69,9 @@ export const MACD_DEFAULT_DOWN_COLOR = '#2ec07e'
 export const macdChartDefinition: ComponentDefinition = {
   type: 'macd-chart',
   meta: {
-    name: 'MACD指标图',
+    get name() {
+      return t('editorMaterial.meta.macdChart')
+    },
     category: 'chart',
     icon: 'DataLine',
     defaultWidth: 480,
@@ -74,39 +80,85 @@ export const macdChartDefinition: ComponentDefinition = {
   widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
     ...chartBaseSchema,
-    { key: 'showDIF', label: '显示 DIF', type: 'switch', default: true, group: '线条' },
-    { key: 'showDEA', label: '显示 DEA', type: 'switch', default: true, group: '线条' },
-    { key: 'showMACD', label: '显示 MACD', type: 'switch', default: true, group: '线条' },
+    {
+      key: 'showDIF',
+      get label() {
+        return t('editorMaterial.ui.showDif')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.line')
+      },
+    },
+    {
+      key: 'showDEA',
+      get label() {
+        return t('editorMaterial.ui.showDea')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.line')
+      },
+    },
+    {
+      key: 'showMACD',
+      get label() {
+        return t('editorMaterial.ui.showMacd')
+      },
+      type: 'switch',
+      default: true,
+      get group() {
+        return t('editorMaterial.ui.line')
+      },
+    },
     {
       key: 'difColor',
-      label: 'DIF 颜色',
+      get label() {
+        return t('editorMaterial.ui.difColor')
+      },
       type: 'colorpicker',
       default: MACD_DEFAULT_DIF_COLOR,
-      group: '颜色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
       visibleWhen: { field: 'showDIF', truthy: true },
     },
     {
       key: 'deaColor',
-      label: 'DEA 颜色',
+      get label() {
+        return t('editorMaterial.ui.deaColor')
+      },
       type: 'colorpicker',
       default: MACD_DEFAULT_DEA_COLOR,
-      group: '颜色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
       visibleWhen: { field: 'showDEA', truthy: true },
     },
     {
       key: 'macdUpColor',
-      label: 'MACD 阳柱（正）',
+      get label() {
+        return t('editorMaterial.ui.macdPositiveBar')
+      },
       type: 'colorpicker',
       default: MACD_DEFAULT_UP_COLOR,
-      group: '颜色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
       visibleWhen: { field: 'showMACD', truthy: true },
     },
     {
       key: 'macdDownColor',
-      label: 'MACD 阴柱（负）',
+      get label() {
+        return t('editorMaterial.ui.macdNegativeBar')
+      },
       type: 'colorpicker',
       default: MACD_DEFAULT_DOWN_COLOR,
-      group: '颜色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
       visibleWhen: { field: 'showMACD', truthy: true },
     },
     ...buildSeriesLabelSchema('top'),
@@ -120,10 +172,34 @@ export const macdChartDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'categoryField', label: '日期字段', type: 'category' },
-    { key: 'difField', label: 'DIF字段', type: 'value' },
-    { key: 'deaField', label: 'DEA字段', type: 'value' },
-    { key: 'macdField', label: 'MACD字段', type: 'value' },
+    {
+      key: 'categoryField',
+      get label() {
+        return t('editorMaterial.ui.dateField')
+      },
+      type: 'category',
+    },
+    {
+      key: 'difField',
+      get label() {
+        return t('editorMaterial.ui.difField')
+      },
+      type: 'value',
+    },
+    {
+      key: 'deaField',
+      get label() {
+        return t('editorMaterial.ui.deaField')
+      },
+      type: 'value',
+    },
+    {
+      key: 'macdField',
+      get label() {
+        return t('editorMaterial.ui.macdField')
+      },
+      type: 'value',
+    },
   ],
 }
 

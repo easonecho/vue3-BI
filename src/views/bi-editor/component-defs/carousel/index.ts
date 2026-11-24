@@ -1,10 +1,16 @@
 import type { ComponentDefinition } from '../types'
 import Widget from './Widget.vue'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const carouselDefinition: ComponentDefinition = {
   type: 'carousel',
   meta: {
-    name: '轮播图',
+    get name() {
+      return t('editorMaterial.meta.carousel')
+    },
     category: 'basic',
     icon: 'PictureFilled',
     defaultWidth: 480,
@@ -14,7 +20,9 @@ export const carouselDefinition: ComponentDefinition = {
   propsSchema: [
     {
       key: 'images',
-      label: '图片素材',
+      get label() {
+        return t('editorMaterial.ui.imageAsset')
+      },
       type: 'asset',
       assetType: 'image',
       multiple: true,
@@ -24,77 +32,131 @@ export const carouselDefinition: ComponentDefinition = {
         'https://images.pexels.com/photos/2901208/pexels-photo-2901208.jpeg?auto=compress&cs=tinysrgb&w=800',
         'https://images.pexels.com/photos/902290/pexels-photo-902290.jpeg?auto=compress&cs=tinysrgb&w=800',
       ],
-      group: '源',
-      tip: '从素材库选择多张图片作为轮播图',
+      get group() {
+        return t('editorMaterial.ui.source')
+      },
+      get tip() {
+        return t('editorMaterial.ui.selectMultipleImagesFromTheAssetLibraryForTheCarousel')
+      },
     },
     {
       key: 'interval',
-      label: '切换间隔(ms)',
+      get label() {
+        return t('editorMaterial.ui.switchIntervalMs')
+      },
       type: 'slider',
       min: 1000,
       max: 10000,
       step: 500,
       default: 3000,
-      group: '轮播',
-      tip: '切换间隔(ms)',
+      get group() {
+        return t('editorMaterial.ui.carousel')
+      },
+      get tip() {
+        return t('editorMaterial.ui.switchIntervalMs')
+      },
     },
     {
       key: 'autoplay',
-      label: '自动播放',
+      get label() {
+        return t('editorMaterial.ui.autoplay')
+      },
       type: 'switch',
       default: true,
-      group: '轮播',
-      tip: '自动播放',
+      get group() {
+        return t('editorMaterial.ui.carousel')
+      },
+      get tip() {
+        return t('editorMaterial.ui.autoplay')
+      },
     },
     {
       key: 'showArrow',
-      label: '显示左右箭头',
+      get label() {
+        return t('editorMaterial.ui.showLeftRightArrows')
+      },
       type: 'switch',
       default: true,
-      group: '导航',
-      tip: '显示左右箭头',
+      get group() {
+        return t('editorMaterial.ui.navigation')
+      },
+      get tip() {
+        return t('editorMaterial.ui.showLeftRightArrows')
+      },
     },
     {
       key: 'showIndicator',
-      label: '底部指示点',
+      get label() {
+        return t('editorMaterial.ui.bottomIndicators')
+      },
       type: 'switch',
       default: true,
-      group: '导航',
-      tip: '底部指示点',
+      get group() {
+        return t('editorMaterial.ui.navigation')
+      },
+      get tip() {
+        return t('editorMaterial.ui.bottomIndicators')
+      },
     },
     {
       key: 'effect',
-      label: '切换效果',
+      get label() {
+        return t('editorMaterial.ui.transitionEffect')
+      },
       type: 'select',
       options: [
-        { label: '淡入淡出', value: 'fade' },
-        { label: '滑动', value: 'slide' },
+        {
+          get label() {
+            return t('editorMaterial.ui.fade')
+          },
+          value: 'fade',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.slide')
+          },
+          value: 'slide',
+        },
       ],
       default: 'slide',
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
     {
       key: 'arrowColor',
-      label: '箭头颜色',
+      get label() {
+        return t('editorMaterial.ui.arrowColor')
+      },
       type: 'colorpicker',
       default: '#ffffff',
-      group: '颜色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
     },
     {
       key: 'indicatorColor',
-      label: '指示点颜色',
+      get label() {
+        return t('editorMaterial.ui.indicatorDotColor')
+      },
       type: 'colorpicker',
       default: '#22d3ee',
-      group: '颜色',
+      get group() {
+        return t('editorMaterial.ui.color')
+      },
     },
     {
       key: 'borderRadius',
-      label: '圆角',
+      get label() {
+        return t('editorMaterial.ui.cornerRadius')
+      },
       type: 'slider',
       min: 0,
       max: 20,
       default: 4,
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
   ],
   defaultStyle: {},

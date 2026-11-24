@@ -2,6 +2,10 @@ import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 import { chartBaseSchema, baseSeriesStylesWithAxesColumns, buildSeriesLabelSchema } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 /** 🔑 K 线图默认真实数据：30 天的 OHLC（开/收/低/高）数据 */
 function buildCandlestickDefaults(): { categories: string[]; data: number[][] } {
   const categories: string[] = []
@@ -33,7 +37,7 @@ const candlestickDefaults = buildCandlestickDefaults()
 export const CANDLESTICK_DEFAULT_CATEGORIES = candlestickDefaults.categories
 export const CANDLESTICK_DEFAULT_SERIES = [
   {
-    name: '日K',
+    name: t('editorMaterial.ui.dailyK'),
     data: candlestickDefaults.data,
   },
 ]
@@ -45,7 +49,9 @@ export const CANDLESTICK_DEFAULT_DOWN_COLOR = '#2ec07e'
 export const candlestickChartDefinition: ComponentDefinition = {
   type: 'candlestick-chart',
   meta: {
-    name: 'K线图',
+    get name() {
+      return t('editorMaterial.meta.candlestickChart')
+    },
     category: 'chart',
     icon: 'Histogram',
     defaultWidth: 480,
@@ -56,25 +62,39 @@ export const candlestickChartDefinition: ComponentDefinition = {
     ...chartBaseSchema,
     {
       key: 'upColor',
-      label: '阳线颜色（涨）',
+      get label() {
+        return t('editorMaterial.ui.upCandleColor')
+      },
       type: 'colorpicker',
       default: CANDLESTICK_DEFAULT_UP_COLOR,
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
     {
       key: 'downColor',
-      label: '阴线颜色（跌）',
+      get label() {
+        return t('editorMaterial.ui.downCandleColor')
+      },
       type: 'colorpicker',
       default: CANDLESTICK_DEFAULT_DOWN_COLOR,
-      group: '样式',
+      get group() {
+        return t('editorMaterial.ui.style')
+      },
     },
     {
       key: 'seriesStyles',
-      label: '数据系列样式',
+      get label() {
+        return t('editorMaterial.ui.seriesStyles')
+      },
       type: 'table',
       default: [],
-      group: '数据系列',
-      tip: '根据系列名称单独配置颜色、是否显示标签（按名称匹配）',
+      get group() {
+        return t('editorMaterial.ui.dataSeries')
+      },
+      get tip() {
+        return t('editorMaterial.ui.configureColorAndLabelVisibilityPerSeriesByName3')
+      },
       columns: [...baseSeriesStylesWithAxesColumns],
     },
     // 🔑 系列标签（K 线图默认在顶部）
@@ -87,8 +107,21 @@ export const candlestickChartDefinition: ComponentDefinition = {
   defaultStyle: {},
   supportsDataBinding: true,
   dataBindingSchema: [
-    { key: 'categoryField', label: '日期字段', type: 'category' },
-    { key: 'valueFields', label: 'OHLC字段', type: 'value', multiple: true },
+    {
+      key: 'categoryField',
+      get label() {
+        return t('editorMaterial.ui.dateField')
+      },
+      type: 'category',
+    },
+    {
+      key: 'valueFields',
+      get label() {
+        return t('editorMaterial.ui.ohlcField')
+      },
+      type: 'value',
+      multiple: true,
+    },
   ],
 }
 

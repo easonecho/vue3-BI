@@ -1,19 +1,21 @@
 <template>
   <div class="code-config-actions">
     <el-button size="small" type="primary" plain :icon="CodeIcon" @click="openCodeDialog">
-      编辑配置
+      {{ t('editorUi.code.edit') }}
     </el-button>
-    <el-button size="small" :icon="DownloadIcon" @click="exportCode">导出</el-button>
+    <el-button size="small" :icon="DownloadIcon" @click="exportCode">{{
+      t('editorUi.code.export')
+    }}</el-button>
     <el-upload :auto-upload="false" :show-file-list="false" accept=".json" @change="importCode">
-      <el-button size="small" :icon="UploadIcon">导入</el-button>
+      <el-button size="small" :icon="UploadIcon">{{ t('editorUi.code.import') }}</el-button>
     </el-upload>
   </div>
-  <div class="code-config-hint">通过 JSON 代码编辑组件配置，支持导入导出</div>
+  <div class="code-config-hint">{{ t('editorUi.code.hint') }}</div>
 
   <!-- 🔑 代码编辑弹窗：单个 Monaco JSON 编辑器 -->
   <el-dialog
     v-model="codeDialogVisible"
-    title="代码编辑配置"
+    :title="t('editorUi.code.dialogTitle')"
     :width="codeFullscreen ? '100%' : '760px'"
     :fullscreen="codeFullscreen"
     :top="codeFullscreen ? '0' : '10vh'"
@@ -25,8 +27,13 @@
   >
     <template #header>
       <div class="code-dialog-header">
-        <span class="code-dialog-title">代码编辑配置</span>
-        <el-tooltip :content="codeFullscreen ? '退出全屏' : '全屏'" placement="top">
+        <span class="code-dialog-title">{{ t('editorUi.code.dialogTitle') }}</span>
+        <el-tooltip
+          :content="
+            codeFullscreen ? t('editorUi.code.exitFullscreen') : t('editorUi.code.fullscreen')
+          "
+          placement="top"
+        >
           <el-button
             class="code-fullscreen-btn"
             text
@@ -37,10 +44,10 @@
       </div>
     </template>
     <div class="code-toolbar">
-      <span class="code-hint"
-        >编辑配置 JSON（id/type 等字段已锁定，仅可编辑以下字段：{{ EDITABLE_FIELDS.join(', ') }}）</span
-      >
-      <el-button size="small" @click="formatCode">格式化</el-button>
+      <span class="code-hint">{{
+        t('editorUi.code.fieldHint', { fields: EDITABLE_FIELDS.join(', ') })
+      }}</span>
+      <el-button size="small" @click="formatCode">{{ t('editorUi.code.format') }}</el-button>
     </div>
     <div v-if="codeError" class="code-error">⚠ {{ codeError }}</div>
     <MonacoEditor
@@ -52,14 +59,17 @@
       @save="applyCode"
     />
     <template #footer>
-      <el-button @click="codeDialogVisible = false">关闭</el-button>
-      <el-button type="primary" :disabled="!!codeError" @click="applyCode">应用</el-button>
+      <el-button @click="codeDialogVisible = false">{{ t('editorUi.code.close') }}</el-button>
+      <el-button type="primary" :disabled="!!codeError" @click="applyCode">{{
+        t('editorUi.code.apply')
+      }}</el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, defineAsyncComponent } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
 import type { ComponentInstance } from '@/views/bi-editor/types'
@@ -76,6 +86,7 @@ import {
 const MonacoEditor = defineAsyncComponent(() => import('@/components/MonacoEditor.vue'))
 
 const store = useBiEditorStore()
+const { t } = useI18n()
 
 /** 可编辑字段白名单 */
 const EDITABLE_FIELDS = [
@@ -150,7 +161,7 @@ function applyCode() {
   if (codeError.value || !store.selectedId) return
   try {
     store.updateComponent(store.selectedId, pickEditable(JSON.parse(codeText.value)))
-    ElMessage.success('配置已应用')
+    ElMessage.success(t('editorUi.code.applied'))
   } catch (e) {
     codeError.value = (e as Error).message
   }
@@ -170,7 +181,7 @@ function formatCode() {
 function exportCode() {
   const comp = store.selectedComponent
   if (!comp) {
-    ElMessage.warning('请先选中一个组件')
+    ElMessage.warning(t('editorUi.code.selectFirst'))
     return
   }
   const json = JSON.stringify(collectEditable(comp), null, 2)
@@ -183,7 +194,7 @@ function exportCode() {
   a.click()
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
-  ElMessage.success('配置已导出')
+  ElMessage.success(t('editorUi.code.exported'))
 }
 
 /** 🔑 从 JSON 文件导入配置并应用到当前选中组件 */
@@ -191,15 +202,15 @@ async function importCode(file: UploadFile) {
   if (!file.raw) return
   const comp = store.selectedComponent
   if (!comp) {
-    ElMessage.warning('请先选中一个组件')
+    ElMessage.warning(t('editorUi.code.selectFirst'))
     return
   }
   try {
     const text = await file.raw.text()
     store.updateComponent(store.selectedId!, pickEditable(JSON.parse(text)))
-    ElMessage.success('配置已导入并应用')
+    ElMessage.success(t('editorUi.code.imported'))
   } catch (e) {
-    ElMessage.error(`导入失败：${(e as Error).message}`)
+    ElMessage.error(t('editorUi.code.importFailed', { message: (e as Error).message }))
   }
 }
 </script>

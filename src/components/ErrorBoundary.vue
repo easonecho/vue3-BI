@@ -1,8 +1,12 @@
 <template>
   <div v-if="hasError" class="error-boundary">
-    <el-result icon="error" title="渲染错误" sub-title="组件渲染发生异常，请重试">
+    <el-result
+      icon="error"
+      :title="t('componentLibrary.renderErrorTitle')"
+      :sub-title="t('componentLibrary.renderErrorSubtitle')"
+    >
       <template #extra>
-        <el-button type="primary" @click="handleRetry">重试</el-button>
+        <el-button type="primary" @click="handleRetry">{{ t('componentLibrary.retry') }}</el-button>
       </template>
     </el-result>
     <pre v-if="isDev && errorStack" class="error-boundary__stack">{{ errorStack }}</pre>
@@ -20,8 +24,10 @@
  * 路由变化时自动重置。
  */
 import { ref, onErrorCaptured, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
+const { t } = useI18n()
 const route = useRoute()
 
 const hasError = ref(false)

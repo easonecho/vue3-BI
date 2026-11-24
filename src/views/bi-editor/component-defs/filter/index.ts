@@ -5,10 +5,16 @@
 import { defineAsyncComponent } from 'vue'
 import type { ComponentDefinition } from '../types'
 
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
+
 export const filterDefinition: ComponentDefinition = {
   type: 'filter',
   meta: {
-    name: '筛选器',
+    get name() {
+      return t('editorMaterial.meta.filter')
+    },
     category: 'data',
     icon: 'Filter',
     defaultWidth: 240,
@@ -16,77 +22,182 @@ export const filterDefinition: ComponentDefinition = {
   },
   widget: defineAsyncComponent(() => import('./Widget.vue')),
   propsSchema: [
-    { key: 'title', label: '标题', type: 'input', default: '请选择', group: '基础' },
+    {
+      key: 'title',
+      get label() {
+        return t('editorMaterial.ui.title')
+      },
+      type: 'input',
+      default: t('editorMaterial.ui.pleaseSelect'),
+      get group() {
+        return t('editorMaterial.ui.basic')
+      },
+    },
     {
       key: 'filterKey',
-      label: '筛选字段（未绑定数据集时手写）',
+      get label() {
+        return t('editorMaterial.ui.filterFieldManualWhenNoDataset')
+      },
       type: 'input',
       default: 'region',
-      group: '基础',
+      get group() {
+        return t('editorMaterial.ui.basic')
+      },
     },
     {
       key: 'filterType',
-      label: '类型',
+      get label() {
+        return t('editorMaterial.ui.type')
+      },
       type: 'select',
       default: 'select',
-      group: '基础',
+      get group() {
+        return t('editorMaterial.ui.basic')
+      },
       options: [
-        { label: '下拉单选', value: 'select' },
-        { label: '下拉多选', value: 'multi-select' },
-        { label: '日期', value: 'date' },
-        { label: '日期范围', value: 'date-range' },
+        {
+          get label() {
+            return t('editorMaterial.ui.dropdownSingle')
+          },
+          value: 'select',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.dropdownMulti')
+          },
+          value: 'multi-select',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.date')
+          },
+          value: 'date',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.dateRange')
+          },
+          value: 'date-range',
+        },
       ],
     },
-    { key: 'placeholder', label: '占位文字', type: 'input', default: '请选择', group: '基础' },
+    {
+      key: 'placeholder',
+      get label() {
+        return t('editorMaterial.ui.placeholderText')
+      },
+      type: 'input',
+      default: t('editorMaterial.ui.pleaseSelect'),
+      get group() {
+        return t('editorMaterial.ui.basic')
+      },
+    },
     {
       key: 'defaultRelative',
-      label: '日期范围默认相对区间（每次打开按当天滚动）',
+      get label() {
+        return t('editorMaterial.ui.defaultRelativeDateRangeRollsWithTodayOnOpen')
+      },
       type: 'select',
       default: 'none',
-      group: '基础',
+      get group() {
+        return t('editorMaterial.ui.basic')
+      },
       options: [
-        { label: '不设置', value: 'none' },
-        { label: '今天', value: 'today' },
-        { label: '昨天', value: 'yesterday' },
-        { label: '最近 7 天', value: 'last7days' },
-        { label: '最近 30 天', value: 'last30days' },
-        { label: '本月', value: 'thisMonth' },
-        { label: '上月', value: 'lastMonth' },
+        {
+          get label() {
+            return t('editorMaterial.ui.notSet')
+          },
+          value: 'none',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.today')
+          },
+          value: 'today',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.yesterday')
+          },
+          value: 'yesterday',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.last7Days')
+          },
+          value: 'last7days',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.last30Days')
+          },
+          value: 'last30days',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.thisMonth')
+          },
+          value: 'thisMonth',
+        },
+        {
+          get label() {
+            return t('editorMaterial.ui.lastMonth')
+          },
+          value: 'lastMonth',
+        },
       ],
     },
     {
       key: 'options',
-      label: '静态选项（未绑定数据集时使用，每行 label:value）',
+      get label() {
+        return t('editorMaterial.ui.staticOptionsUsedWithoutADatasetOneLabelValuePerLine')
+      },
       type: 'textarea',
       default: '北京:bj\n上海:sh\n广州:gz\n深圳:sz',
-      group: '选项',
+      get group() {
+        return t('editorMaterial.ui.options')
+      },
     },
     {
       key: 'cascade',
-      label: '级联筛选（用其他筛选值缩小候选范围）',
+      get label() {
+        return t('editorMaterial.ui.cascadingFilterNarrowCandidatesWithOtherFilterValues')
+      },
       type: 'switch',
       default: false,
-      group: '选项',
+      get group() {
+        return t('editorMaterial.ui.options')
+      },
     },
     {
       key: 'cascadeKeys',
-      label: '级联父字段（逗号分隔，留空=全部其他筛选器）',
+      get label() {
+        return t('editorMaterial.ui.cascadingParentFieldsCommaSeparatedEmptyAllOtherFilters')
+      },
       type: 'input',
       default: '',
-      group: '选项',
+      get group() {
+        return t('editorMaterial.ui.options')
+      },
     },
     {
       key: 'allowSelectAll',
-      label: '多选支持全选/反选',
+      get label() {
+        return t('editorMaterial.ui.multiSelectSupportsSelectAllInvert')
+      },
       type: 'switch',
       default: true,
-      group: '选项',
+      get group() {
+        return t('editorMaterial.ui.options')
+      },
     },
   ],
   dataBindingSchema: [
     {
       key: 'field',
-      label: '筛选字段',
+      get label() {
+        return t('editorMaterial.ui.filterField')
+      },
       type: 'category',
       multiple: false,
     },

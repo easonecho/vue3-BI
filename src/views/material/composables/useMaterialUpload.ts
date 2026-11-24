@@ -1,11 +1,8 @@
 import { reactive, ref } from 'vue'
 import { ElMessage, type UploadFile, type UploadInstance } from 'element-plus'
+import i18n from '@/i18n'
 import { uploadMaterial, type MaterialType } from '@/api/material'
-import {
-  errorMessage,
-  fileBaseName,
-  inferMaterialType,
-} from '../utils/material-utils'
+import { errorMessage, fileBaseName, inferMaterialType } from '../utils/material-utils'
 
 export interface MaterialUploadDeps {
   /** 上传成功后的回调（关闭对话框、通知父级刷新列表） */
@@ -29,8 +26,20 @@ export function useMaterialUpload(deps: MaterialUploadDeps) {
   })
 
   const rules = {
-    file: [{ required: true, message: '请选择文件', trigger: 'change' }],
-    type: [{ required: true, message: '请选择类型', trigger: 'change' }],
+    file: [
+      {
+        required: true,
+        message: i18n.global.t('materialPage.chooseFileRequired'),
+        trigger: 'change',
+      },
+    ],
+    type: [
+      {
+        required: true,
+        message: i18n.global.t('materialPage.chooseTypeRequired'),
+        trigger: 'change',
+      },
+    ],
   }
 
   const acceptString = 'video/*,image/*,.svg,.json'
@@ -54,12 +63,12 @@ export function useMaterialUpload(deps: MaterialUploadDeps) {
   }
 
   function onFileExceed() {
-    ElMessage.warning('一次只能上传一个文件，请先删除已选文件')
+    ElMessage.warning(i18n.global.t('materialPage.onlyOneFile'))
   }
 
   async function submitUpload(): Promise<boolean> {
     if (!form.file) {
-      ElMessage.warning('请先选择文件')
+      ElMessage.warning(i18n.global.t('materialPage.selectFileFirst'))
       return false
     }
     uploading.value = true
@@ -69,12 +78,12 @@ export function useMaterialUpload(deps: MaterialUploadDeps) {
         type: form.type,
         description: form.description || undefined,
       })
-      ElMessage.success('上传成功')
+      ElMessage.success(i18n.global.t('materialPage.uploadSuccess'))
       uploadRef.value?.clearFiles()
       await deps.onSuccess()
       return true
     } catch (e) {
-      ElMessage.error(errorMessage(e, '上传失败，请重试'))
+      ElMessage.error(errorMessage(e, i18n.global.t('materialPage.uploadFailed')))
       return false
     } finally {
       uploading.value = false
