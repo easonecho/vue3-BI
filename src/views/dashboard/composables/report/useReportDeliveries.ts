@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import i18n from '@/i18n'
 import {
   getReportDeliveries,
   markReportDeliveryRead,
@@ -26,7 +27,7 @@ export function useReportDeliveries(deps: ReportDeliveriesDeps) {
 
   // 报表快照预览
   const previewVisible = ref(false)
-  const previewTitle = ref('报表预览')
+  const previewTitle = ref(i18n.global.t('dashboard.reportPreviewTitle'))
   const previewError = ref('')
   const snapshot = ref<ReportSnapshot | null>(null)
 
@@ -43,7 +44,9 @@ export function useReportDeliveries(deps: ReportDeliveriesDeps) {
       deliveries.value = res.data.list
       deliveryTotal.value = res.data.total
     } catch (e) {
-      ElMessage.error(e instanceof Error ? e.message : '加载投递记录失败')
+      ElMessage.error(
+        e instanceof Error ? e.message : i18n.global.t('dashboard.reportLoadDeliveriesFailed'),
+      )
     } finally {
       loadingDeliveries.value = false
     }
@@ -67,7 +70,7 @@ export function useReportDeliveries(deps: ReportDeliveriesDeps) {
 
   function resetPreview() {
     previewVisible.value = false
-    previewTitle.value = '报表预览'
+    previewTitle.value = i18n.global.t('dashboard.reportPreviewTitle')
     previewError.value = ''
     snapshot.value = null
   }

@@ -21,7 +21,9 @@ const {
   ruleDeleteMock: vi.fn<(id: number) => Promise<unknown>>(),
   ruleRunMock:
     vi.fn<
-      (id: number) => Promise<{ data: { triggered: boolean; value: number; eventId: number | null } }>
+      (
+        id: number,
+      ) => Promise<{ data: { triggered: boolean; value: number; eventId: number | null } }>
     >(),
   eventListMock:
     vi.fn<
@@ -117,7 +119,8 @@ const FormStub = defineComponent({
   name: 'DatasetAlertRuleFormDialog',
   props: ['modelValue', 'datasetId', 'editing', 'fieldOptions'],
   emits: ['update:modelValue', 'saved'],
-  template: '<div class="form-stub" :data-open="modelValue" :data-editing-id="editing && editing.id" />',
+  template:
+    '<div class="form-stub" :data-open="modelValue" :data-editing-id="editing && editing.id" />',
 })
 
 const stubs = {

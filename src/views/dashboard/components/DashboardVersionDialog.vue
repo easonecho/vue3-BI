@@ -1,27 +1,33 @@
 <template>
   <el-dialog
     v-model="visible"
-    :title="dashboard ? `版本管理 - ${dashboard.name}` : '版本管理'"
+    :title="
+      dashboard
+        ? t('dashboard.versionTitleWithName', { name: dashboard.name })
+        : t('dashboard.versionTitle')
+    "
     width="900px"
     destroy-on-close
     @closed="handleClosed"
   >
     <div class="version-toolbar">
       <el-button type="primary" size="small" @click="openSaveDialog">
-        <el-icon><Plus /></el-icon>&nbsp;保存当前版本
+        <el-icon><Plus /></el-icon>&nbsp;{{ t('dashboard.saveVersion') }}
       </el-button>
-      <el-button size="small" :loading="loading" @click="loadVersions">刷新</el-button>
+      <el-button size="small" :loading="loading" @click="loadVersions">{{
+        t('dashboard.refresh')
+      }}</el-button>
       <el-input
         v-model="keyword"
         size="small"
-        placeholder="搜索版本名称/备注"
+        :placeholder="t('dashboard.versionSearchPlaceholder')"
         clearable
         style="width: 200px"
         :prefix-icon="Search"
         @keyup.enter="handleSearch"
         @clear="handleSearch"
       />
-      <span class="version-hint">恢复历史版本前会自动备份当前配置，可随时回退</span>
+      <span class="version-hint">{{ t('dashboard.versionRestoreHint') }}</span>
     </div>
 
     <DashboardVersionTable
@@ -56,6 +62,7 @@
 
 <script setup lang="ts">
 import { computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Plus, Search } from '@element-plus/icons-vue'
 import DashboardVersionTable from './DashboardVersionTable.vue'
 import DashboardVersionSaveDialog from './DashboardVersionSaveDialog.vue'
@@ -76,6 +83,8 @@ const visible = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value),
 })
+
+const { t } = useI18n()
 
 const {
   versions,

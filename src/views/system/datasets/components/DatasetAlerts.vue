@@ -1,13 +1,17 @@
 <template>
   <el-dialog
     v-model="visible"
-    :title="dataset ? `告警订阅 - ${dataset.name}` : '告警订阅'"
+    :title="
+      dataset
+        ? t('datasetPage.alerts.titleWithName', { name: dataset.name })
+        : t('datasetPage.alerts.title')
+    "
     width="940px"
     destroy-on-close
     @closed="handleClosed"
   >
     <el-tabs v-model="activeTab">
-      <el-tab-pane label="告警规则" name="rules">
+      <el-tab-pane :label="t('datasetPage.alerts.tabRules')" name="rules">
         <DatasetAlertRulesTab
           :rules="rules"
           :loading="loadingRules"
@@ -22,7 +26,7 @@
 
       <el-tab-pane name="events">
         <template #label>
-          告警记录
+          {{ t('datasetPage.alerts.tabEvents') }}
           <el-badge v-if="unreadCount > 0" :value="unreadCount" class="event-badge" />
         </template>
         <DatasetAlertEventsTab
@@ -52,6 +56,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { AlertRule } from '@/api/alert'
 import DatasetAlertRulesTab from './DatasetAlertRulesTab.vue'
 import DatasetAlertEventsTab from './DatasetAlertEventsTab.vue'
@@ -73,6 +78,8 @@ const visible = computed({
 })
 
 const activeTab = ref<'rules' | 'events'>('rules')
+
+const { t } = useI18n()
 
 const {
   rules,

@@ -11,26 +11,34 @@
     <div class="lineage-toolbar">
       <el-input
         v-model="keyword"
-        placeholder="搜索数据源 / 数据集 / 看板"
+        :placeholder="t('datasetPage.lineage.searchPlaceholder')"
         clearable
         style="width: 260px"
         :prefix-icon="Search"
         @keyup.enter="reload"
         @clear="reload"
       />
-      <el-button :loading="loading" @click="reload">查询</el-button>
+      <el-button :loading="loading" @click="reload">{{ t('datasetPage.query') }}</el-button>
       <!-- 聚焦入口 (数据集页/看板页) -->
       <el-tag v-if="focusLabel && !scopeCleared" type="warning" effect="plain" size="small">
-        仅展示{{ focusLabel }}相关血缘
+        {{ t('datasetPage.lineage.focusOnly', { label: focusLabel }) }}
       </el-tag>
       <el-button v-if="focusLabel && !scopeCleared" link type="primary" @click="showFullGraph">
-        查看全部
+        {{ t('datasetPage.lineage.showAll') }}
       </el-button>
       <div v-if="stats" class="lineage-stats">
-        <el-tag size="small" effect="plain" type="info">数据源 {{ stats.datasourceCount }}</el-tag>
-        <el-tag size="small" effect="plain" type="primary">数据集 {{ stats.datasetCount }}</el-tag>
-        <el-tag size="small" effect="plain" type="success">看板 {{ stats.dashboardCount }}</el-tag>
-        <el-tag size="small" effect="plain">关系 {{ stats.edgeCount }}</el-tag>
+        <el-tag size="small" effect="plain" type="info">{{
+          t('datasetPage.lineage.statDatasource', { count: stats.datasourceCount })
+        }}</el-tag>
+        <el-tag size="small" effect="plain" type="primary">{{
+          t('datasetPage.lineage.statDataset', { count: stats.datasetCount })
+        }}</el-tag>
+        <el-tag size="small" effect="plain" type="success">{{
+          t('datasetPage.lineage.statDashboard', { count: stats.dashboardCount })
+        }}</el-tag>
+        <el-tag size="small" effect="plain">{{
+          t('datasetPage.lineage.statEdge', { count: stats.edgeCount })
+        }}</el-tag>
       </div>
     </div>
 
@@ -45,14 +53,15 @@
     </div>
 
     <template #footer>
-      <span class="lineage-hint">拖拽节点或滚轮缩放查看; 箭头方向: 数据源 → 数据集 → 看板</span>
-      <el-button @click="visible = false">关闭</el-button>
+      <span class="lineage-hint">{{ t('datasetPage.lineage.hint') }}</span>
+      <el-button @click="visible = false">{{ t('common.close') }}</el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Search } from '@element-plus/icons-vue'
 import { init as echartsInit, use, type ECharts } from 'echarts/core'
 import { GraphChart } from 'echarts/charts'
@@ -74,6 +83,8 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ 'update:modelValue': [boolean] }>()
 
+const { t } = useI18n()
+
 const visible = computed({
   get: () => props.modelValue,
   set: (v: boolean) => emit('update:modelValue', v),
@@ -87,19 +98,19 @@ const nodes = ref<LineageNode[]>([])
 const edges = ref<LineageEdge[]>([])
 const stats = ref<LineageStats | null>(null)
 
-const dialogTitle = computed(() => props.title || '数据血缘')
+const dialogTitle = computed(() => props.title || t('datasetPage.lineage.title'))
 
 /** 当前聚焦对象文案 (为空表示全量图) */
 const focusLabel = computed(() => {
-  if (props.datasetId) return '当前数据集'
-  if (props.dashboardId) return '当前看板'
+  if (props.datasetId) return t('datasetPage.lineage.focusDataset')
+  if (props.dashboardId) return t('datasetPage.lineage.focusDashboard')
   return ''
 })
 
 const emptyDescription = computed(() =>
   focusLabel.value && !scopeCleared.value
-    ? `${focusLabel.value}暂无血缘数据 (绑定数据集后自动生成)`
-    : '暂无血缘数据 (看板组件绑定数据集后自动生成)',
+    ? t('datasetPage.lineage.emptyFocused', { label: focusLabel.value })
+    : t('datasetPage.lineage.empty'),
 )
 
 function showFullGraph() {
@@ -116,11 +127,11 @@ const KIND_INDEX: Record<LineageNode['kind'], number> = {
   dashboard: 2,
 }
 
-const CATEGORY_STYLE = [
-  { name: '数据源', itemStyle: { color: '#909399' } },
-  { name: '数据集', itemStyle: { color: '#5470c6' } },
-  { name: '看板', itemStyle: { color: '#3ba272' } },
-]
+const CATEGORY_STYLE = computed(() => [
+  { name: t('datasetPage.lineage.kindDatasource'), itemStyle: { color: '#909399' } },
+  { name: t('datasetPage.lineage.kindDataset'), itemStyle: { color: '#5470c6' } },
+  { name: t('datasetPage.lineage.kindDashboard'), itemStyle: { color: '#3ba272' } },
+])
 
 function ensureChart(): ECharts | null {
   if (!chartEl.value) return null
@@ -152,7 +163,7 @@ function renderChart() {
         },
         legend: [
           {
-            data: ['数据源', '数据集', '看板'],
+            data: CATEGORY_STYLE.value.map((item) => item.name),
             bottom: 0,
             icon: 'circle',
             textStyle: { color: '#6b7280', fontSize: 12 },
@@ -168,7 +179,7 @@ function renderChart() {
             edgeSymbol: ['none', 'arrow'],
             edgeSymbolSize: 8,
             force: { repulsion: 360, edgeLength: [90, 170], gravity: 0.08 },
-            categories: CATEGORY_STYLE,
+            categories: CATEGORY_STYLE.value,
             label: {
               show: true,
               position: 'right',
@@ -206,11 +217,17 @@ function renderChart() {
 
 function edgeLabel(data: any): string {
   const label = typeof data?.value === 'string' ? data.value : ''
-  return label ? `组件: ${label}` : '数据流向'
+  return label
+    ? t('datasetPage.lineage.edgeComponent', { label })
+    : t('datasetPage.lineage.edgeDefault')
 }
 
 function kindLabel(kind: LineageNode['kind']): string {
-  return kind === 'datasource' ? '数据源' : kind === 'dataset' ? '数据集' : '看板'
+  return kind === 'datasource'
+    ? t('datasetPage.lineage.kindDatasource')
+    : kind === 'dataset'
+      ? t('datasetPage.lineage.kindDataset')
+      : t('datasetPage.lineage.kindDashboard')
 }
 
 async function reload() {

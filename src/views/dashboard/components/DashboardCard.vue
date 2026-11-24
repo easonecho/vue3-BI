@@ -4,7 +4,7 @@
       class="card-thumb"
       role="button"
       tabindex="0"
-      :aria-label="`预览看板 ${item.name}`"
+      :aria-label="t('dashboard.previewAria', { name: item.name })"
       @click="emit('preview', item.id)"
       @keydown.enter.self.prevent="emit('preview', item.id)"
       @keydown.space.self.prevent="emit('preview', item.id)"
@@ -19,10 +19,10 @@
       </div>
       <div class="thumb-overlay">
         <el-button size="small" type="primary" @click.stop="emit('preview', item.id)">
-          <el-icon><View /></el-icon>&nbsp;预览
+          <el-icon><View /></el-icon>&nbsp;{{ t('dashboard.preview') }}
         </el-button>
         <el-button size="small" @click.stop="emit('edit', item.id)">
-          <el-icon><Edit /></el-icon>&nbsp;编辑
+          <el-icon><Edit /></el-icon>&nbsp;{{ t('dashboard.edit') }}
         </el-button>
       </div>
     </div>
@@ -34,12 +34,15 @@
           <span class="card-title" :title="item.name">{{ item.name }}</span>
         </div>
         <div class="footer-right">
-          <el-tooltip :content="favorited ? '取消收藏' : '收藏'" placement="top">
+          <el-tooltip
+            :content="favorited ? t('dashboard.unfavorite') : t('dashboard.favorite')"
+            placement="top"
+          >
             <button
               type="button"
               class="favorite-btn"
               :class="{ active: favorited }"
-              :aria-label="favorited ? '取消收藏' : '收藏'"
+              :aria-label="favorited ? t('dashboard.unfavorite') : t('dashboard.favorite')"
               :aria-pressed="favorited"
               @click.stop="emit('toggle-favorite', item)"
             >
@@ -47,48 +50,55 @@
             </button>
           </el-tooltip>
           <el-dropdown trigger="click" @command="(cmd: string) => emit('command', cmd, item)">
-            <button type="button" class="more-btn" aria-label="更多操作" aria-haspopup="menu">
+            <button
+              type="button"
+              class="more-btn"
+              :aria-label="t('dashboard.moreActions')"
+              aria-haspopup="menu"
+            >
               <el-icon><MoreFilled /></el-icon>
             </button>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="rename">
-                  <el-icon><Edit /></el-icon>&nbsp;重命名
+                  <el-icon><Edit /></el-icon>&nbsp;{{ t('common.rename') }}
                 </el-dropdown-item>
                 <el-dropdown-item command="copy">
-                  <el-icon><CopyDocument /></el-icon>&nbsp;复制
+                  <el-icon><CopyDocument /></el-icon>&nbsp;{{ t('common.copy') }}
                 </el-dropdown-item>
                 <el-dropdown-item command="moveGroup">
-                  <el-icon><Rank /></el-icon>&nbsp;移动到分组
+                  <el-icon><Rank /></el-icon>&nbsp;{{ t('dashboard.moveGroup') }}
                 </el-dropdown-item>
                 <el-dropdown-item command="saveAsTemplate">
-                  <el-icon><Files /></el-icon>&nbsp;存为模板
+                  <el-icon><Files /></el-icon>&nbsp;{{ t('dashboard.saveAsTemplate') }}
                 </el-dropdown-item>
                 <el-dropdown-item command="share">
-                  <el-icon><Share /></el-icon>&nbsp;分享
+                  <el-icon><Share /></el-icon>&nbsp;{{ t('dashboard.share') }}
                 </el-dropdown-item>
                 <el-dropdown-item command="acl">
-                  <el-icon><Lock /></el-icon>&nbsp;权限
+                  <el-icon><Lock /></el-icon>&nbsp;{{ t('dashboard.permission') }}
                 </el-dropdown-item>
                 <el-dropdown-item command="report">
-                  <el-icon><Clock /></el-icon>&nbsp;定时报表
+                  <el-icon><Clock /></el-icon>&nbsp;{{ t('dashboard.scheduledReport') }}
                 </el-dropdown-item>
                 <el-dropdown-item command="lineage">
-                  <el-icon><Connection /></el-icon>&nbsp;数据血缘
+                  <el-icon><Connection /></el-icon>&nbsp;{{ t('dashboard.dataLineage') }}
                 </el-dropdown-item>
                 <el-dropdown-item command="versions">
-                  <el-icon><Tickets /></el-icon>&nbsp;版本管理
+                  <el-icon><Tickets /></el-icon>&nbsp;{{ t('dashboard.versionManage') }}
                 </el-dropdown-item>
                 <el-dropdown-item command="toggleStatus" divided>
                   <el-icon><Promotion /></el-icon>&nbsp;{{
-                    item.status === 1 ? '转为草稿' : '发布'
+                    item.status === 1 ? t('dashboard.toggleStatus') : t('dashboard.togglePublish')
                   }}
                 </el-dropdown-item>
                 <el-dropdown-item command="togglePublic">
-                  <el-icon><Share /></el-icon>&nbsp;{{ item.isPublic ? '设为私有' : '设为公开' }}
+                  <el-icon><Share /></el-icon>&nbsp;{{
+                    item.isPublic ? t('dashboard.setPrivate') : t('dashboard.setPublic')
+                  }}
                 </el-dropdown-item>
                 <el-dropdown-item command="delete" divided>
-                  <el-icon><Delete /></el-icon>&nbsp;删除
+                  <el-icon><Delete /></el-icon>&nbsp;{{ t('common.delete') }}
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -96,14 +106,16 @@
         </div>
       </div>
       <!-- 描述行 -->
-      <p class="card-desc" :title="item.description">{{ item.description || '暂无描述' }}</p>
+      <p class="card-desc" :title="item.description">
+        {{ item.description || t('dashboard.noDesc') }}
+      </p>
       <!-- 标签行 -->
       <div class="card-tags">
         <el-tag size="small" :type="item.isPublic ? 'success' : 'info'">{{
-          item.isPublic ? '公开' : '私有'
+          item.isPublic ? t('dashboard.public') : t('dashboard.private')
         }}</el-tag>
         <el-tag size="small" :type="item.status === 1 ? 'success' : 'warning'">{{
-          item.status === 1 ? '已发布' : '草稿'
+          item.status === 1 ? t('dashboard.published') : t('dashboard.draft')
         }}</el-tag>
         <el-tag v-if="item._count?.charts" size="small" type="primary" effect="plain">
           <el-icon><PieChart /></el-icon>&nbsp;{{ item._count.charts }}
@@ -133,6 +145,7 @@ import {
   Connection,
   Lock,
 } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import type { Dashboard } from '@/api/types'
 
 defineProps<{
@@ -142,6 +155,8 @@ defineProps<{
   /** 当前用户是否已收藏 */
   favorited: boolean
 }>()
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   preview: [id: number]

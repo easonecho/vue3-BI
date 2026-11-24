@@ -97,12 +97,14 @@ function makeRule(overrides: Partial<AlertRule> = {}): AlertRule {
   }
 }
 
-function mountDialog(props: {
-  modelValue?: boolean
-  editing?: AlertRule | null
-  fieldOptions?: string[]
-  datasetId?: number | null
-} = {}) {
+function mountDialog(
+  props: {
+    modelValue?: boolean
+    editing?: AlertRule | null
+    fieldOptions?: string[]
+    datasetId?: number | null
+  } = {},
+) {
   return mount(DatasetAlertRuleFormDialog, {
     props: {
       modelValue: props.modelValue ?? true,

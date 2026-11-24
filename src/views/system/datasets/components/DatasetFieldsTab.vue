@@ -2,72 +2,86 @@
   <div>
     <div style="margin-bottom: 12px">
       <el-button type="primary" size="small" @click="addField">
-        <el-icon><Plus /></el-icon>&nbsp;新增字段
+        <el-icon><Plus /></el-icon>&nbsp;{{ t('datasetPage.fields.add') }}
       </el-button>
       <el-button size="small" :disabled="!previewColumns.length" @click="autoDetectFields">
-        从预览结果自动检测
+        {{ t('datasetPage.fields.autoDetect') }}
       </el-button>
-      <span v-pre style="margin-left: 12px; color: #6b7280; font-size: 13px">
-        配置字段别名、类型转换、计算字段
+      <span style="margin-left: 12px; color: #6b7280; font-size: 13px">
+        {{ t('datasetPage.fields.hint') }}
       </span>
-      <div v-pre style="color: #9ca3af; font-size: 12px; margin-top: 6px; line-height: 1.7">
-        计算字段表达式支持: 算术 (+ - * / % ^)、比较 (= != > >= &lt; &lt;=)、逻辑 (and or not)、三元
-        (cond ? a : b); 函数: ABS ROUND CEIL FLOOR SQRT POW MIN MAX IF COALESCE NULLIF CONCAT LEFT
-        RIGHT LEN UPPER LOWER TRIM SUBSTRING REPLACE CONTAINS STARTSWITH ENDSWITH YEAR MONTH DAY
-        DATEDIFF NOW NUMBER STRING DATE; 字段名直接书写或用
-        {{字段名}} 引用, 例如: ROUND({{price}} * {{quantity}}, 2)
+      <div style="color: #9ca3af; font-size: 12px; margin-top: 6px; line-height: 1.7">
+        {{
+          t('datasetPage.fields.expressionHint', {
+            field: FIELD_REF,
+            price: PRICE_REF,
+            quantity: QUANTITY_REF,
+          })
+        }}
       </div>
     </div>
     <el-table :data="fields" size="small" border>
-      <el-table-column label="字段名" width="140">
+      <el-table-column :label="t('datasetPage.fields.colName')" width="140">
         <template #default="{ row }">
-          <el-input v-model="row.name" size="small" placeholder="如: price" />
+          <el-input
+            v-model="row.name"
+            size="small"
+            :placeholder="t('datasetPage.fields.namePlaceholder')"
+          />
         </template>
       </el-table-column>
-      <el-table-column label="别名" width="120">
+      <el-table-column :label="t('datasetPage.fields.colAlias')" width="120">
         <template #default="{ row }">
-          <el-input v-model="row.alias" size="small" placeholder="显示名" />
+          <el-input
+            v-model="row.alias"
+            size="small"
+            :placeholder="t('datasetPage.fields.aliasPlaceholder')"
+          />
         </template>
       </el-table-column>
-      <el-table-column label="类型" width="110">
+      <el-table-column :label="t('datasetPage.fields.colType')" width="110">
         <template #default="{ row }">
           <el-select v-model="row.type" size="small" clearable style="width: 100%">
-            <el-option label="字符串" value="string" />
-            <el-option label="数字" value="number" />
-            <el-option label="日期" value="date" />
-            <el-option label="日期时间" value="datetime" />
-            <el-option label="布尔" value="boolean" />
+            <el-option :label="t('datasetPage.fieldType.string')" value="string" />
+            <el-option :label="t('datasetPage.fieldType.number')" value="number" />
+            <el-option :label="t('datasetPage.fieldType.date')" value="date" />
+            <el-option :label="t('datasetPage.fieldType.datetime')" value="datetime" />
+            <el-option :label="t('datasetPage.fieldType.boolean')" value="boolean" />
           </el-select>
         </template>
       </el-table-column>
-      <el-table-column label="语义角色" width="96" align="center">
+      <el-table-column :label="t('datasetPage.fields.colRole')" width="96" align="center">
         <template #default="{ row }">
           <el-select
             :model-value="row.role"
             size="small"
-            placeholder="未设置"
+            :placeholder="t('datasetPage.fields.rolePlaceholder')"
             clearable
             style="width: 100%"
             @update:model-value="(v: string | undefined) => setFieldRole(row, v)"
           >
-            <el-option label="维度" value="dimension" />
-            <el-option label="度量" value="measure" />
+            <el-option :label="t('datasetPage.role.dimension')" value="dimension" />
+            <el-option :label="t('datasetPage.role.measure')" value="measure" />
           </el-select>
         </template>
       </el-table-column>
-      <el-table-column label="默认聚合" width="110" align="center">
+      <el-table-column
+        :label="t('datasetPage.fields.colDefaultAggregate')"
+        width="110"
+        align="center"
+      >
         <template #default="{ row }">
           <el-select
             :model-value="row.defaultAggregate"
             size="small"
-            placeholder="不聚合"
+            :placeholder="t('datasetPage.fields.aggregatePlaceholder')"
             clearable
             :disabled="row.role === 'dimension'"
             style="width: 100%"
             @update:model-value="(v: string | undefined) => setFieldDefaultAggregate(row, v)"
           >
             <el-option
-              v-for="opt in AGGREGATE_UI_OPTIONS"
+              v-for="opt in aggregateUiOptions"
               :key="opt.value"
               :label="opt.label"
               :value="opt.value"
@@ -75,19 +89,19 @@
           </el-select>
         </template>
       </el-table-column>
-      <el-table-column label="显示格式" width="168">
+      <el-table-column :label="t('datasetPage.fields.colFormat')" width="168">
         <template #default="{ row }">
           <div style="display: flex; gap: 4px">
             <el-select
               :model-value="row.format?.type"
               size="small"
-              placeholder="默认"
+              :placeholder="t('datasetPage.fields.formatPlaceholder')"
               clearable
               style="flex: 1"
               @update:model-value="(v: string | undefined) => setFieldFormat(row, v)"
             >
               <el-option
-                v-for="opt in FORMAT_UI_OPTIONS"
+                v-for="opt in formatUiOptions"
                 :key="opt.value"
                 :label="opt.label"
                 :value="opt.value"
@@ -110,27 +124,32 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="可见" width="70" align="center">
+      <el-table-column :label="t('datasetPage.fields.colVisible')" width="70" align="center">
         <template #default="{ row }">
           <el-switch v-model="row.visible" size="small" />
         </template>
       </el-table-column>
-      <el-table-column label="计算字段" width="90" align="center">
+      <el-table-column :label="t('datasetPage.fields.colComputed')" width="90" align="center">
         <template #default="{ row }">
           <el-switch v-model="row.computed" size="small" />
         </template>
       </el-table-column>
-      <el-table-column label="表达式" min-width="200">
+      <el-table-column :label="t('datasetPage.fields.colExpression')" min-width="200">
         <template #default="{ row }">
           <el-input
             v-model="row.expression"
             size="small"
             :disabled="!row.computed"
-            placeholder="如: {{price}} * {{quantity}}"
+            :placeholder="
+              t('datasetPage.fields.expressionPlaceholder', {
+                price: PRICE_REF,
+                quantity: QUANTITY_REF,
+              })
+            "
           />
         </template>
       </el-table-column>
-      <el-table-column label="校验" width="70" align="center">
+      <el-table-column :label="t('datasetPage.fields.colValidate')" width="70" align="center">
         <template #default="{ row }">
           <el-button
             link
@@ -138,28 +157,39 @@
             size="small"
             :disabled="!row.computed || !row.expression"
             @click="validateExpr(row)"
-            >校验</el-button
+            >{{ t('datasetPage.fields.colValidate') }}</el-button
           >
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="80" align="center">
+      <el-table-column :label="t('datasetPage.fields.colActions')" width="80" align="center">
         <template #default="{ $index }">
-          <el-button link type="danger" size="small" @click="removeField($index)">删除</el-button>
+          <el-button link type="danger" size="small" @click="removeField($index)">{{
+            t('common.delete')
+          }}</el-button>
         </template>
       </el-table-column>
     </el-table>
     <el-empty
       v-if="fields.length === 0"
-      description="暂无字段配置, 可从预览结果自动检测"
+      :description="t('datasetPage.fields.empty')"
       :image-size="60"
     />
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { type DatasetField, validateCalcExpression } from '@/api/dataset'
+
+const { t, locale } = useI18n()
+
+/** 表达式示例中的字段占位符 (避免在模板表达式中直接书写双大括号) */
+const FIELD_REF = computed(() => (locale.value === 'en-US' ? '{{field}}' : '{{字段名}}'))
+const PRICE_REF = '{{price}}'
+const QUANTITY_REF = '{{quantity}}'
 
 const props = defineProps<{
   /** 预览结果的列名 (用于自动检测) */
@@ -172,24 +202,24 @@ const props = defineProps<{
 const fields = defineModel<DatasetField[]>('fields', { default: () => [] })
 
 /** 语义层: 默认聚合选项 */
-const AGGREGATE_UI_OPTIONS = [
-  { label: '不聚合', value: 'none' },
-  { label: '求和', value: 'sum' },
-  { label: '平均值', value: 'avg' },
-  { label: '计数', value: 'count' },
-  { label: '去重计数', value: 'countDistinct' },
-  { label: '最大值', value: 'max' },
-  { label: '最小值', value: 'min' },
-]
+const aggregateUiOptions = computed(() => [
+  { label: t('datasetPage.aggregateUi.none'), value: 'none' },
+  { label: t('datasetPage.aggregateUi.sum'), value: 'sum' },
+  { label: t('datasetPage.aggregateUi.avg'), value: 'avg' },
+  { label: t('datasetPage.aggregateUi.count'), value: 'count' },
+  { label: t('datasetPage.aggregateUi.countDistinct'), value: 'countDistinct' },
+  { label: t('datasetPage.aggregateUi.max'), value: 'max' },
+  { label: t('datasetPage.aggregateUi.min'), value: 'min' },
+])
 
 /** 语义层: 显示格式选项 */
-const FORMAT_UI_OPTIONS = [
-  { label: '数值', value: 'number' },
-  { label: '货币', value: 'currency' },
-  { label: '百分比', value: 'percent' },
-  { label: '日期', value: 'date' },
-  { label: '文本', value: 'text' },
-]
+const formatUiOptions = computed(() => [
+  { label: t('datasetPage.formatUi.number'), value: 'number' },
+  { label: t('datasetPage.formatUi.currency'), value: 'currency' },
+  { label: t('datasetPage.formatUi.percent'), value: 'percent' },
+  { label: t('datasetPage.formatUi.date'), value: 'date' },
+  { label: t('datasetPage.formatUi.text'), value: 'text' },
+])
 
 function setFieldRole(row: DatasetField, role?: string) {
   row.role = (role || undefined) as DatasetField['role']
@@ -277,7 +307,7 @@ function autoDetectFields() {
     }
   }
   fields.value = next
-  ElMessage.success(`已添加 ${props.previewColumns.length} 个字段`)
+  ElMessage.success(t('datasetPage.fields.added', { count: props.previewColumns.length }))
 }
 
 // ---------- 计算字段表达式校验 ----------
@@ -295,12 +325,12 @@ async function validateExpr(row: DatasetField) {
     const res = await validateCalcExpression(row.expression, [...baseFields])
     const r = res.data
     if (r?.valid) {
-      ElMessage.success('表达式有效')
+      ElMessage.success(t('datasetPage.fields.expressionValid'))
     } else {
-      ElMessage.warning(r?.error || '表达式无效')
+      ElMessage.warning(r?.error || t('datasetPage.fields.expressionInvalid'))
     }
   } catch (e: any) {
-    ElMessage.error(e?.message || '校验请求失败')
+    ElMessage.error(e?.message || t('datasetPage.fields.validateFailed'))
   }
 }
 </script>

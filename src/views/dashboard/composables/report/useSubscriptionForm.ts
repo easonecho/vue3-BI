@@ -1,5 +1,6 @@
 import { reactive, ref } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import i18n from '@/i18n'
 import {
   createReportSubscription,
   updateReportSubscription,
@@ -36,11 +37,11 @@ export function useSubscriptionForm(deps: SubscriptionFormDeps) {
   })
 
   const cronOptions = [
-    { label: '每小时整点', value: '0 * * * *' },
-    { label: '每天 08:00', value: '0 8 * * *' },
-    { label: '每天 09:00', value: '0 9 * * *' },
-    { label: '每周一 09:00', value: '0 9 * * 1' },
-    { label: '每月 1 日 09:00', value: '0 9 1 * *' },
+    { label: i18n.global.t('dashboard.reportCronHourly'), value: '0 * * * *' },
+    { label: i18n.global.t('dashboard.reportCronDaily8'), value: '0 8 * * *' },
+    { label: i18n.global.t('dashboard.reportCronDaily9'), value: '0 9 * * *' },
+    { label: i18n.global.t('dashboard.reportCronWeeklyMon9'), value: '0 9 * * 1' },
+    { label: i18n.global.t('dashboard.reportCronMonthly1'), value: '0 9 1 * *' },
   ]
 
   /** 机器人/回调地址校验：仅对 webhook / 企业微信 / 钉钉渠道生效 */
@@ -50,19 +51,19 @@ export function useSubscriptionForm(deps: SubscriptionFormDeps) {
     if (!url) {
       const requiredMessage =
         form.channel === 'wecom'
-          ? '请填写企业微信机器人地址'
+          ? i18n.global.t('dashboard.reportWecomRequired')
           : form.channel === 'dingtalk'
-            ? '请填写钉钉机器人地址'
-            : '请填写 Webhook 回调地址'
+            ? i18n.global.t('dashboard.reportDingtalkRequired')
+            : i18n.global.t('dashboard.reportWebhookRequired')
       return requiredMessage
     }
     try {
       const parsed = new URL(url)
       if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-        return '地址仅支持 http/https'
+        return i18n.global.t('dashboard.reportUrlProtocol')
       }
     } catch {
-      return '地址格式不正确，请填写完整的 URL'
+      return i18n.global.t('dashboard.reportUrlInvalid')
     }
     return null
   }
@@ -71,15 +72,28 @@ export function useSubscriptionForm(deps: SubscriptionFormDeps) {
   function validateEmailRecipients(): string | null {
     if (form.channel !== 'email') return null
     const { valid, invalid } = parseRecipientEmails(form.recipients)
-    if (valid.length === 0) return '请填写至少一个收件邮箱'
-    if (invalid.length > 0) return `收件邮箱格式不正确: ${invalid.slice(0, 3).join(', ')}`
+    if (valid.length === 0) return i18n.global.t('dashboard.reportEmailRequired')
+    if (invalid.length > 0)
+      return i18n.global.t('dashboard.reportEmailInvalid', {
+        list: invalid.slice(0, 3).join(', '),
+      })
     return null
   }
 
   const formRules: FormRules = {
-    name: [{ required: true, message: '请输入订阅名称', trigger: 'blur' }],
-    cron: [{ required: true, message: '请选择或输入 cron 表达式', trigger: 'change' }],
-    channel: [{ required: true, message: '请选择投递渠道', trigger: 'change' }],
+    name: [
+      { required: true, message: i18n.global.t('dashboard.reportNameRequired'), trigger: 'blur' },
+    ],
+    cron: [
+      { required: true, message: i18n.global.t('dashboard.reportCronRequired'), trigger: 'change' },
+    ],
+    channel: [
+      {
+        required: true,
+        message: i18n.global.t('dashboard.reportChannelRequired'),
+        trigger: 'change',
+      },
+    ],
     webhookUrl: [
       {
         validator: (_rule, _value, callback) => {
@@ -176,15 +190,15 @@ export function useSubscriptionForm(deps: SubscriptionFormDeps) {
       }
       if (editingId.value) {
         await updateReportSubscription(editingId.value, payload)
-        ElMessage.success('订阅已更新')
+        ElMessage.success(i18n.global.t('dashboard.reportUpdated'))
       } else {
         await createReportSubscription({ ...payload, dashboardId })
-        ElMessage.success('订阅已创建')
+        ElMessage.success(i18n.global.t('dashboard.reportCreated'))
       }
       await deps.onSaved()
       return true
     } catch (e) {
-      ElMessage.error(e instanceof Error ? e.message : '保存失败')
+      ElMessage.error(e instanceof Error ? e.message : i18n.global.t('dashboard.reportSaveFailed'))
       return false
     } finally {
       saving.value = false

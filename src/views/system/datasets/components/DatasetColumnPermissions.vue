@@ -1,17 +1,26 @@
 <template>
   <el-dialog
     v-model="visible"
-    :title="dataset ? `列级权限 - ${dataset.name}` : '列级权限'"
+    :title="
+      dataset
+        ? t('datasetPage.columnPermission.titleWithName', { name: dataset.name })
+        : t('datasetPage.columnPermission.title')
+    "
     width="880px"
     destroy-on-close
     @closed="handleClosed"
   >
     <div class="rls-toolbar">
-      <el-button type="primary" size="small" :disabled="fieldOptions.length === 0" @click="openCreate">
-        <el-icon><Plus /></el-icon>&nbsp;新增规则
+      <el-button
+        type="primary"
+        size="small"
+        :disabled="fieldOptions.length === 0"
+        @click="openCreate"
+      >
+        <el-icon><Plus /></el-icon>&nbsp;{{ t('datasetPage.columnPermission.add') }}
       </el-button>
       <span class="rls-hint">
-        命中规则的用户将看不到所选字段；同一用户命中多条规则时取并集
+        {{ t('datasetPage.columnPermission.hint') }}
       </span>
     </div>
 
@@ -20,36 +29,67 @@
       type="warning"
       :closable="false"
       show-icon
-      title="该数据集暂未配置字段, 请先在「编辑数据集 → 字段配置」中维护字段后再设置列级权限"
+      :title="t('datasetPage.columnPermission.noFieldsAlert')"
       style="margin-bottom: 12px"
     />
 
     <el-table v-loading="loading" :data="rules" size="small" border>
-      <el-table-column prop="name" label="规则名称" min-width="140" show-overflow-tooltip />
-      <el-table-column label="适用对象" width="180">
+      <el-table-column
+        prop="name"
+        :label="t('datasetPage.columnPermission.colName')"
+        min-width="140"
+        show-overflow-tooltip
+      />
+      <el-table-column :label="t('datasetPage.columnPermission.colSubject')" width="180">
         <template #default="{ row }">
           <el-tag size="small" effect="plain">{{ subjectLabel(row) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="隐藏字段" min-width="240">
+      <el-table-column :label="t('datasetPage.columnPermission.colHiddenFields')" min-width="240">
         <template #default="{ row }">
-          <el-tag v-for="f in row.fields || []" :key="f" size="small" type="warning" effect="plain" class="field-tag">
+          <el-tag
+            v-for="f in row.fields || []"
+            :key="f"
+            size="small"
+            type="warning"
+            effect="plain"
+            class="field-tag"
+          >
             {{ f }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="priority" label="优先级" width="80" align="center" />
-      <el-table-column label="启用" width="80" align="center">
+      <el-table-column
+        prop="priority"
+        :label="t('datasetPage.columnPermission.colPriority')"
+        width="80"
+        align="center"
+      />
+      <el-table-column
+        :label="t('datasetPage.columnPermission.colEnabled')"
+        width="80"
+        align="center"
+      >
         <template #default="{ row }">
           <el-switch v-model="row.enabled" size="small" @change="toggleEnabled(row)" />
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="120" align="center">
+      <el-table-column
+        :label="t('datasetPage.columnPermission.colActions')"
+        width="120"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-          <el-popconfirm title="确定删除该规则吗?" confirm-button-type="danger" @confirm="handleDelete(row)">
+          <el-button link type="primary" size="small" @click="openEdit(row)">{{
+            t('common.edit')
+          }}</el-button>
+          <el-popconfirm
+            :title="t('datasetPage.columnPermission.deleteConfirm')"
+            confirm-button-type="danger"
+            @confirm="handleDelete(row)"
+          >
             <template #reference>
-              <el-button link type="danger" size="small">删除</el-button>
+              <el-button link type="danger" size="small">{{ t('common.delete') }}</el-button>
             </template>
           </el-popconfirm>
         </template>
@@ -57,32 +97,57 @@
     </el-table>
     <el-empty
       v-if="!loading && rules.length === 0"
-      description="暂无列级权限规则"
+      :description="t('datasetPage.columnPermission.empty')"
       :image-size="60"
     />
 
     <!-- 新增/编辑规则 -->
     <el-dialog
       v-model="formVisible"
-      :title="editingId ? '编辑规则' : '新增规则'"
+      :title="
+        editingId
+          ? t('datasetPage.columnPermission.editTitle')
+          : t('datasetPage.columnPermission.createTitle')
+      "
       width="660px"
       append-to-body
       destroy-on-close
     >
       <el-form ref="formRef" :model="form" :rules="formRules" label-width="96px">
-        <el-form-item label="规则名称" prop="name">
-          <el-input v-model="form.name" maxlength="100" placeholder="如: 销售角色不可见成本字段" />
+        <el-form-item :label="t('datasetPage.rowPermissionForm.nameLabel')" prop="name">
+          <el-input
+            v-model="form.name"
+            maxlength="100"
+            :placeholder="t('datasetPage.columnPermission.namePlaceholder')"
+          />
         </el-form-item>
-        <el-form-item label="适用对象" prop="subjectType">
+        <el-form-item :label="t('datasetPage.rowPermissionForm.subjectLabel')" prop="subjectType">
           <el-radio-group v-model="form.subjectType" @change="form.subjectId = undefined">
-            <el-radio-button value="all">全员</el-radio-button>
-            <el-radio-button value="role">角色</el-radio-button>
-            <el-radio-button value="user">用户</el-radio-button>
-            <el-radio-button value="dept">部门</el-radio-button>
+            <el-radio-button value="all">{{
+              t('datasetPage.rowPermissionForm.subjectAll')
+            }}</el-radio-button>
+            <el-radio-button value="role">{{
+              t('datasetPage.rowPermissionForm.subjectRole')
+            }}</el-radio-button>
+            <el-radio-button value="user">{{
+              t('datasetPage.rowPermissionForm.subjectUser')
+            }}</el-radio-button>
+            <el-radio-button value="dept">{{
+              t('datasetPage.rowPermissionForm.subjectDept')
+            }}</el-radio-button>
           </el-radio-group>
         </el-form-item>
-        <el-form-item v-if="form.subjectType !== 'all'" label="选择对象" prop="subjectId">
-          <el-select v-model="form.subjectId" filterable placeholder="请选择" style="width: 100%">
+        <el-form-item
+          v-if="form.subjectType !== 'all'"
+          :label="t('datasetPage.rowPermissionForm.subjectIdLabel')"
+          prop="subjectId"
+        >
+          <el-select
+            v-model="form.subjectId"
+            filterable
+            :placeholder="t('datasetPage.rowPermissionForm.subjectIdPlaceholder')"
+            style="width: 100%"
+          >
             <el-option
               v-for="opt in subjectOptions"
               :key="opt.value"
@@ -91,14 +156,14 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="隐藏字段" prop="fields">
+        <el-form-item :label="t('datasetPage.columnPermission.colHiddenFields')" prop="fields">
           <el-select
             v-model="form.fields"
             multiple
             filterable
             collapse-tags
             collapse-tags-tooltip
-            placeholder="选择需要隐藏的字段"
+            :placeholder="t('datasetPage.columnPermission.hiddenPlaceholder')"
             style="width: 100%"
           >
             <el-option
@@ -109,17 +174,21 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="优先级">
+        <el-form-item :label="t('datasetPage.rowPermissionForm.priorityLabel')">
           <el-input-number v-model="form.priority" :min="0" :max="9999" controls-position="right" />
-          <span class="rls-hint" style="margin-left: 10px">仅用于展示排序, 多条规则取并集</span>
+          <span class="rls-hint" style="margin-left: 10px">{{
+            t('datasetPage.columnPermission.priorityHint')
+          }}</span>
         </el-form-item>
-        <el-form-item label="启用">
+        <el-form-item :label="t('datasetPage.rowPermissionForm.enabledLabel')">
           <el-switch v-model="form.enabled" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="formVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="submitForm">确定</el-button>
+        <el-button @click="formVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="submitting" @click="submitForm">{{
+          t('datasetPage.confirm')
+        }}</el-button>
       </template>
     </el-dialog>
   </el-dialog>
@@ -127,6 +196,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import {
@@ -160,6 +230,8 @@ const rules = ref<ColumnPermission[]>([])
 const loading = ref(false)
 const options = ref<RowPermissionOptions>({ roles: [], users: [], departments: [] })
 
+const { t } = useI18n()
+
 /** 数据集字段展示名 (alias 优先), 作为隐藏字段的配置值 */
 const fieldOptions = computed<{ label: string; value: string }[]>(() => {
   const raw = props.dataset?.fields
@@ -178,7 +250,12 @@ const fieldOptions = computed<{ label: string; value: string }[]>(() => {
     .map((f) => {
       const display = f.alias || f.name
       const suffix = f.alias ? ` (${f.name})` : ''
-      const role = f.role === 'measure' ? ' · 度量' : f.role === 'dimension' ? ' · 维度' : ''
+      const role =
+        f.role === 'measure'
+          ? t('datasetPage.columnPermission.roleMeasure')
+          : f.role === 'dimension'
+            ? t('datasetPage.columnPermission.roleDimension')
+            : ''
       return { label: `${display}${suffix}${role}`, value: display }
     })
 })
@@ -194,7 +271,7 @@ async function loadRules() {
       fields: Array.isArray(r.fields) ? r.fields : [],
     }))
   } catch (e: any) {
-    ElMessage.error(e?.message || '加载列级权限失败')
+    ElMessage.error(e?.message || t('datasetPage.columnPermission.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -226,18 +303,18 @@ function handleClosed() {
 
 // ---------- 展示 ----------
 const subjectLabel = (rule: ColumnPermission): string => {
-  if (rule.subjectType === 'all') return '全员'
+  if (rule.subjectType === 'all') return t('datasetPage.subject.all')
   if (rule.subjectType === 'role') {
     const item = options.value.roles.find((r) => r.id === rule.subjectId)
-    return `角色: ${item?.name ?? `#${rule.subjectId}`}`
+    return t('datasetPage.subject.role', { name: item?.name ?? `#${rule.subjectId}` })
   }
   if (rule.subjectType === 'user') {
     const item = options.value.users.find((u) => u.id === rule.subjectId)
     const name = item ? item.nickname || item.username : `#${rule.subjectId}`
-    return `用户: ${name}`
+    return t('datasetPage.subject.user', { name })
   }
   const item = options.value.departments.find((d) => d.id === rule.subjectId)
-  return `部门: ${item?.name ?? `#${rule.subjectId}`}`
+  return t('datasetPage.subject.dept', { name: item?.name ?? `#${rule.subjectId}` })
 }
 
 // ---------- 表单 ----------
@@ -278,13 +355,15 @@ const subjectOptions = computed(() => {
   return []
 })
 
-const formRules: FormRules = {
-  name: [{ required: true, message: '请输入规则名称', trigger: 'blur' }],
+const formRules = computed<FormRules>(() => ({
+  name: [
+    { required: true, message: t('datasetPage.rowPermissionForm.nameRequired'), trigger: 'blur' },
+  ],
   subjectId: [
     {
       validator: (_rule, value, callback) => {
         if (form.subjectType !== 'all' && (value === undefined || value === null)) {
-          callback(new Error('请选择规则适用的对象'))
+          callback(new Error(t('datasetPage.rowPermissionForm.subjectRequired')))
           return
         }
         callback()
@@ -292,8 +371,14 @@ const formRules: FormRules = {
       trigger: 'change',
     },
   ],
-  fields: [{ required: true, message: '请至少选择一个隐藏字段', trigger: 'change' }],
-}
+  fields: [
+    {
+      required: true,
+      message: t('datasetPage.columnPermission.hiddenFieldsRequired'),
+      trigger: 'change',
+    },
+  ],
+}))
 
 function resetForm() {
   form.name = ''
@@ -327,7 +412,7 @@ async function submitForm() {
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
   if (form.fields.length === 0) {
-    ElMessage.warning('请至少选择一个隐藏字段')
+    ElMessage.warning(t('datasetPage.columnPermission.hiddenFieldsRequired'))
     return
   }
 
@@ -344,16 +429,16 @@ async function submitForm() {
   try {
     if (editingId.value) {
       await updateColumnPermission(props.dataset.id, editingId.value, payload)
-      ElMessage.success('规则已更新')
+      ElMessage.success(t('datasetPage.columnPermission.updated'))
     } else {
       await createColumnPermission(props.dataset.id, payload)
-      ElMessage.success('规则已创建')
+      ElMessage.success(t('datasetPage.columnPermission.created'))
     }
     formVisible.value = false
     await loadRules()
     emit('saved')
   } catch (e: any) {
-    ElMessage.error(e?.message || '保存失败')
+    ElMessage.error(e?.message || t('datasetPage.columnPermission.saveFailed'))
   } finally {
     submitting.value = false
   }
@@ -370,10 +455,14 @@ async function toggleEnabled(rule: ColumnPermission) {
       priority: rule.priority,
       enabled: rule.enabled,
     })
-    ElMessage.success(rule.enabled ? '规则已启用' : '规则已停用')
+    ElMessage.success(
+      rule.enabled
+        ? t('datasetPage.columnPermission.enabled')
+        : t('datasetPage.columnPermission.disabled'),
+    )
   } catch (e: any) {
     rule.enabled = !rule.enabled
-    ElMessage.error(e?.message || '操作失败')
+    ElMessage.error(e?.message || t('datasetPage.columnPermission.operationFailed'))
   }
 }
 
@@ -381,11 +470,11 @@ async function handleDelete(rule: ColumnPermission) {
   if (!props.dataset) return
   try {
     await deleteColumnPermission(props.dataset.id, rule.id)
-    ElMessage.success('规则已删除')
+    ElMessage.success(t('datasetPage.columnPermission.deleted'))
     await loadRules()
     emit('saved')
   } catch (e: any) {
-    ElMessage.error(e?.message || '删除失败')
+    ElMessage.error(e?.message || t('datasetPage.columnPermission.deleteFailed'))
   }
 }
 </script>

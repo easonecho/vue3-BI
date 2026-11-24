@@ -1,25 +1,29 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="上传 Excel/CSV 创建数据集"
+    :title="t('datasetPage.upload.title')"
     width="520px"
     destroy-on-close
     @open="onOpen"
   >
     <el-form label-width="96px">
-      <el-form-item label="数据集名称">
-        <el-input v-model="uploadForm.name" maxlength="100" placeholder="留空则使用文件名" />
+      <el-form-item :label="t('datasetPage.upload.nameLabel')">
+        <el-input
+          v-model="uploadForm.name"
+          maxlength="100"
+          :placeholder="t('datasetPage.upload.namePlaceholder')"
+        />
       </el-form-item>
-      <el-form-item label="描述">
+      <el-form-item :label="t('datasetPage.upload.descriptionLabel')">
         <el-input
           v-model="uploadForm.description"
           type="textarea"
           :rows="2"
           maxlength="500"
-          placeholder="可选"
+          :placeholder="t('datasetPage.upload.descriptionPlaceholder')"
         />
       </el-form-item>
-      <el-form-item label="数据文件" required>
+      <el-form-item :label="t('datasetPage.upload.fileLabel')" required>
         <el-upload
           drag
           :auto-upload="false"
@@ -31,24 +35,24 @@
           style="width: 100%"
         >
           <el-icon style="font-size: 32px; color: #9ca3af"><Upload /></el-icon>
-          <div style="color: #6b7280; font-size: 13px">拖拽文件到此处, 或点击选择</div>
+          <div style="color: #6b7280; font-size: 13px">{{ t('datasetPage.upload.dropHint') }}</div>
           <template #tip>
             <div style="color: #9ca3af; font-size: 12px">
-              支持 .xlsx / .csv (首行为表头), 最大 10MB、5 万行、200 列
+              {{ t('datasetPage.upload.tip') }}
             </div>
           </template>
         </el-upload>
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
+      <el-button @click="visible = false">{{ t('common.cancel') }}</el-button>
       <el-button
         type="primary"
         :loading="uploading"
         :disabled="!uploadForm.file"
         @click="handleUploadConfirm"
       >
-        上传并创建
+        {{ t('datasetPage.upload.submit') }}
       </el-button>
     </template>
   </el-dialog>
@@ -56,6 +60,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
@@ -77,6 +82,9 @@ const visible = computed({
 })
 
 const uploading = ref(false)
+
+const { t } = useI18n()
+
 const uploadForm = reactive<{ name: string; description: string; file: File | null }>({
   name: '',
   description: '',
@@ -100,11 +108,11 @@ function acceptUpload(file: UploadFile): boolean {
   if (!raw) return false
   const ext = raw.name.slice(raw.name.lastIndexOf('.')).toLowerCase()
   if (ext !== '.xlsx' && ext !== '.csv') {
-    ElMessage.error(`不支持的文件格式 "${ext}", 仅支持 .xlsx / .csv`)
+    ElMessage.error(t('datasetPage.upload.unsupportedFile', { ext }))
     return false
   }
   if (raw.size > 10 * 1024 * 1024) {
-    ElMessage.error('文件超过 10MB 限制')
+    ElMessage.error(t('datasetPage.upload.fileTooLarge'))
     return false
   }
   return true
@@ -118,11 +126,16 @@ async function handleUploadConfirm() {
       name: uploadForm.name || undefined,
       description: uploadForm.description || undefined,
     })
-    ElMessage.success(`上传成功: ${result.rowCount} 行 / ${result.columns?.length ?? 0} 列`)
+    ElMessage.success(
+      t('datasetPage.upload.success', {
+        rows: result.rowCount,
+        cols: result.columns?.length ?? 0,
+      }),
+    )
     visible.value = false
     emit('created')
   } catch (e: any) {
-    ElMessage.error(e?.message || '上传失败')
+    ElMessage.error(e?.message || t('datasetPage.upload.failed'))
   } finally {
     uploading.value = false
   }

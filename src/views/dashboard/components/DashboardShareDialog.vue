@@ -1,79 +1,83 @@
 <template>
-  <el-dialog v-model="visible" title="分享看板" width="480px" @open="onOpen">
+  <el-dialog v-model="visible" :title="t('dashboard.shareTitle')" width="480px" @open="onOpen">
     <div v-loading="shareLoading">
       <template v-if="shareConfig?.isShared">
         <el-alert type="success" :closable="false" style="margin-bottom: 16px">
-          分享链接已生成,任何人可通过链接访问
+          {{ t('dashboard.shareCreated') }}
         </el-alert>
         <el-input :model-value="shareFullUrl" readonly style="margin-bottom: 12px">
           <template #append>
             <el-button @click="copyShareUrl">
-              <el-icon><CopyDocument /></el-icon>&nbsp;复制
+              <el-icon><CopyDocument /></el-icon>&nbsp;{{ t('dashboard.copyUrl') }}
             </el-button>
           </template>
         </el-input>
         <div class="share-meta">
           <el-tag v-if="shareConfig.hasPassword" size="small" type="warning">
-            <el-icon><Lock /></el-icon>&nbsp;密码保护
+            <el-icon><Lock /></el-icon>&nbsp;{{ t('dashboard.passwordProtection') }}
           </el-tag>
-          <el-tag v-else size="small" type="info">无密码</el-tag>
+          <el-tag v-else size="small" type="info">{{ t('dashboard.noPassword') }}</el-tag>
           <el-tag v-if="shareConfig.expiresAt" size="small" type="warning">
-            <el-icon><Clock /></el-icon>&nbsp;{{ formatTime(shareConfig.expiresAt) }} 过期
+            <el-icon><Clock /></el-icon>&nbsp;{{
+              t('dashboard.expiresAt', { time: formatTime(shareConfig.expiresAt) })
+            }}
           </el-tag>
-          <el-tag v-else size="small" type="success">永久有效</el-tag>
+          <el-tag v-else size="small" type="success">{{ t('dashboard.permanent') }}</el-tag>
         </div>
         <!-- 🔑 P1-C: iframe 嵌入代码 (第三方系统无登录集成) -->
         <div class="embed-block">
-          <div class="embed-title">iframe 嵌入代码</div>
+          <div class="embed-title">{{ t('dashboard.iframeEmbedTitle') }}</div>
           <el-input :model-value="embedCode" type="textarea" :rows="2" readonly />
           <el-button size="small" style="margin-top: 8px" @click="copyEmbedCode">
-            <el-icon><CopyDocument /></el-icon>&nbsp;复制嵌入代码
+            <el-icon><CopyDocument /></el-icon>&nbsp;{{ t('dashboard.copyEmbedCode') }}
           </el-button>
         </div>
       </template>
       <template v-else-if="shareConfig && !shareConfig.isShared">
         <el-alert type="info" :closable="false" style="margin-bottom: 16px">
-          创建分享链接后,任何人可通过链接访问该看板 (无需登录)
+          {{ t('dashboard.shareCreateHint') }}
         </el-alert>
         <el-form label-width="90px">
-          <el-form-item label="密码保护">
+          <el-form-item :label="t('dashboard.passwordProtection')">
             <el-switch v-model="shareForm.enablePassword" />
-            <span class="form-hint">开启后访问者需输入密码</span>
+            <span class="form-hint">{{ t('dashboard.passwordHint') }}</span>
           </el-form-item>
-          <el-form-item v-if="shareForm.enablePassword" label="访问密码">
+          <el-form-item v-if="shareForm.enablePassword" :label="t('dashboard.accessPassword')">
             <el-input
               v-model="shareForm.password"
               type="password"
-              placeholder="请输入访问密码"
+              :placeholder="t('dashboard.passwordPlaceholder')"
               show-password
               maxlength="50"
             />
           </el-form-item>
-          <el-form-item label="有效期">
+          <el-form-item :label="t('dashboard.validity')">
             <el-select v-model="shareForm.expiresInHours" style="width: 100%">
-              <el-option label="永久有效" :value="0" />
-              <el-option label="1 天" :value="24" />
-              <el-option label="7 天" :value="168" />
-              <el-option label="30 天" :value="720" />
-              <el-option label="365 天" :value="8760" />
+              <el-option :label="t('dashboard.permanent')" :value="0" />
+              <el-option :label="t('dashboard.days1')" :value="24" />
+              <el-option :label="t('dashboard.days7')" :value="168" />
+              <el-option :label="t('dashboard.days30')" :value="720" />
+              <el-option :label="t('dashboard.days365')" :value="8760" />
             </el-select>
           </el-form-item>
         </el-form>
       </template>
     </div>
     <template #footer>
-      <el-button @click="visible = false">关闭</el-button>
+      <el-button @click="visible = false">{{ t('common.close') }}</el-button>
       <template v-if="shareConfig?.isShared">
-        <el-popconfirm title="确定取消分享吗? 链接将立即失效" @confirm="handleRevokeShare">
+        <el-popconfirm :title="t('dashboard.revokeConfirm')" @confirm="handleRevokeShare">
           <template #reference>
-            <el-button type="danger" :loading="revoking">取消分享</el-button>
+            <el-button type="danger" :loading="revoking">{{
+              t('dashboard.revokeShare')
+            }}</el-button>
           </template>
         </el-popconfirm>
       </template>
       <template v-else-if="shareConfig && !shareConfig.isShared">
-        <el-button type="primary" :loading="creatingShare" @click="handleCreateShare"
-          >创建分享链接</el-button
-        >
+        <el-button type="primary" :loading="creatingShare" @click="handleCreateShare">{{
+          t('dashboard.createShare')
+        }}</el-button>
       </template>
     </template>
   </el-dialog>
@@ -81,6 +85,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { CopyDocument, Lock, Clock } from '@element-plus/icons-vue'
 import { getShareConfig, createShare, revokeShare } from '@/api/share'
@@ -110,6 +115,8 @@ const shareForm = reactive({
   password: '',
   expiresInHours: 0,
 })
+
+const { t } = useI18n()
 
 const shareFullUrl = computed(() => {
   if (!shareConfig.value?.shareUrl) return ''
@@ -157,7 +164,7 @@ async function loadShareConfig() {
 async function handleCreateShare() {
   if (!props.dashboard) return
   if (shareForm.enablePassword && !shareForm.password.trim()) {
-    ElMessage.warning('请输入访问密码')
+    ElMessage.warning(t('dashboard.passwordRequired'))
     return
   }
   creatingShare.value = true
@@ -167,7 +174,7 @@ async function handleCreateShare() {
       expiresInHours: shareForm.expiresInHours || undefined,
     })
     shareConfig.value = res.data
-    ElMessage.success('分享链接已生成')
+    ElMessage.success(t('dashboard.shareSuccess'))
   } catch {
     // 错误提示由 request 拦截器统一处理
   } finally {
@@ -181,7 +188,7 @@ async function handleRevokeShare() {
   try {
     await revokeShare(props.dashboard.id)
     shareConfig.value = null
-    ElMessage.success('已取消分享')
+    ElMessage.success(t('dashboard.revokeSuccess'))
     visible.value = false
   } catch {
     // 错误提示由 request 拦截器统一处理
@@ -207,11 +214,11 @@ async function copyToClipboard(text: string, successMsg: string) {
 }
 
 async function copyShareUrl() {
-  await copyToClipboard(shareFullUrl.value, '链接已复制到剪贴板')
+  await copyToClipboard(shareFullUrl.value, t('dashboard.urlCopied'))
 }
 
 async function copyEmbedCode() {
-  await copyToClipboard(embedCode.value, '嵌入代码已复制')
+  await copyToClipboard(embedCode.value, t('dashboard.embedCodeCopied'))
 }
 </script>
 

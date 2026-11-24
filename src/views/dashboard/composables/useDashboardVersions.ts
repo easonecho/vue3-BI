@@ -6,6 +6,7 @@
  */
 import { ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import i18n from '@/i18n'
 import {
   createDashboardVersion,
   deleteDashboardVersion,
@@ -68,7 +69,7 @@ export function useDashboardVersions(deps: DashboardVersionsDeps) {
       versions.value = res.data.list
       total.value = res.data.total
     } catch (e) {
-      ElMessage.error(e instanceof Error ? e.message : '加载版本列表失败')
+      ElMessage.error(e instanceof Error ? e.message : i18n.global.t('dashboard.versionLoadFailed'))
     } finally {
       loading.value = false
     }
@@ -90,12 +91,12 @@ export function useDashboardVersions(deps: DashboardVersionsDeps) {
     saving.value = true
     try {
       await createDashboardVersion(dashboardId, remark.value.trim() || undefined)
-      ElMessage.success('版本已保存')
+      ElMessage.success(i18n.global.t('dashboard.versionSaved'))
       saveVisible.value = false
       page.value = 1
       await loadVersions()
     } catch (e) {
-      ElMessage.error(e instanceof Error ? e.message : '保存版本失败')
+      ElMessage.error(e instanceof Error ? e.message : i18n.global.t('dashboard.versionSaveFailed'))
     } finally {
       saving.value = false
     }
@@ -111,7 +112,9 @@ export function useDashboardVersions(deps: DashboardVersionsDeps) {
       const res = await getDashboardVersion(dashboardId, row.id)
       detail.value = res.data
     } catch (e) {
-      ElMessage.error(e instanceof Error ? e.message : '加载版本详情失败')
+      ElMessage.error(
+        e instanceof Error ? e.message : i18n.global.t('dashboard.versionDetailLoadFailed'),
+      )
     } finally {
       detailLoading.value = false
     }
@@ -122,22 +125,33 @@ export function useDashboardVersions(deps: DashboardVersionsDeps) {
     if (dashboardId === null || dashboardId === undefined) return
     try {
       await ElMessageBox.confirm(
-        `确定恢复到 v${row.versionNo} 吗? 当前配置会先自动备份为新版本，恢复后需刷新编辑器查看。`,
-        '恢复版本',
-        { type: 'warning', confirmButtonText: '恢复', cancelButtonText: '取消' },
+        i18n.global.t('dashboard.versionRestoreConfirm', { versionNo: row.versionNo }),
+        i18n.global.t('dashboard.versionRestoreTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: i18n.global.t('dashboard.versionRestoreBtn'),
+          cancelButtonText: i18n.global.t('common.cancel'),
+        },
       )
     } catch {
       return // 用户取消
     }
     try {
       const res = await restoreDashboardVersion(dashboardId, row.id)
-      ElMessage.success(`已恢复 v${row.versionNo}，当前配置已备份为 v${res.data.backupVersionNo}`)
+      ElMessage.success(
+        i18n.global.t('dashboard.versionRestored', {
+          versionNo: row.versionNo,
+          backupVersionNo: res.data.backupVersionNo,
+        }),
+      )
       detailVisible.value = false
       deps.onRestored()
       page.value = 1
       await loadVersions()
     } catch (e) {
-      ElMessage.error(e instanceof Error ? e.message : '恢复版本失败')
+      ElMessage.error(
+        e instanceof Error ? e.message : i18n.global.t('dashboard.versionRestoreFailed'),
+      )
     }
   }
 
@@ -146,11 +160,13 @@ export function useDashboardVersions(deps: DashboardVersionsDeps) {
     if (dashboardId === null || dashboardId === undefined) return
     try {
       await deleteDashboardVersion(dashboardId, row.id)
-      ElMessage.success('版本已删除')
+      ElMessage.success(i18n.global.t('dashboard.versionDeleted'))
       if (versions.value.length === 1 && page.value > 1) page.value -= 1
       await loadVersions()
     } catch (e) {
-      ElMessage.error(e instanceof Error ? e.message : '删除版本失败')
+      ElMessage.error(
+        e instanceof Error ? e.message : i18n.global.t('dashboard.versionDeleteFailed'),
+      )
     }
   }
 

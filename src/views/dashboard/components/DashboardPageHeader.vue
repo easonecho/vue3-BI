@@ -1,32 +1,36 @@
 <template>
   <div class="page-header">
     <div class="header-title-area">
-      <h1 class="page-title">看板管理</h1>
-      <p class="page-subtitle">共 {{ total }} 个看板</p>
+      <h1 class="page-title">{{ t('dashboard.title') }}</h1>
+      <p class="page-subtitle">{{ t('dashboard.subtitle', { count: total }) }}</p>
     </div>
     <div class="header-stats">
       <div class="stat-chip">
         <span class="stat-value">{{ total }}</span>
-        <span class="stat-label">总计</span>
+        <span class="stat-label">{{ t('dashboard.total') }}</span>
       </div>
       <div class="stat-chip">
         <span class="stat-value">{{ publishedCount }}</span>
-        <span class="stat-label">已发布</span>
+        <span class="stat-label">{{ t('dashboard.published') }}</span>
       </div>
       <div class="stat-chip">
         <span class="stat-value">{{ draftCount }}</span>
-        <span class="stat-label">草稿</span>
+        <span class="stat-label">{{ t('dashboard.draft') }}</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 defineProps<{
   total: number
   publishedCount: number
   draftCount: number
 }>()
+
+const { t } = useI18n()
 </script>
 
 <style scoped lang="less">

@@ -1,13 +1,17 @@
 <template>
   <el-dialog
     v-model="visible"
-    :title="dashboard ? `定时报表 - ${dashboard.name}` : '定时报表'"
+    :title="
+      dashboard
+        ? t('dashboard.reportTitleWithName', { name: dashboard.name })
+        : t('dashboard.scheduledReport')
+    "
     width="1040px"
     destroy-on-close
     @closed="handleClosed"
   >
     <el-tabs v-model="activeTab">
-      <el-tab-pane label="订阅配置" name="subs">
+      <el-tab-pane :label="t('dashboard.reportTabSubscriptions')" name="subs">
         <ReportSubscriptionsTab
           :subscriptions="subscriptions"
           :loading="loadingSubs"
@@ -22,7 +26,7 @@
 
       <el-tab-pane name="deliveries">
         <template #label>
-          投递记录
+          {{ t('dashboard.reportTabDeliveries') }}
           <el-badge v-if="unreadCount > 0" :value="unreadCount" class="delivery-badge" />
         </template>
         <ReportDeliveriesTab
@@ -57,6 +61,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { ReportSubscription } from '@/api/report'
 import ReportSubscriptionsTab from './ReportSubscriptionsTab.vue'
 import ReportDeliveriesTab from './ReportDeliveriesTab.vue'
@@ -80,6 +85,8 @@ const visible = computed({
 })
 
 const activeTab = ref<'subs' | 'deliveries'>('subs')
+
+const { t } = useI18n()
 
 const getDashboardId = () => props.dashboard?.id ?? null
 

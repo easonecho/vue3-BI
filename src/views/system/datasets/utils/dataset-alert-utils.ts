@@ -1,38 +1,119 @@
 /**
  * 数据集告警 - 展示常量与纯函数
  */
+import i18n from '@/i18n'
 import type { AlertAggregate, AlertOperator, AlertRule } from '@/api/alert'
 
+/** 选项文案随语言切换动态取词 */
+function translate(key: string): string {
+  return i18n.global.t(key)
+}
+
 export const AGGREGATE_OPTIONS: { label: string; value: AlertAggregate }[] = [
-  { label: '行数 (count)', value: 'count' },
-  { label: '求和 (sum)', value: 'sum' },
-  { label: '平均值 (avg)', value: 'avg' },
-  { label: '最大值 (max)', value: 'max' },
-  { label: '最小值 (min)', value: 'min' },
+  {
+    get label() {
+      return translate('datasetPage.alerts.aggregate.count')
+    },
+    value: 'count',
+  },
+  {
+    get label() {
+      return translate('datasetPage.alerts.aggregate.sum')
+    },
+    value: 'sum',
+  },
+  {
+    get label() {
+      return translate('datasetPage.alerts.aggregate.avg')
+    },
+    value: 'avg',
+  },
+  {
+    get label() {
+      return translate('datasetPage.alerts.aggregate.max')
+    },
+    value: 'max',
+  },
+  {
+    get label() {
+      return translate('datasetPage.alerts.aggregate.min')
+    },
+    value: 'min',
+  },
 ]
 
 export const OPERATOR_OPTIONS: { label: string; value: AlertOperator }[] = [
-  { label: '大于 >', value: 'gt' },
-  { label: '大于等于 >=', value: 'gte' },
-  { label: '小于 <', value: 'lt' },
-  { label: '小于等于 <=', value: 'lte' },
-  { label: '等于 =', value: 'eq' },
-  { label: '不等于 !=', value: 'ne' },
+  {
+    get label() {
+      return translate('datasetPage.alerts.operator.gt')
+    },
+    value: 'gt',
+  },
+  {
+    get label() {
+      return translate('datasetPage.alerts.operator.gte')
+    },
+    value: 'gte',
+  },
+  {
+    get label() {
+      return translate('datasetPage.alerts.operator.lt')
+    },
+    value: 'lt',
+  },
+  {
+    get label() {
+      return translate('datasetPage.alerts.operator.lte')
+    },
+    value: 'lte',
+  },
+  {
+    get label() {
+      return translate('datasetPage.alerts.operator.eq')
+    },
+    value: 'eq',
+  },
+  {
+    get label() {
+      return translate('datasetPage.alerts.operator.ne')
+    },
+    value: 'ne',
+  },
 ]
 
 export const CRON_OPTIONS = [
-  { label: '每 5 分钟', value: '*/5 * * * *' },
-  { label: '每小时整点', value: '0 * * * *' },
-  { label: '每天 09:00', value: '0 9 * * *' },
-  { label: '每周一 09:00', value: '0 9 * * 1' },
+  {
+    get label() {
+      return translate('datasetPage.alerts.cron.every5Min')
+    },
+    value: '*/5 * * * *',
+  },
+  {
+    get label() {
+      return translate('datasetPage.alerts.cron.hourly')
+    },
+    value: '0 * * * *',
+  },
+  {
+    get label() {
+      return translate('datasetPage.alerts.cron.daily9')
+    },
+    value: '0 9 * * *',
+  },
+  {
+    get label() {
+      return translate('datasetPage.alerts.cron.weeklyMon9')
+    },
+    value: '0 9 * * 1',
+  },
 ]
 
-const AGGREGATE_LABEL: Record<string, string> = {
-  count: '行数',
-  sum: '求和',
-  avg: '平均值',
-  max: '最大值',
-  min: '最小值',
+const AGGREGATE_KEY: Record<string, string> = {
+  count: 'datasetPage.alerts.aggregateLabel.count',
+  sum: 'datasetPage.alerts.aggregateLabel.sum',
+  avg: 'datasetPage.alerts.aggregateLabel.avg',
+  max: 'datasetPage.alerts.aggregateLabel.max',
+  min: 'datasetPage.alerts.aggregateLabel.min',
 }
 
 const OPERATOR_LABEL: Record<string, string> = {
@@ -49,9 +130,10 @@ export function conditionLabel(
   row: Pick<AlertRule, 'field' | 'aggregate' | 'operator' | 'threshold'>,
 ): string {
   const field = row.field ? `(${row.field})` : ''
-  return `${AGGREGATE_LABEL[row.aggregate] ?? row.aggregate}${field} ${
-    OPERATOR_LABEL[row.operator] ?? row.operator
-  } ${row.threshold}`
+  const aggregate = AGGREGATE_KEY[row.aggregate]
+    ? translate(AGGREGATE_KEY[row.aggregate])
+    : row.aggregate
+  return `${aggregate}${field} ${OPERATOR_LABEL[row.operator] ?? row.operator} ${row.threshold}`
 }
 
 /** 告警时间格式化（空值回退 '-'） */

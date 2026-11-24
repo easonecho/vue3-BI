@@ -1,3 +1,4 @@
+import i18n from '@/i18n'
 import type {
   RowCondition,
   RowPermission,
@@ -7,20 +8,85 @@ import type {
   RowSubjectType,
 } from '@/api/dataset'
 
+/** 选项文案随语言切换动态取词 */
+function translate(key: string, named?: Record<string, unknown>): string {
+  return named ? i18n.global.t(key, named) : i18n.global.t(key)
+}
+
 /** 操作符下拉选项 */
 export const OPERATOR_OPTIONS: { label: string; value: RowPermissionOperator }[] = [
-  { label: '等于', value: 'eq' },
-  { label: '不等于', value: 'ne' },
-  { label: '大于', value: 'gt' },
-  { label: '大于等于', value: 'gte' },
-  { label: '小于', value: 'lt' },
-  { label: '小于等于', value: 'lte' },
-  { label: '包含于 (in)', value: 'in' },
-  { label: '不包含于 (notIn)', value: 'notIn' },
-  { label: '模糊匹配', value: 'like' },
-  { label: '为空', value: 'isNull' },
-  { label: '不为空', value: 'notNull' },
-  { label: '区间 (between)', value: 'between' },
+  {
+    get label() {
+      return translate('datasetPage.rowOperator.eq')
+    },
+    value: 'eq',
+  },
+  {
+    get label() {
+      return translate('datasetPage.rowOperator.ne')
+    },
+    value: 'ne',
+  },
+  {
+    get label() {
+      return translate('datasetPage.rowOperator.gt')
+    },
+    value: 'gt',
+  },
+  {
+    get label() {
+      return translate('datasetPage.rowOperator.gte')
+    },
+    value: 'gte',
+  },
+  {
+    get label() {
+      return translate('datasetPage.rowOperator.lt')
+    },
+    value: 'lt',
+  },
+  {
+    get label() {
+      return translate('datasetPage.rowOperator.lte')
+    },
+    value: 'lte',
+  },
+  {
+    get label() {
+      return translate('datasetPage.rowOperator.in')
+    },
+    value: 'in',
+  },
+  {
+    get label() {
+      return translate('datasetPage.rowOperator.notIn')
+    },
+    value: 'notIn',
+  },
+  {
+    get label() {
+      return translate('datasetPage.rowOperator.like')
+    },
+    value: 'like',
+  },
+  {
+    get label() {
+      return translate('datasetPage.rowOperator.isNull')
+    },
+    value: 'isNull',
+  },
+  {
+    get label() {
+      return translate('datasetPage.rowOperator.notNull')
+    },
+    value: 'notNull',
+  },
+  {
+    get label() {
+      return translate('datasetPage.rowOperator.between')
+    },
+    value: 'between',
+  },
 ]
 
 /** 操作符在条件展示文本中的符号 */
@@ -34,8 +100,12 @@ export const OPERATOR_LABELS: Record<RowPermissionOperator, string> = {
   in: 'IN',
   notIn: 'NOT IN',
   like: 'LIKE',
-  isNull: '为空',
-  notNull: '不为空',
+  get isNull() {
+    return translate('datasetPage.rowOperator.isNull')
+  },
+  get notNull() {
+    return translate('datasetPage.rowOperator.notNull')
+  },
   between: 'BETWEEN',
 }
 
@@ -81,18 +151,18 @@ export function buildConditions(conditions: EditableCondition[]): RowCondition[]
 
 /** 规则适用对象展示文案 */
 export function subjectLabel(rule: RowPermission, options: RowPermissionOptions): string {
-  if (rule.subjectType === 'all') return '全员'
+  if (rule.subjectType === 'all') return translate('datasetPage.subject.all')
   if (rule.subjectType === 'role') {
     const item = options.roles.find((r) => r.id === rule.subjectId)
-    return `角色: ${item?.name ?? `#${rule.subjectId}`}`
+    return translate('datasetPage.subject.role', { name: item?.name ?? `#${rule.subjectId}` })
   }
   if (rule.subjectType === 'user') {
     const item = options.users.find((u) => u.id === rule.subjectId)
     const name = item ? item.nickname || item.username : `#${rule.subjectId}`
-    return `用户: ${name}`
+    return translate('datasetPage.subject.user', { name })
   }
   const item = options.departments.find((d) => d.id === rule.subjectId)
-  return `部门: ${item?.name ?? `#${rule.subjectId}`}`
+  return translate('datasetPage.subject.dept', { name: item?.name ?? `#${rule.subjectId}` })
 }
 
 /** 规则过滤条件展示文案（多条件 AND） */

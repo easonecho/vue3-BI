@@ -1,17 +1,33 @@
 <template>
-  <el-dialog v-model="visible" title="版本详情" width="720px" append-to-body destroy-on-close>
+  <el-dialog
+    v-model="visible"
+    :title="t('dashboard.versionDetailTitle')"
+    width="720px"
+    append-to-body
+    destroy-on-close
+  >
     <div v-loading="loading">
       <template v-if="detail">
         <el-descriptions :column="2" size="small" border class="detail-meta">
-          <el-descriptions-item label="版本号">v{{ detail.versionNo }}</el-descriptions-item>
-          <el-descriptions-item label="看板名称">{{ detail.name }}</el-descriptions-item>
-          <el-descriptions-item label="组件数">{{ componentCount }}</el-descriptions-item>
-          <el-descriptions-item label="图表数">{{ detail.snapshot?.chartCount ?? 0 }}</el-descriptions-item>
-          <el-descriptions-item label="画布尺寸">{{ canvasSize }}</el-descriptions-item>
-          <el-descriptions-item label="快照时间">
+          <el-descriptions-item :label="t('dashboard.versionNoLabel')"
+            >v{{ detail.versionNo }}</el-descriptions-item
+          >
+          <el-descriptions-item :label="t('dashboard.name')">{{
+            detail.name
+          }}</el-descriptions-item>
+          <el-descriptions-item :label="t('dashboard.componentCount')">{{
+            componentCount
+          }}</el-descriptions-item>
+          <el-descriptions-item :label="t('dashboard.chartCount')">{{
+            detail.snapshot?.chartCount ?? 0
+          }}</el-descriptions-item>
+          <el-descriptions-item :label="t('dashboard.canvasSize')">{{
+            canvasSize
+          }}</el-descriptions-item>
+          <el-descriptions-item :label="t('dashboard.snapshotTime')">
             {{ formatVersionTime(detail.snapshot?.capturedAt || detail.createdAt) }}
           </el-descriptions-item>
-          <el-descriptions-item label="备注" :span="2">
+          <el-descriptions-item :label="t('dashboard.remark')" :span="2">
             {{ detail.remark || '-' }}
           </el-descriptions-item>
         </el-descriptions>
@@ -19,24 +35,27 @@
           <img
             v-if="detail.snapshot?.thumbnail?.startsWith('data:')"
             :src="detail.snapshot.thumbnail"
-            alt="版本缩略图"
+            :alt="t('dashboard.versionThumbnailAlt')"
           />
           <div v-else class="detail-thumb__empty">
             <el-icon :size="28"><DataAnalysis /></el-icon>
-            <span>该版本无缩略图</span>
+            <span>{{ t('dashboard.noThumbnail') }}</span>
           </div>
         </div>
       </template>
     </div>
     <template #footer>
-      <el-button @click="visible = false">关闭</el-button>
-      <el-button v-if="detail" type="warning" @click="emit('restore', detail)">恢复此版本</el-button>
+      <el-button @click="visible = false">{{ t('common.close') }}</el-button>
+      <el-button v-if="detail" type="warning" @click="emit('restore', detail)">{{
+        t('dashboard.restoreThisVersion')
+      }}</el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { DataAnalysis } from '@element-plus/icons-vue'
 import type { DashboardVersion } from '@/api/dashboard-version'
 import {
@@ -55,6 +74,8 @@ const emit = defineEmits<{
 }>()
 
 const visible = defineModel<boolean>({ required: true })
+
+const { t } = useI18n()
 
 const componentCount = computed(() => countComponents(props.detail))
 const canvasSize = computed(() => formatCanvasSize(props.detail))

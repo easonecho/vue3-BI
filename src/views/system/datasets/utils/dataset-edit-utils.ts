@@ -1,3 +1,4 @@
+import i18n from '@/i18n'
 import type { CreateDatasetParams, DatasetField } from '@/api/dataset'
 import type { Dataset } from '@/api/types'
 
@@ -16,8 +17,7 @@ export function normalizeFieldForEdit(field: any): DatasetField {
   const format = field?.format
   return {
     ...field,
-    format:
-      format && typeof format === 'object' ? (format as DatasetField['format']) : undefined,
+    format: format && typeof format === 'object' ? (format as DatasetField['format']) : undefined,
   }
 }
 
@@ -37,10 +37,13 @@ export function validateUploadFile(raw: File | null | undefined): UploadValidati
   if (!raw) return { ok: false }
   const ext = raw.name.slice(raw.name.lastIndexOf('.')).toLowerCase()
   if (ext !== '.xlsx' && ext !== '.csv') {
-    return { ok: false, message: `不支持的文件格式 "${ext}", 仅支持 .xlsx / .csv` }
+    return {
+      ok: false,
+      message: i18n.global.t('datasetPage.upload.unsupportedFile', { ext }),
+    }
   }
   if (raw.size > 10 * 1024 * 1024) {
-    return { ok: false, message: '文件超过 10MB 限制' }
+    return { ok: false, message: i18n.global.t('datasetPage.upload.fileTooLarge') }
   }
   return { ok: true }
 }

@@ -1,8 +1,8 @@
 <template>
-  <section v-if="items.length" class="recent-bar" aria-label="最近访问的看板">
+  <section v-if="items.length" class="recent-bar" :aria-label="t('dashboard.recentAriaLabel')">
     <span class="recent-label">
       <el-icon><Clock /></el-icon>
-      最近访问
+      {{ t('dashboard.recentVisited') }}
     </span>
     <div class="recent-list">
       <button
@@ -22,11 +22,14 @@
 
 <script setup lang="ts">
 import { Clock } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { formatRecentTime, type RecentDashboard } from '@/utils/recent-dashboards'
 
 defineProps<{ items: RecentDashboard[] }>()
 
 const emit = defineEmits<{ open: [id: number] }>()
+
+const { t } = useI18n()
 </script>
 
 <style scoped lang="less">

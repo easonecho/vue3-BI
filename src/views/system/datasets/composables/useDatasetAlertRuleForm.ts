@@ -3,8 +3,9 @@
  *
  * 负责表单初始化、校验与新增/更新，依赖注入 datasetId 便于单测。
  */
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import i18n from '@/i18n'
 import {
   createAlertRule,
   updateAlertRule,
@@ -46,12 +47,36 @@ export function useDatasetAlertRuleForm(deps: DatasetAlertRuleFormDeps) {
     enabled: true,
   })
 
-  const formRules: FormRules = {
-    name: [{ required: true, message: '请输入规则名称', trigger: 'blur' }],
-    aggregate: [{ required: true, message: '请选择统计方式', trigger: 'change' }],
-    threshold: [{ required: true, message: '请输入阈值', trigger: 'blur' }],
-    cron: [{ required: true, message: '请选择或输入 cron 表达式', trigger: 'change' }],
-  }
+  const formRules = computed<FormRules>(() => ({
+    name: [
+      {
+        required: true,
+        message: i18n.global.t('datasetPage.alertForm.nameRequired'),
+        trigger: 'blur',
+      },
+    ],
+    aggregate: [
+      {
+        required: true,
+        message: i18n.global.t('datasetPage.alertForm.aggregateRequired'),
+        trigger: 'change',
+      },
+    ],
+    threshold: [
+      {
+        required: true,
+        message: i18n.global.t('datasetPage.alertForm.thresholdRequired'),
+        trigger: 'blur',
+      },
+    ],
+    cron: [
+      {
+        required: true,
+        message: i18n.global.t('datasetPage.alertForm.cronRequired'),
+        trigger: 'change',
+      },
+    ],
+  }))
 
   function resetForm() {
     form.name = ''
@@ -88,7 +113,7 @@ export function useDatasetAlertRuleForm(deps: DatasetAlertRuleFormDeps) {
     const valid = await formRef.value.validate().catch(() => false)
     if (!valid) return false
     if (form.aggregate !== 'count' && !form.field) {
-      ElMessage.warning('非 count 聚合必须选择字段')
+      ElMessage.warning(i18n.global.t('datasetPage.alertForm.fieldRequired'))
       return false
     }
     saving.value = true
@@ -105,14 +130,16 @@ export function useDatasetAlertRuleForm(deps: DatasetAlertRuleFormDeps) {
       }
       if (editingId.value) {
         await updateAlertRule(editingId.value, payload)
-        ElMessage.success('规则已更新')
+        ElMessage.success(i18n.global.t('datasetPage.alertForm.updated'))
       } else {
         await createAlertRule({ ...payload, datasetId })
-        ElMessage.success('规则已创建')
+        ElMessage.success(i18n.global.t('datasetPage.alertForm.created'))
       }
       return true
     } catch (e) {
-      ElMessage.error(e instanceof Error ? e.message : '保存失败')
+      ElMessage.error(
+        e instanceof Error ? e.message : i18n.global.t('datasetPage.alertForm.saveFailed'),
+      )
       return false
     } finally {
       saving.value = false

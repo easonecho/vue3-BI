@@ -20,7 +20,9 @@ const {
   ruleDeleteMock: vi.fn<(id: number) => Promise<unknown>>(),
   ruleRunMock:
     vi.fn<
-      (id: number) => Promise<{ data: { triggered: boolean; value: number; eventId: number | null } }>
+      (
+        id: number,
+      ) => Promise<{ data: { triggered: boolean; value: number; eventId: number | null } }>
     >(),
   eventListMock:
     vi.fn<

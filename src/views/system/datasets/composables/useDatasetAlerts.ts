@@ -6,6 +6,7 @@
  */
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import i18n from '@/i18n'
 import {
   deleteAlertRule,
   getAlertEvents,
@@ -84,7 +85,9 @@ export function useDatasetAlerts(deps: DatasetAlertsDeps) {
       const res = await getAlertRules(datasetId)
       rules.value = res.data
     } catch (e) {
-      ElMessage.error(e instanceof Error ? e.message : '加载告警规则失败')
+      ElMessage.error(
+        e instanceof Error ? e.message : i18n.global.t('datasetPage.alerts.loadRulesFailed'),
+      )
     } finally {
       loadingRules.value = false
     }
@@ -103,7 +106,9 @@ export function useDatasetAlerts(deps: DatasetAlertsDeps) {
       events.value = res.data.list
       eventTotal.value = res.data.total
     } catch (e) {
-      ElMessage.error(e instanceof Error ? e.message : '加载告警记录失败')
+      ElMessage.error(
+        e instanceof Error ? e.message : i18n.global.t('datasetPage.alerts.loadEventsFailed'),
+      )
     } finally {
       loadingEvents.value = false
     }
@@ -123,20 +128,28 @@ export function useDatasetAlerts(deps: DatasetAlertsDeps) {
   async function toggleEnabled(row: AlertRule) {
     try {
       await updateAlertRule(row.id, { enabled: row.enabled })
-      ElMessage.success(row.enabled ? '规则已启用' : '规则已停用')
+      ElMessage.success(
+        row.enabled
+          ? i18n.global.t('datasetPage.alerts.enabled')
+          : i18n.global.t('datasetPage.alerts.disabled'),
+      )
     } catch (e) {
       row.enabled = !row.enabled
-      ElMessage.error(e instanceof Error ? e.message : '操作失败')
+      ElMessage.error(
+        e instanceof Error ? e.message : i18n.global.t('datasetPage.alerts.operationFailed'),
+      )
     }
   }
 
   async function removeRule(row: AlertRule) {
     try {
       await deleteAlertRule(row.id)
-      ElMessage.success('规则已删除')
+      ElMessage.success(i18n.global.t('datasetPage.alerts.deleted'))
       await loadRules()
     } catch (e) {
-      ElMessage.error(e instanceof Error ? e.message : '删除失败')
+      ElMessage.error(
+        e instanceof Error ? e.message : i18n.global.t('datasetPage.alerts.deleteFailed'),
+      )
     }
   }
 
@@ -145,14 +158,16 @@ export function useDatasetAlerts(deps: DatasetAlertsDeps) {
       const res = await runAlertRule(row.id)
       const result = res.data
       if (result.triggered) {
-        ElMessage.warning(`已触发告警，当前值 ${result.value}`)
+        ElMessage.warning(i18n.global.t('datasetPage.alerts.triggered', { value: result.value }))
         await loadUnreadCount()
       } else {
-        ElMessage.success(`未触发，当前值 ${result.value}`)
+        ElMessage.success(i18n.global.t('datasetPage.alerts.notTriggered', { value: result.value }))
       }
       await loadRules()
     } catch (e) {
-      ElMessage.error(e instanceof Error ? e.message : '执行失败')
+      ElMessage.error(
+        e instanceof Error ? e.message : i18n.global.t('datasetPage.alerts.runFailed'),
+      )
     }
   }
 
@@ -162,7 +177,9 @@ export function useDatasetAlerts(deps: DatasetAlertsDeps) {
       row.status = 1
       unreadCount.value = Math.max(0, unreadCount.value - 1)
     } catch (e) {
-      ElMessage.error(e instanceof Error ? e.message : '操作失败')
+      ElMessage.error(
+        e instanceof Error ? e.message : i18n.global.t('datasetPage.alerts.operationFailed'),
+      )
     }
   }
 
@@ -171,11 +188,13 @@ export function useDatasetAlerts(deps: DatasetAlertsDeps) {
     if (datasetId === null || datasetId === undefined) return
     try {
       await markAllAlertEventsRead(datasetId)
-      ElMessage.success('已全部标记为已读')
+      ElMessage.success(i18n.global.t('datasetPage.alerts.allRead'))
       unreadCount.value = 0
       await loadEvents()
     } catch (e) {
-      ElMessage.error(e instanceof Error ? e.message : '操作失败')
+      ElMessage.error(
+        e instanceof Error ? e.message : i18n.global.t('datasetPage.alerts.operationFailed'),
+      )
     }
   }
 

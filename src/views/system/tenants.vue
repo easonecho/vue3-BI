@@ -4,50 +4,67 @@
       <div class="filter-bar">
         <el-input
           v-model="filters.keyword"
-          placeholder="搜索租户编码/名称"
+          :placeholder="t('tenantPage.searchPlaceholder')"
           clearable
           style="width: 240px"
           @keyup.enter="loadList"
           @clear="loadList"
         />
-        <el-select v-model="filters.status" placeholder="全部状态" clearable style="width: 130px">
-          <el-option label="启用" :value="1" />
-          <el-option label="停用" :value="0" />
+        <el-select
+          v-model="filters.status"
+          :placeholder="t('tenantPage.allStatus')"
+          clearable
+          style="width: 130px"
+        >
+          <el-option :label="t('tenantPage.enabled')" :value="1" />
+          <el-option :label="t('tenantPage.disabled')" :value="0" />
         </el-select>
         <el-button type="primary" @click="loadList">
-          <el-icon><Search /></el-icon>&nbsp;查询
+          <el-icon><Search /></el-icon>&nbsp;{{ t('tenantPage.query') }}
         </el-button>
         <div class="spacer" />
         <el-button v-permission="'system:tenant:add'" type="success" @click="openCreate">
-          <el-icon><Plus /></el-icon>&nbsp;新增租户
+          <el-icon><Plus /></el-icon>&nbsp;{{ t('tenantPage.create') }}
         </el-button>
       </div>
 
       <el-table v-loading="loading" :data="list" style="margin-top: 16px" stripe border>
         <el-table-column prop="id" label="ID" width="70" align="center" />
-        <el-table-column prop="code" label="租户编码" min-width="120">
-          <template #default="{ row }"><el-tag size="small">{{ row.code }}</el-tag></template>
+        <el-table-column prop="code" :label="t('tenantPage.code')" min-width="120">
+          <template #default="{ row }"
+            ><el-tag size="small">{{ row.code }}</el-tag></template
+          >
         </el-table-column>
-        <el-table-column prop="name" label="租户名称" min-width="150" />
-        <el-table-column label="状态" width="90" align="center">
+        <el-table-column prop="name" :label="t('tenantPage.name')" min-width="150" />
+        <el-table-column :label="t('tenantPage.status')" width="90" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'info'" size="small">
-              {{ row.status === 1 ? '启用' : '停用' }}
+              {{ row.status === 1 ? t('tenantPage.enabled') : t('tenantPage.disabled') }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="contact" label="联系人" width="120" show-overflow-tooltip />
-        <el-table-column label="用户上限" width="100" align="center">
-          <template #default="{ row }">{{ row.maxUsers ?? '不限' }}</template>
+        <el-table-column
+          prop="contact"
+          :label="t('tenantPage.contact')"
+          width="120"
+          show-overflow-tooltip
+        />
+        <el-table-column :label="t('tenantPage.maxUsers')" width="100" align="center">
+          <template #default="{ row }">{{ row.maxUsers ?? t('tenantPage.unlimited') }}</template>
         </el-table-column>
-        <el-table-column label="到期时间" width="170">
+        <el-table-column :label="t('tenantPage.expiredAt')" width="170">
           <template #default="{ row }">{{ formatTime(row.expiredAt) }}</template>
         </el-table-column>
-        <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
-        <el-table-column label="创建时间" width="170">
+        <el-table-column
+          prop="remark"
+          :label="t('tenantPage.remark')"
+          min-width="160"
+          show-overflow-tooltip
+        />
+        <el-table-column :label="t('tenantPage.createdAt')" width="170">
           <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="140" fixed="right" align="center">
+        <el-table-column :label="t('common.actions')" width="140" fixed="right" align="center">
           <template #default="{ row }">
             <el-button
               v-permission="'system:tenant:edit'"
@@ -56,7 +73,7 @@
               size="small"
               @click="openEdit(row)"
             >
-              编辑
+              {{ t('common.edit') }}
             </el-button>
             <el-button
               v-if="row.id !== PLATFORM_TENANT_ID"
@@ -66,7 +83,7 @@
               size="small"
               @click="toggleStatus(row)"
             >
-              {{ row.status === 1 ? '停用' : '启用' }}
+              {{ row.status === 1 ? t('tenantPage.disabled') : t('tenantPage.enabled') }}
             </el-button>
           </template>
         </el-table-column>
@@ -86,53 +103,66 @@
 
     <el-dialog
       v-model="dialogVisible"
-      :title="mode === 'create' ? '新增租户' : '编辑租户'"
+      :title="mode === 'create' ? t('tenantPage.create') : t('tenantPage.editTitle')"
       width="580px"
       destroy-on-close
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
-        <el-form-item label="租户编码" prop="code">
+        <el-form-item :label="t('tenantPage.code')" prop="code">
           <el-input
             v-model="form.code"
             :disabled="mode === 'edit'"
             maxlength="50"
-            placeholder="登录时使用，如 acme"
+            :placeholder="t('tenantPage.codePlaceholder')"
           />
         </el-form-item>
-        <el-form-item label="租户名称" prop="name">
-          <el-input v-model="form.name" maxlength="100" placeholder="如 Acme 公司" />
+        <el-form-item :label="t('tenantPage.name')" prop="name">
+          <el-input
+            v-model="form.name"
+            maxlength="100"
+            :placeholder="t('tenantPage.namePlaceholder')"
+          />
         </el-form-item>
-        <el-form-item label="联系人">
+        <el-form-item :label="t('tenantPage.contact')">
           <el-input v-model="form.contact" maxlength="100" />
         </el-form-item>
-        <el-form-item label="用户上限">
+        <el-form-item :label="t('tenantPage.maxUsers')">
           <el-input-number v-model="form.maxUsers" :min="1" :max="100000" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="到期时间">
+        <el-form-item :label="t('tenantPage.expiredAt')">
           <el-date-picker
             v-model="form.expiredAt"
             type="datetime"
-            placeholder="留空表示永久有效"
+            :placeholder="t('tenantPage.expirePlaceholder')"
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item v-if="mode === 'edit'" label="状态">
+        <el-form-item v-if="mode === 'edit'" :label="t('tenantPage.status')">
           <el-switch v-model="form.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="form.remark" type="textarea" :rows="2" maxlength="200" show-word-limit />
+        <el-form-item :label="t('tenantPage.remark')">
+          <el-input
+            v-model="form.remark"
+            type="textarea"
+            :rows="2"
+            maxlength="200"
+            show-word-limit
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="submit">确定</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="submitting" @click="submit">{{
+          t('tenantPage.confirm')
+        }}</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Search, Plus } from '@element-plus/icons-vue'
 import {
@@ -142,6 +172,8 @@ import {
   type Tenant,
   type TenantQuery,
 } from '@/api/tenant'
+
+const { t } = useI18n()
 
 const PLATFORM_TENANT_ID = 1
 
@@ -184,17 +216,17 @@ const form = reactive({
   status: 1,
   remark: '',
 })
-const rules: FormRules = {
+const rules = computed<FormRules>(() => ({
   code: [
-    { required: true, message: '请输入租户编码', trigger: 'blur' },
+    { required: true, message: t('tenantPage.codeRequired'), trigger: 'blur' },
     {
       pattern: /^[a-zA-Z0-9_-]{2,50}$/,
-      message: '仅支持字母、数字、下划线、中划线，长度 2-50',
+      message: t('tenantPage.codePattern'),
       trigger: 'blur',
     },
   ],
-  name: [{ required: true, message: '请输入租户名称', trigger: 'blur' }],
-}
+  name: [{ required: true, message: t('tenantPage.nameRequired'), trigger: 'blur' }],
+}))
 
 function openCreate() {
   mode.value = 'create'
@@ -241,10 +273,10 @@ async function submit() {
   try {
     if (mode.value === 'create') {
       await createTenant({ ...payload, code: form.code })
-      ElMessage.success('创建成功')
+      ElMessage.success(t('tenantPage.createSuccess'))
     } else {
       await updateTenant(form.id, { ...payload, status: form.status })
-      ElMessage.success('保存成功')
+      ElMessage.success(t('tenantPage.saveSuccess'))
     }
     dialogVisible.value = false
     await loadList()
@@ -259,8 +291,10 @@ async function toggleStatus(row: Tenant) {
   const next = row.status === 1 ? 0 : 1
   try {
     await ElMessageBox.confirm(
-      `确定${next === 1 ? '启用' : '停用'}租户「${row.name}」吗？停用后该租户用户将无法访问。`,
-      '提示',
+      t(next === 1 ? 'tenantPage.toggleConfirmEnable' : 'tenantPage.toggleConfirmDisable', {
+        name: row.name,
+      }),
+      t('tenantPage.tip'),
       { type: 'warning' },
     )
   } catch {
@@ -268,7 +302,7 @@ async function toggleStatus(row: Tenant) {
   }
   try {
     await updateTenant(row.id, { status: next })
-    ElMessage.success(next === 1 ? '已启用' : '已停用')
+    ElMessage.success(t(next === 1 ? 'tenantPage.enabledDone' : 'tenantPage.disabledDone'))
     await loadList()
   } catch {
     /* 错误已由请求层提示 */

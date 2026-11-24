@@ -1,10 +1,10 @@
 <template>
-  <el-dialog v-model="visible" title="移动到分组" width="420px">
+  <el-dialog v-model="visible" :title="t('dashboard.moveGroup')" width="420px">
     <el-form label-width="80px">
-      <el-form-item label="目标分组">
+      <el-form-item :label="t('dashboard.moveTarget')">
         <el-select
           v-model="moveGroupTarget"
-          placeholder="选择分组 (选空=移出分组)"
+          :placeholder="t('dashboard.moveTargetPlaceholder')"
           clearable
           style="width: 100%"
         >
@@ -13,14 +13,17 @@
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
-      <el-button type="primary" :loading="movingGroup" @click="confirmMoveGroup">确定</el-button>
+      <el-button @click="visible = false">{{ t('common.cancel') }}</el-button>
+      <el-button type="primary" :loading="movingGroup" @click="confirmMoveGroup">{{
+        t('common.confirm')
+      }}</el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { moveDashboardToGroup } from '@/api/dashboard'
 import type { Dashboard, DashboardGroup } from '@/api/types'
@@ -45,6 +48,8 @@ const visible = computed({
 const moveGroupTarget = ref<number | null>(null)
 const movingGroup = ref(false)
 
+const { t } = useI18n()
+
 // 打开时以看板当前分组作为默认值
 watch(
   () => props.modelValue,
@@ -58,7 +63,7 @@ async function confirmMoveGroup() {
   movingGroup.value = true
   try {
     await moveDashboardToGroup(props.dashboard.id, moveGroupTarget.value)
-    ElMessage.success('已移动到分组')
+    ElMessage.success(t('dashboard.moveSuccess'))
     visible.value = false
     emit('moved')
   } catch {

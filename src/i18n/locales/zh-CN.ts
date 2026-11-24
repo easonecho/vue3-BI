@@ -1,7 +1,16 @@
 /**
  * 中文（简体）语言包
+ *
+ * 基础文案写在本文件, 各业务模块的补充文案放到 fragments/zh-CN/*.ts,
+ * 构建时通过 import.meta.glob 自动深合并, 避免多人同时改同一文件。
  */
-export default {
+import { mergeLocales, type LocaleTree } from './merge'
+
+const fragments = import.meta.glob<{ default: LocaleTree }>('./fragments/zh-CN/*.ts', {
+  eager: true,
+})
+
+const base: LocaleTree = {
   common: {
     confirm: '确认',
     cancel: '取消',
@@ -291,3 +300,8 @@ export default {
     retry: '重试',
   },
 }
+
+export default Object.values(fragments).reduce<LocaleTree>(
+  (acc, fragment) => mergeLocales(acc, fragment.default),
+  base,
+)

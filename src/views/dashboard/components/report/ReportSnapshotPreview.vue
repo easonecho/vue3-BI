@@ -2,9 +2,13 @@
   <el-dialog v-model="visible" :title="title" width="900px" append-to-body destroy-on-close>
     <template v-if="snapshot">
       <el-descriptions :column="3" size="small" border class="snapshot-meta">
-        <el-descriptions-item label="看板">{{ snapshot.dashboard.name }}</el-descriptions-item>
-        <el-descriptions-item label="图表数">{{ snapshot.dashboard.chartCount }}</el-descriptions-item>
-        <el-descriptions-item label="生成时间">{{
+        <el-descriptions-item :label="t('dashboard.snapshotDashboard')">{{
+          snapshot.dashboard.name
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('dashboard.chartCount')">{{
+          snapshot.dashboard.chartCount
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('dashboard.snapshotGeneratedAt')">{{
           formatTime(snapshot.generatedAt)
         }}</el-descriptions-item>
       </el-descriptions>
@@ -14,11 +18,13 @@
           <span class="snapshot-chart__name">{{ chart.name }}</span>
           <el-tag size="small" effect="plain">{{ chart.type }}</el-tag>
           <el-tag size="small" type="info" effect="plain">{{ chart.datasetName || '-' }}</el-tag>
-          <el-tag v-if="chart.truncated" size="small" type="warning">仅展示前 10 行</el-tag>
+          <el-tag v-if="chart.truncated" size="small" type="warning">{{
+            t('dashboard.snapshotTruncated')
+          }}</el-tag>
         </div>
         <el-alert
           v-if="chart.error"
-          :title="`数据查询失败: ${chart.error}`"
+          :title="t('dashboard.snapshotQueryFailed', { error: chart.error })"
           type="error"
           :closable="false"
           show-icon
@@ -29,7 +35,7 @@
           size="small"
           border
           max-height="260"
-          empty-text="无数据"
+          :empty-text="t('dashboard.snapshotNoData')"
         >
           <el-table-column
             v-for="col in chart.columns"
@@ -45,18 +51,19 @@
     </template>
     <el-alert
       v-else
-      :title="error || '该投递记录没有可预览的报表内容'"
+      :title="error || t('dashboard.snapshotNoContent')"
       type="error"
       :closable="false"
       show-icon
     />
     <template #footer>
-      <el-button @click="visible = false">关闭</el-button>
+      <el-button @click="visible = false">{{ t('common.close') }}</el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { ReportSnapshot } from '@/api/report'
 import { cellValue, formatTime } from '../../utils/report-utils'
 
@@ -67,6 +74,8 @@ defineProps<{
 }>()
 
 const visible = defineModel<boolean>({ required: true })
+
+const { t } = useI18n()
 </script>
 
 <style scoped lang="less">

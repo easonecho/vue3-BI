@@ -2,15 +2,15 @@
   <div>
     <div v-if="fileData" class="file-meta">
       <div class="file-meta__row">
-        <span class="file-meta__label">当前文件</span>
+        <span class="file-meta__label">{{ t('datasetPage.fileTab.currentFile') }}</span>
         <code>{{ fileData.fileName || '-' }}</code>
       </div>
       <div class="file-meta__row">
-        <span class="file-meta__label">数据规模</span>
-        <span>{{ fileData.rowCount ?? 0 }} 行</span>
+        <span class="file-meta__label">{{ t('datasetPage.fileTab.dataScale') }}</span>
+        <span>{{ t('datasetPage.fileTab.rows', { count: fileData.rowCount ?? 0 }) }}</span>
       </div>
       <div class="file-meta__row">
-        <span class="file-meta__label">更新时间</span>
+        <span class="file-meta__label">{{ t('datasetPage.fileTab.updatedAt') }}</span>
         <span>{{ formatFileTime(fileData.updatedAt) }}</span>
       </div>
     </div>
@@ -24,11 +24,11 @@
         :file-list="replaceFile ? [{ name: replaceFile.name }] : []"
       >
         <el-button size="small" type="primary" plain>
-          <el-icon><Upload /></el-icon>&nbsp;选择新的数据文件
+          <el-icon><Upload /></el-icon>&nbsp;{{ t('datasetPage.fileTab.chooseFile') }}
         </el-button>
         <template #tip>
           <div style="color: #9ca3af; font-size: 12px; margin-top: 4px">
-            支持 .xlsx / .csv, 最大 10MB、5 万行; 替换后立即生效并清理缓存
+            {{ t('datasetPage.fileTab.uploadTip') }}
           </div>
         </template>
       </el-upload>
@@ -39,17 +39,18 @@
       :disabled="!replaceFile"
       @click="handleReplaceConfirm"
     >
-      替换数据文件
+      {{ t('datasetPage.fileTab.replace') }}
     </el-button>
     <el-divider />
     <el-button :disabled="!datasetId" @click="previewCurrentDataset">
-      预览数据 (前 100 行)
+      {{ t('datasetPage.fileTab.preview') }}
     </el-button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
@@ -71,6 +72,8 @@ const emit = defineEmits<{
 const replacing = ref(false)
 const replaceFile = ref<File | null>(null)
 
+const { t } = useI18n()
+
 function onReplaceFileChange(file: UploadFile) {
   const raw = (file.raw as File) ?? undefined
   const result = validateUploadFile(raw)
@@ -86,7 +89,12 @@ async function handleReplaceConfirm() {
   replacing.value = true
   try {
     const result = await replaceDatasetData(props.datasetId, replaceFile.value)
-    ElMessage.success(`数据已替换: ${result.rowCount} 行 / ${result.columns?.length ?? 0} 列`)
+    ElMessage.success(
+      t('datasetPage.fileTab.replaceSuccess', {
+        rows: result.rowCount,
+        cols: result.columns?.length ?? 0,
+      }),
+    )
     replaceFile.value = null
     emit('update:fileData', {
       fileName: result.fileName,
@@ -96,7 +104,7 @@ async function handleReplaceConfirm() {
     })
     emit('saved')
   } catch (e: any) {
-    ElMessage.error(e?.message || '替换失败')
+    ElMessage.error(e?.message || t('datasetPage.fileTab.replaceFailed'))
   } finally {
     replacing.value = false
   }

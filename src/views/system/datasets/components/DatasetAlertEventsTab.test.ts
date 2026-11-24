@@ -58,13 +58,15 @@ function makeEvent(overrides: Partial<AlertEvent> = {}): AlertEvent {
   }
 }
 
-function mountTab(props: {
-  events?: AlertEvent[]
-  loading?: boolean
-  unreadCount?: number
-  total?: number
-  pageSize?: number
-} = {}) {
+function mountTab(
+  props: {
+    events?: AlertEvent[]
+    loading?: boolean
+    unreadCount?: number
+    total?: number
+    pageSize?: number
+  } = {},
+) {
   currentRow = (props.events?.[0] ?? {}) as Record<string, unknown>
   return mount(DatasetAlertEventsTab, {
     props: {

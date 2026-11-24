@@ -1,43 +1,44 @@
 <template>
   <div>
     <el-alert type="info" :closable="false" style="margin-bottom: 16px">
-      抽取模式将 SQL 结果物化为本地快照: 图表取数直接读快照, 不再实时查询源库。
-      可手动「立即抽取」, 也可在生成快照后配置定时刷新。
+      {{ t('datasetPage.extract.info') }}
     </el-alert>
     <template v-if="mode === 'edit'">
       <el-descriptions v-if="extractInfo.enabled" :column="4" border size="small">
-        <el-descriptions-item label="状态">
-          <el-tag type="success" size="small">已启用</el-tag>
+        <el-descriptions-item :label="t('datasetPage.extract.status')">
+          <el-tag type="success" size="small">{{ t('datasetPage.extract.enabled') }}</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="快照行数">
+        <el-descriptions-item :label="t('datasetPage.extract.rowCount')">
           {{ extractInfo.rowCount }}
         </el-descriptions-item>
-        <el-descriptions-item label="最近抽取">
+        <el-descriptions-item :label="t('datasetPage.extract.lastExtract')">
           {{ formatFileTime(extractInfo.lastExtractAt || undefined) }}
         </el-descriptions-item>
-        <el-descriptions-item label="定时刷新">
+        <el-descriptions-item :label="t('datasetPage.extract.refresh')">
           <el-tag v-if="extractInfo.refreshEnabled" type="success" size="small">
             {{ refreshCronLabel }}
           </el-tag>
-          <span v-else class="text-muted">未启用</span>
+          <span v-else class="text-muted">{{ t('datasetPage.extract.disabled') }}</span>
         </el-descriptions-item>
       </el-descriptions>
       <el-empty
         v-if="!extractInfo.enabled"
-        description="尚未启用抽取, 当前为实时查询"
+        :description="t('datasetPage.extract.empty')"
         :image-size="60"
       />
       <div class="extract-actions">
         <el-button type="primary" :loading="extracting" @click="handleExtract">
-          立即抽取
+          {{ t('datasetPage.extract.extractNow') }}
         </el-button>
         <el-popconfirm
           v-if="extractInfo.enabled"
-          title="取消后将恢复实时查询源库, 确定吗?"
+          :title="t('datasetPage.extract.removeConfirm')"
           @confirm="handleRemoveExtract"
         >
           <template #reference>
-            <el-button :loading="removingExtract">取消抽取</el-button>
+            <el-button :loading="removingExtract">{{
+              t('datasetPage.extract.removeExtract')
+            }}</el-button>
           </template>
         </el-popconfirm>
       </div>
@@ -45,7 +46,7 @@
       <!-- 定时刷新 (P2-1) -->
       <div v-if="extractInfo.enabled" class="extract-refresh">
         <div class="refresh-row">
-          <span class="refresh-label">定时刷新</span>
+          <span class="refresh-label">{{ t('datasetPage.extract.refresh') }}</span>
           <el-switch v-model="refreshEnabled" :disabled="savingRefresh" />
           <el-select
             v-model="refreshCron"
@@ -60,21 +61,27 @@
             />
           </el-select>
           <el-button type="primary" :loading="savingRefresh" @click="handleSaveRefresh">
-            保存
+            {{ t('datasetPage.extract.refreshSave') }}
           </el-button>
         </div>
         <p class="refresh-hint">
-          按 cron 自动重新抽取快照; 最近自动刷新:
-          {{ formatFileTime(extractInfo.lastAutoRunAt || undefined) }}
+          {{
+            t('datasetPage.extract.refreshHint', {
+              time: formatFileTime(extractInfo.lastAutoRunAt || undefined),
+            })
+          }}
         </p>
       </div>
     </template>
-    <el-alert v-else type="warning" :closable="false">保存数据集后才能执行抽取</el-alert>
+    <el-alert v-else type="warning" :closable="false">{{
+      t('datasetPage.extract.saveFirst')
+    }}</el-alert>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import {
   type DatasetExtractInfo,
@@ -87,6 +94,8 @@ import { formatFileTime } from '../utils/dataset-edit-utils'
 import { CRON_OPTIONS as REFRESH_CRON_OPTIONS } from '../utils/dataset-alert-utils'
 
 const DEFAULT_REFRESH_CRON = '0 * * * *'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   mode: 'create' | 'edit'
@@ -155,8 +164,8 @@ async function handleExtract() {
     await loadExtractInfo(props.datasetId)
     ElMessage.success(
       res.data.truncated
-        ? `数据抽取完成 (超过上限, 仅保留 ${res.data.rowCount} 行)`
-        : `数据抽取完成 (${res.data.rowCount} 行)`,
+        ? t('datasetPage.extract.extractedTruncated', { count: res.data.rowCount })
+        : t('datasetPage.extract.extracted', { count: res.data.rowCount }),
     )
   } catch {
     // 错误提示由 request 拦截器统一处理
@@ -169,7 +178,7 @@ async function handleSaveRefresh() {
   if (!props.datasetId) return
   const cron = refreshCron.value.trim()
   if (refreshEnabled.value && !cron) {
-    ElMessage.warning('请选择定时刷新周期')
+    ElMessage.warning(t('datasetPage.extract.refreshCronRequired'))
     return
   }
   savingRefresh.value = true
@@ -180,7 +189,11 @@ async function handleSaveRefresh() {
     })
     extractInfo.value.refreshEnabled = res.data.refreshEnabled
     extractInfo.value.refreshCron = res.data.refreshCron
-    ElMessage.success(refreshEnabled.value ? '已启用定时刷新' : '已关闭定时刷新')
+    ElMessage.success(
+      refreshEnabled.value
+        ? t('datasetPage.extract.refreshEnabled')
+        : t('datasetPage.extract.refreshDisabled'),
+    )
   } catch {
     // 错误提示由 request 拦截器统一处理
   } finally {
@@ -194,7 +207,7 @@ async function handleRemoveExtract() {
   try {
     await removeDatasetExtract(props.datasetId)
     resetExtractInfo()
-    ElMessage.success('已取消抽取, 恢复实时查询')
+    ElMessage.success(t('datasetPage.extract.extractRemoved'))
   } catch {
     // 错误提示由 request 拦截器统一处理
   } finally {

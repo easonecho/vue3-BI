@@ -1,25 +1,50 @@
 <template>
   <el-dialog
     v-model="visible"
-    :title="editingId ? '编辑规则' : '新增规则'"
+    :title="
+      editingId
+        ? t('datasetPage.rowPermissionForm.editTitle')
+        : t('datasetPage.rowPermissionForm.createTitle')
+    "
     width="660px"
     append-to-body
     destroy-on-close
   >
     <el-form ref="formRef" :model="form" :rules="formRules" label-width="96px">
-      <el-form-item label="规则名称" prop="name">
-        <el-input v-model="form.name" maxlength="100" placeholder="如: 华东区销售仅看本区数据" />
+      <el-form-item :label="t('datasetPage.rowPermissionForm.nameLabel')" prop="name">
+        <el-input
+          v-model="form.name"
+          maxlength="100"
+          :placeholder="t('datasetPage.rowPermissionForm.namePlaceholder')"
+        />
       </el-form-item>
-      <el-form-item label="适用对象" prop="subjectType">
+      <el-form-item :label="t('datasetPage.rowPermissionForm.subjectLabel')" prop="subjectType">
         <el-radio-group v-model="form.subjectType" @change="form.subjectId = undefined">
-          <el-radio-button value="all">全员</el-radio-button>
-          <el-radio-button value="role">角色</el-radio-button>
-          <el-radio-button value="user">用户</el-radio-button>
-          <el-radio-button value="dept">部门</el-radio-button>
+          <el-radio-button value="all">{{
+            t('datasetPage.rowPermissionForm.subjectAll')
+          }}</el-radio-button>
+          <el-radio-button value="role">{{
+            t('datasetPage.rowPermissionForm.subjectRole')
+          }}</el-radio-button>
+          <el-radio-button value="user">{{
+            t('datasetPage.rowPermissionForm.subjectUser')
+          }}</el-radio-button>
+          <el-radio-button value="dept">{{
+            t('datasetPage.rowPermissionForm.subjectDept')
+          }}</el-radio-button>
         </el-radio-group>
       </el-form-item>
-      <el-form-item v-if="form.subjectType !== 'all'" label="选择对象" prop="subjectId">
-        <el-select v-model="form.subjectId" filterable placeholder="请选择" style="width: 100%">
+      <el-form-item
+        v-if="form.subjectType !== 'all'"
+        :label="t('datasetPage.rowPermissionForm.subjectIdLabel')"
+        prop="subjectId"
+      >
+        <el-select
+          v-model="form.subjectId"
+          filterable
+          :placeholder="t('datasetPage.rowPermissionForm.subjectIdPlaceholder')"
+          style="width: 100%"
+        >
           <el-option
             v-for="opt in subjectOptions"
             :key="opt.value"
@@ -29,10 +54,15 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="过滤条件" required>
+      <el-form-item :label="t('datasetPage.rowPermissionForm.conditionsLabel')" required>
         <div class="cond-list">
           <div v-for="(cond, idx) in form.conditions" :key="idx" class="cond-row">
-            <el-input v-model="cond.field" size="small" placeholder="字段名" style="width: 150px" />
+            <el-input
+              v-model="cond.field"
+              size="small"
+              :placeholder="t('datasetPage.rowPermissionForm.fieldPlaceholder')"
+              style="width: 150px"
+            />
             <el-select v-model="cond.operator" size="small" style="width: 140px">
               <el-option
                 v-for="op in operatorOptions"
@@ -46,7 +76,11 @@
               v-model="cond.valueText"
               size="small"
               style="flex: 1; min-width: 180px"
-              placeholder="值; in/between 用逗号分隔, 支持 {userId}/{username}/{deptId}"
+              :placeholder="
+                t('datasetPage.rowPermissionForm.valuePlaceholder', {
+                  placeholders: '{userId}/{username}/{deptId}',
+                })
+              "
             />
             <el-button
               link
@@ -55,30 +89,37 @@
               :disabled="form.conditions.length <= 1"
               @click="removeCondition(idx)"
             >
-              删除
+              {{ t('common.delete') }}
             </el-button>
           </div>
-          <el-button size="small" @click="addCondition">+ 添加条件</el-button>
+          <el-button size="small" @click="addCondition">{{
+            t('datasetPage.rowPermissionForm.addCondition')
+          }}</el-button>
         </div>
       </el-form-item>
 
-      <el-form-item label="优先级">
+      <el-form-item :label="t('datasetPage.rowPermissionForm.priorityLabel')">
         <el-input-number v-model="form.priority" :min="0" :max="9999" controls-position="right" />
-        <span class="rls-hint" style="margin-left: 10px">数值越大越先参与组合</span>
+        <span class="rls-hint" style="margin-left: 10px">{{
+          t('datasetPage.rowPermissionForm.priorityHint')
+        }}</span>
       </el-form-item>
-      <el-form-item label="启用">
+      <el-form-item :label="t('datasetPage.rowPermissionForm.enabledLabel')">
         <el-switch v-model="form.enabled" />
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
-      <el-button type="primary" :loading="submitting" @click="submitForm">确定</el-button>
+      <el-button @click="visible = false">{{ t('common.cancel') }}</el-button>
+      <el-button type="primary" :loading="submitting" @click="submitForm">{{
+        t('datasetPage.confirm')
+      }}</el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import {
   type RowPermission,
@@ -118,6 +159,8 @@ const visible = computed({
 
 const operatorOptions = OPERATOR_OPTIONS
 
+const { t } = useI18n()
+
 const editingId = computed(() => props.rule?.id ?? null)
 const submitting = ref(false)
 const formRef = ref<FormInstance>()
@@ -126,13 +169,15 @@ const form = reactive<RowPermissionFormState>(createEmptyForm())
 
 const subjectOptions = computed(() => buildSubjectOptions(form.subjectType, props.options))
 
-const formRules: FormRules = {
-  name: [{ required: true, message: '请输入规则名称', trigger: 'blur' }],
+const formRules = computed<FormRules>(() => ({
+  name: [
+    { required: true, message: t('datasetPage.rowPermissionForm.nameRequired'), trigger: 'blur' },
+  ],
   subjectId: [
     {
       validator: (_rule, value, callback) => {
         if (form.subjectType !== 'all' && (value === undefined || value === null)) {
-          callback(new Error('请选择规则适用的对象'))
+          callback(new Error(t('datasetPage.rowPermissionForm.subjectRequired')))
           return
         }
         callback()
@@ -140,7 +185,7 @@ const formRules: FormRules = {
       trigger: 'change',
     },
   ],
-}
+}))
 
 /** 打开时按 rule 初始化表单 */
 watch(
@@ -168,7 +213,7 @@ async function submitForm() {
 
   const payload = formToPayload(form)
   if (buildConditions(form.conditions).length === 0) {
-    ElMessage.warning('请至少填写一个有效的过滤条件')
+    ElMessage.warning(t('datasetPage.rowPermissionForm.conditionsRequired'))
     return
   }
 
@@ -176,15 +221,15 @@ async function submitForm() {
   try {
     if (editingId.value) {
       await updateRowPermission(props.datasetId, editingId.value, payload)
-      ElMessage.success('规则已更新')
+      ElMessage.success(t('datasetPage.rowPermissionForm.updated'))
     } else {
       await createRowPermission(props.datasetId, payload)
-      ElMessage.success('规则已创建')
+      ElMessage.success(t('datasetPage.rowPermissionForm.created'))
     }
     visible.value = false
     emit('saved')
   } catch (e: any) {
-    ElMessage.error(e?.message || '保存失败')
+    ElMessage.error(e?.message || t('datasetPage.rowPermissionForm.saveFailed'))
   } finally {
     submitting.value = false
   }

@@ -14,8 +14,8 @@
 
     <el-col v-if="!loading && items.length === 0" :span="24">
       <div class="empty-state">
-        <el-empty description="暂无看板,点击右上角新建">
-          <el-button type="primary" @click="emit('create')">新建看板</el-button>
+        <el-empty :description="t('dashboard.empty')">
+          <el-button type="primary" @click="emit('create')">{{ t('dashboard.create') }}</el-button>
         </el-empty>
       </div>
     </el-col>
@@ -24,6 +24,7 @@
 
 <script setup lang="ts">
 import type { Dashboard } from '@/api/types'
+import { useI18n } from 'vue-i18n'
 import DashboardCard from './DashboardCard.vue'
 
 defineProps<{
@@ -38,6 +39,8 @@ const emit = defineEmits<{
   command: [cmd: string, item: Dashboard]
   create: []
 }>()
+
+const { t } = useI18n()
 
 /** 当前用户是否已收藏（favorites 有值即视为已收藏） */
 function isFavorited(item: Dashboard): boolean {

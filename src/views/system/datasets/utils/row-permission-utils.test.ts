@@ -66,13 +66,9 @@ describe('展示文案', () => {
     expect(subjectLabel({ ...rule, subjectType: 'role', subjectId: 1 }, options)).toBe(
       '角色: 管理员',
     )
-    expect(subjectLabel({ ...rule, subjectType: 'user', subjectId: 2 }, options)).toBe(
-      '用户: 小爱',
-    )
+    expect(subjectLabel({ ...rule, subjectType: 'user', subjectId: 2 }, options)).toBe('用户: 小爱')
     expect(subjectLabel(rule, options)).toBe('部门: 华东大区')
-    expect(subjectLabel({ ...rule, subjectType: 'role', subjectId: 99 }, options)).toBe(
-      '角色: #99',
-    )
+    expect(subjectLabel({ ...rule, subjectType: 'role', subjectId: 99 }, options)).toBe('角色: #99')
   })
 
   it('conditionsLabel 用 AND 连接，空值操作符不带值', () => {

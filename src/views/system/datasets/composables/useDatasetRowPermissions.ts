@@ -1,5 +1,6 @@
 import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import i18n from '@/i18n'
 import {
   type RowPermission,
   type RowPermissionOptions,
@@ -38,7 +39,7 @@ export function useDatasetRowPermissions(deps: UseDatasetRowPermissionsOptions) 
         conditions: Array.isArray(r.conditions) ? r.conditions : [],
       }))
     } catch (e: any) {
-      ElMessage.error(e?.message || '加载行级权限失败')
+      ElMessage.error(e?.message || i18n.global.t('datasetPage.rowPermission.loadFailed'))
     } finally {
       loading.value = false
     }
@@ -83,7 +84,7 @@ export function useDatasetRowPermissions(deps: UseDatasetRowPermissionsOptions) 
       deps.onSaved()
     } catch (e: any) {
       rule.enabled = !rule.enabled
-      ElMessage.error(e?.message || '更新失败')
+      ElMessage.error(e?.message || i18n.global.t('datasetPage.rowPermission.updateFailed'))
     }
   }
 
@@ -92,11 +93,11 @@ export function useDatasetRowPermissions(deps: UseDatasetRowPermissionsOptions) 
     if (!dataset) return
     try {
       await deleteRowPermission(dataset.id, rule.id)
-      ElMessage.success('规则已删除')
+      ElMessage.success(i18n.global.t('datasetPage.rowPermission.deleted'))
       await loadRules()
       deps.onSaved()
     } catch (e: any) {
-      ElMessage.error(e?.message || '删除失败')
+      ElMessage.error(e?.message || i18n.global.t('datasetPage.rowPermission.deleteFailed'))
     }
   }
 

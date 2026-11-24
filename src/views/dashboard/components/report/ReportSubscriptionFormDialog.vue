@@ -1,16 +1,22 @@
 <template>
   <el-dialog
     v-model="visible"
-    :title="editingId ? '编辑报表订阅' : '新增报表订阅'"
+    :title="
+      editingId ? t('dashboard.reportEditSubscription') : t('dashboard.reportCreateSubscription')
+    "
     width="640px"
     append-to-body
     destroy-on-close
   >
     <el-form ref="formRef" :model="form" :rules="formRules" label-width="96px">
-      <el-form-item label="订阅名称" prop="name">
-        <el-input v-model="form.name" maxlength="100" placeholder="如: 每日销售看板" />
+      <el-form-item :label="t('dashboard.reportSubscriptionName')" prop="name">
+        <el-input
+          v-model="form.name"
+          maxlength="100"
+          :placeholder="t('dashboard.reportNamePlaceholder')"
+        />
       </el-form-item>
-      <el-form-item label="执行周期" prop="cron">
+      <el-form-item :label="t('dashboard.reportCron')" prop="cron">
         <el-select
           v-model="form.cron"
           filterable
@@ -26,7 +32,7 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="投递渠道" prop="channel">
+      <el-form-item :label="t('dashboard.reportChannel')" prop="channel">
         <div class="channel-field">
           <el-radio-group v-model="form.channel" @change="handleChannelChange">
             <el-radio v-for="opt in channelOptions" :key="opt.value" :label="opt.value">
@@ -38,7 +44,11 @@
       </el-form-item>
       <el-form-item
         v-if="showRecipients(form.channel)"
-        :label="form.channel === 'email' ? '收件邮箱' : '收件人'"
+        :label="
+          form.channel === 'email'
+            ? t('dashboard.reportEmailRecipients')
+            : t('dashboard.reportRecipients')
+        "
         prop="recipients"
       >
         <el-input
@@ -46,40 +56,51 @@
           maxlength="500"
           :placeholder="
             form.channel === 'email'
-              ? '必填，多个邮箱以逗号分隔，如: a@company.com, b@company.com'
-              : '可选，多个收件人以逗号分隔（记录在投递记录中）'
+              ? t('dashboard.reportEmailRecipientsPlaceholder')
+              : t('dashboard.reportRecipientsPlaceholder')
           "
         />
       </el-form-item>
       <el-form-item
         v-if="isRobotChannel(form.channel)"
-        :label="form.channel === 'webhook' ? '回调地址' : '机器人地址'"
+        :label="
+          form.channel === 'webhook'
+            ? t('dashboard.reportCallbackUrl')
+            : t('dashboard.reportRobotUrl')
+        "
         prop="webhookUrl"
       >
         <el-input v-model="form.webhookUrl" maxlength="500" :placeholder="robotUrlPlaceholder" />
       </el-form-item>
-      <el-form-item v-if="form.channel === 'dingtalk'" label="加签密钥" prop="webhookSecret">
+      <el-form-item
+        v-if="form.channel === 'dingtalk'"
+        :label="t('dashboard.reportSignSecret')"
+        prop="webhookSecret"
+      >
         <el-input
           v-model="form.webhookSecret"
           type="password"
           show-password
           maxlength="255"
-          placeholder="可选，钉钉机器人「加签」安全设置的密钥"
+          :placeholder="t('dashboard.reportSignSecretPlaceholder')"
         />
       </el-form-item>
-      <el-form-item label="启用">
+      <el-form-item :label="t('dashboard.reportEnabled')">
         <el-switch v-model="form.enabled" />
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
+      <el-button @click="visible = false">{{ t('common.cancel') }}</el-button>
+      <el-button type="primary" :loading="saving" @click="handleSave">{{
+        t('common.save')
+      }}</el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { ReportSubscription } from '@/api/report'
 import { useSubscriptionForm } from '../../composables/report/useSubscriptionForm'
 import {
@@ -97,6 +118,8 @@ const props = defineProps<{
 const emit = defineEmits<{ saved: [] }>()
 
 const visible = defineModel<boolean>({ required: true })
+
+const { t } = useI18n()
 
 const {
   formRef,

@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import i18n from '@/i18n'
 import {
   deleteReportSubscription,
   getReportSubscriptions,
@@ -32,7 +33,7 @@ export function useReportSubscriptions(deps: ReportSubscriptionsDeps) {
       const res = await getReportSubscriptions(dashboardId)
       subscriptions.value = res.data
     } catch (e) {
-      ElMessage.error(e instanceof Error ? e.message : '加载报表订阅失败')
+      ElMessage.error(e instanceof Error ? e.message : i18n.global.t('dashboard.reportLoadFailed'))
     } finally {
       loadingSubs.value = false
     }
@@ -41,20 +42,26 @@ export function useReportSubscriptions(deps: ReportSubscriptionsDeps) {
   async function toggleEnabled(row: ReportSubscription) {
     try {
       await updateReportSubscription(row.id, { enabled: row.enabled })
-      ElMessage.success(row.enabled ? '订阅已启用' : '订阅已停用')
+      ElMessage.success(
+        i18n.global.t(row.enabled ? 'dashboard.reportEnabledDone' : 'dashboard.reportDisabledDone'),
+      )
     } catch (e) {
       row.enabled = !row.enabled
-      ElMessage.error(e instanceof Error ? e.message : '操作失败')
+      ElMessage.error(
+        e instanceof Error ? e.message : i18n.global.t('dashboard.reportToggleFailed'),
+      )
     }
   }
 
   async function removeSubscription(row: ReportSubscription) {
     try {
       await deleteReportSubscription(row.id)
-      ElMessage.success('订阅已删除')
+      ElMessage.success(i18n.global.t('dashboard.reportDeleted'))
       await loadSubscriptions()
     } catch (e) {
-      ElMessage.error(e instanceof Error ? e.message : '删除失败')
+      ElMessage.error(
+        e instanceof Error ? e.message : i18n.global.t('dashboard.reportDeleteFailed'),
+      )
     }
   }
 
@@ -62,15 +69,15 @@ export function useReportSubscriptions(deps: ReportSubscriptionsDeps) {
     try {
       const res = await runReportSubscription(row.id)
       if (res.data.status === 'failed') {
-        ElMessage.error(res.data.message || '报表生成失败')
+        ElMessage.error(res.data.message || i18n.global.t('dashboard.reportRunFailedMessage'))
       } else {
-        ElMessage.success(res.data.message || '报表已生成')
+        ElMessage.success(res.data.message || i18n.global.t('dashboard.reportRunSuccess'))
       }
       await loadSubscriptions()
       await deps.loadUnreadCount()
       if (deps.getActiveTab() === 'deliveries') await deps.loadDeliveries()
     } catch (e) {
-      ElMessage.error(e instanceof Error ? e.message : '生成失败')
+      ElMessage.error(e instanceof Error ? e.message : i18n.global.t('dashboard.reportRunFailed'))
     }
   }
 

@@ -1,25 +1,29 @@
 <template>
   <el-dialog
     v-model="visible"
-    :title="mode === 'create' ? '新增数据集' : '编辑数据集'"
+    :title="mode === 'create' ? t('datasetPage.edit.createTitle') : t('datasetPage.edit.editTitle')"
     width="1000px"
     destroy-on-close
     @open="onOpen"
   >
     <el-tabs v-model="activeTab">
-      <el-tab-pane label="基本配置" name="basic">
+      <el-tab-pane :label="t('datasetPage.edit.tabBasic')" name="basic">
         <el-form ref="formRef" :model="form" :rules="rules" label-width="96px">
-          <el-form-item label="数据集名称" prop="name">
-            <el-input v-model="form.name" maxlength="100" placeholder="业务显示名" />
+          <el-form-item :label="t('datasetPage.edit.nameLabel')" prop="name">
+            <el-input
+              v-model="form.name"
+              maxlength="100"
+              :placeholder="t('datasetPage.edit.namePlaceholder')"
+            />
           </el-form-item>
-          <el-form-item v-if="form.type === 'file'" label="数据类型">
-            <el-tag type="warning" size="small">文件数据集 (Excel/CSV, 无需数据源)</el-tag>
+          <el-form-item v-if="form.type === 'file'" :label="t('datasetPage.edit.dataType')">
+            <el-tag type="warning" size="small">{{ t('datasetPage.edit.fileDatasetTag') }}</el-tag>
           </el-form-item>
-          <el-form-item v-else label="关联数据源" prop="datasourceId">
+          <el-form-item v-else :label="t('datasetPage.edit.datasourceLabel')" prop="datasourceId">
             <el-select
               v-model="form.datasourceId"
               filterable
-              placeholder="选择数据源"
+              :placeholder="t('datasetPage.edit.datasourcePlaceholder')"
               style="width: 100%"
             >
               <el-option
@@ -30,13 +34,13 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="缓存开关" prop="cacheEnabled">
+          <el-form-item :label="t('datasetPage.edit.cacheLabel')" prop="cacheEnabled">
             <el-switch v-model="form.cacheEnabled" />
-            <span style="margin-left: 12px; color: #6b7280; font-size: 13px"
-              >启用后相同查询在 TTL 内走内存缓存</span
-            >
+            <span style="margin-left: 12px; color: #6b7280; font-size: 13px">{{
+              t('datasetPage.edit.cacheHint')
+            }}</span>
           </el-form-item>
-          <el-form-item label="缓存 TTL" prop="cacheTtl">
+          <el-form-item :label="t('datasetPage.edit.cacheTtlLabel')" prop="cacheTtl">
             <el-input-number
               v-model="form.cacheTtl"
               :min="0"
@@ -44,9 +48,11 @@
               controls-position="right"
               style="width: 200px"
             />
-            <span v-pre style="margin-left: 12px; color: #6b7280; font-size: 13px">秒</span>
+            <span style="margin-left: 12px; color: #6b7280; font-size: 13px">{{
+              t('datasetPage.edit.seconds')
+            }}</span>
           </el-form-item>
-          <el-form-item label="描述">
+          <el-form-item :label="t('datasetPage.edit.descriptionLabel')">
             <el-input
               v-model="form.description"
               type="textarea"
@@ -58,7 +64,11 @@
         </el-form>
       </el-tab-pane>
 
-      <el-tab-pane v-if="form.type === 'file'" label="数据文件" name="datafile">
+      <el-tab-pane
+        v-if="form.type === 'file'"
+        :label="t('datasetPage.edit.tabDatafile')"
+        name="datafile"
+      >
         <DatasetEditFileTab
           :dataset-id="form.id"
           :file-data="form.fileData"
@@ -68,40 +78,38 @@
         />
       </el-tab-pane>
 
-      <el-tab-pane v-else label="SQL 查询" name="sql">
+      <el-tab-pane v-else :label="t('datasetPage.edit.tabSql')" name="sql">
         <el-form :model="form" label-width="96px">
-          <el-form-item label="SQL 查询" prop="sql">
+          <el-form-item :label="t('datasetPage.edit.sqlLabel')" prop="sql">
             <SqlEditor
               v-model="form.sql"
               :height="240"
               label="SQL"
               placeholder="SELECT col1, col2 FROM table_name WHERE col = {{paramName}} ..."
             />
-            <div v-pre style="color: #9ca3af; font-size: 12px; margin-top: 4px">
-              仅允许 SELECT 查询。使用 {{ paramName }} 引用参数（在"参数配置"标签页定义）。
+            <div style="color: #9ca3af; font-size: 12px; margin-top: 4px">
+              {{ t('datasetPage.edit.sqlHint', { paramName: PARAM_REF }) }}
             </div>
           </el-form-item>
         </el-form>
         <el-button :disabled="!(form.datasourceId && form.sql)" @click="previewCurrentForm">
-          校验 SQL 并预览
+          {{ t('datasetPage.edit.validateSql') }}
         </el-button>
       </el-tab-pane>
 
-      <el-tab-pane
-        :label="`参数配置${form.params && form.params.length ? ' (' + form.params.length + ')' : ''}`"
-        name="params"
-      >
+      <el-tab-pane :label="paramsTabLabel" name="params">
         <DatasetParamsTab v-model:params="form.params" />
       </el-tab-pane>
 
-      <el-tab-pane v-if="form.type !== 'file'" label="抽取模式" name="extract">
+      <el-tab-pane
+        v-if="form.type !== 'file'"
+        :label="t('datasetPage.edit.tabExtract')"
+        name="extract"
+      >
         <DatasetExtractTab :mode="mode" :dataset-id="form.id" />
       </el-tab-pane>
 
-      <el-tab-pane
-        :label="`字段管理${form.fields && form.fields.length ? ' (' + form.fields.length + ')' : ''}`"
-        name="fields"
-      >
+      <el-tab-pane :label="fieldsTabLabel" name="fields">
         <DatasetFieldsTab
           v-model:fields="form.fields"
           :preview-columns="previewColumns"
@@ -110,19 +118,19 @@
       </el-tab-pane>
     </el-tabs>
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
-      <el-button type="primary" :loading="submitting" @click="submitForm">确定</el-button>
+      <el-button @click="visible = false">{{ t('common.cancel') }}</el-button>
+      <el-button type="primary" :loading="submitting" @click="submitForm">{{
+        t('datasetPage.confirm')
+      }}</el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import {
-  createDataset,
-  updateDataset,
-} from '@/api/dataset'
+import { createDataset, updateDataset } from '@/api/dataset'
 import type { DataSource } from '@/api/types'
 import SqlEditor from '@/components/SqlEditor.vue'
 import DatasetParamsTab from './DatasetParamsTab.vue'
@@ -162,6 +170,11 @@ const visible = computed({
   set: (v: boolean) => emit('update:modelValue', v),
 })
 
+const { t } = useI18n()
+
+/** SQL 参数引用示例（避免在模板表达式中直接书写双大括号） */
+const PARAM_REF = '{{ paramName }}'
+
 const submitting = ref(false)
 const formRef = ref<FormInstance>()
 const activeTab = ref('basic')
@@ -180,20 +193,42 @@ const form = reactive<DatasetEditForm>({
   fileData: undefined,
 })
 
+/** 参数配置标签页文案 (含参数数量) */
+const paramsTabLabel = computed(() =>
+  form.params && form.params.length
+    ? t('datasetPage.edit.tabParamsWithCount', { count: form.params.length })
+    : t('datasetPage.edit.tabParams'),
+)
+
+/** 字段管理标签页文案 (含字段数量) */
+const fieldsTabLabel = computed(() =>
+  form.fields && form.fields.length
+    ? t('datasetPage.edit.tabFieldsWithCount', { count: form.fields.length })
+    : t('datasetPage.edit.tabFields'),
+)
+
 /** 动态校验规则: 文件数据集无需数据源/SQL */
 const rules = computed<FormRules>(() => {
   const base: FormRules = {
     name: [
-      { required: true, message: '请输入名称', trigger: 'blur' },
+      { required: true, message: t('datasetPage.edit.nameRequired'), trigger: 'blur' },
       { max: 100, trigger: 'blur' },
     ],
     cacheTtl: [
-      { type: 'number', min: 0, max: 86400, message: 'TTL 需在 0-86400 秒', trigger: 'blur' },
+      {
+        type: 'number',
+        min: 0,
+        max: 86400,
+        message: t('datasetPage.edit.ttlRange'),
+        trigger: 'blur',
+      },
     ],
   }
   if (form.type === 'file') return base
-  base.datasourceId = [{ required: true, message: '请选择数据源', trigger: 'change' }]
-  base.sql = [{ required: true, message: '请输入 SQL', trigger: 'blur' }]
+  base.datasourceId = [
+    { required: true, message: t('datasetPage.edit.datasourceRequired'), trigger: 'change' },
+  ]
+  base.sql = [{ required: true, message: t('datasetPage.edit.sqlRequired'), trigger: 'blur' }]
   return base
 })
 
@@ -243,7 +278,7 @@ async function submitForm() {
   const isFile = form.type === 'file'
   if (!isFile && !form.sql) {
     activeTab.value = 'sql'
-    ElMessage.warning('请输入 SQL')
+    ElMessage.warning(t('datasetPage.edit.sqlRequired'))
     return
   }
   submitting.value = true
@@ -251,10 +286,10 @@ async function submitForm() {
     const payload = buildDatasetPayload(form, isFile)
     if (props.mode === 'create') {
       await createDataset(payload)
-      ElMessage.success('创建数据集成功')
+      ElMessage.success(t('datasetPage.edit.createSuccess'))
     } else if (form.id) {
       await updateDataset(form.id, payload)
-      ElMessage.success('保存成功')
+      ElMessage.success(t('datasetPage.edit.saveSuccess'))
     }
     visible.value = false
     emit('saved')

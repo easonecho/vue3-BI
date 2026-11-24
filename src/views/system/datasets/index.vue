@@ -4,7 +4,7 @@
       <div class="filter-bar">
         <el-input
           v-model="filters.keyword"
-          placeholder="搜索数据集名称/描述"
+          :placeholder="t('datasetPage.list.searchPlaceholder')"
           clearable
           style="width: 240px"
           :prefix-icon="Search"
@@ -13,7 +13,7 @@
         />
         <el-select
           v-model="filters.datasourceId"
-          placeholder="按数据源筛选"
+          :placeholder="t('datasetPage.list.datasourceFilter')"
           filterable
           clearable
           style="width: 200px"
@@ -27,33 +27,35 @@
           />
         </el-select>
         <el-button type="primary" @click="handleSearch">
-          <el-icon><Search /></el-icon>&nbsp;查询
+          <el-icon><Search /></el-icon>&nbsp;{{ t('datasetPage.query') }}
         </el-button>
         <el-button @click="handleReset">
-          <el-icon><Refresh /></el-icon>&nbsp;重置
+          <el-icon><Refresh /></el-icon>&nbsp;{{ t('common.reset') }}
         </el-button>
         <div class="spacer" />
         <el-button plain @click="lineageVisible = true">
-          <el-icon><Connection /></el-icon>&nbsp;数据血缘
+          <el-icon><Connection /></el-icon>&nbsp;{{ t('datasetPage.list.lineage') }}
         </el-button>
         <el-button type="warning" plain @click="openUploadDialog">
-          <el-icon><Upload /></el-icon>&nbsp;上传 Excel/CSV
+          <el-icon><Upload /></el-icon>&nbsp;{{ t('datasetPage.list.upload') }}
         </el-button>
         <el-button type="success" @click="openCreateDialog">
-          <el-icon><Plus /></el-icon>&nbsp;新增数据集
+          <el-icon><Plus /></el-icon>&nbsp;{{ t('datasetPage.list.create') }}
         </el-button>
       </div>
 
       <el-table v-loading="loading" :data="list" style="margin-top: 16px" stripe border>
         <el-table-column prop="id" label="ID" width="70" align="center" />
-        <el-table-column prop="name" label="名称" min-width="140" />
-        <el-table-column label="类型" width="90" align="center">
+        <el-table-column :label="t('datasetPage.list.colName')" prop="name" min-width="140" />
+        <el-table-column :label="t('datasetPage.list.colType')" width="90" align="center">
           <template #default="{ row }">
-            <el-tag v-if="row.type === 'file'" size="small" type="warning">文件</el-tag>
+            <el-tag v-if="row.type === 'file'" size="small" type="warning">{{
+              t('datasetPage.list.typeFile')
+            }}</el-tag>
             <el-tag v-else size="small" type="primary" effect="plain">SQL</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="数据源" min-width="140">
+        <el-table-column :label="t('datasetPage.list.colDatasource')" min-width="140">
           <template #default="{ row }">
             <span v-if="row.datasource">
               <el-tag size="small" effect="plain">{{ row.datasource.type?.toUpperCase() }}</el-tag>
@@ -62,59 +64,76 @@
             <span v-else style="color: #9ca3af">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="参数" width="80" align="center">
+        <el-table-column :label="t('datasetPage.list.colParams')" width="80" align="center">
           <template #default="{ row }">
-            <el-tag v-if="row.params && row.params.length" size="small" type="warning"
-              >{{ row.params.length }}个</el-tag
-            >
+            <el-tag v-if="row.params && row.params.length" size="small" type="warning">{{
+              t('datasetPage.list.paramsCount', { count: row.params.length })
+            }}</el-tag>
             <span v-else style="color: #9ca3af">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="字段配置" width="90" align="center">
+        <el-table-column :label="t('datasetPage.list.colFields')" width="90" align="center">
           <template #default="{ row }">
-            <el-tag v-if="row.fields && row.fields.length" size="small" type="success"
-              >{{ row.fields.length }}个</el-tag
-            >
+            <el-tag v-if="row.fields && row.fields.length" size="small" type="success">{{
+              t('datasetPage.list.fieldsCount', { count: row.fields.length })
+            }}</el-tag>
             <span v-else style="color: #9ca3af">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="缓存" width="120" align="center">
+        <el-table-column :label="t('datasetPage.list.colCache')" width="120" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.cacheEnabled" size="small" type="success"
               >TTL {{ row.cacheTtl || 300 }}s</el-tag
             >
-            <el-tag v-else size="small" type="info">未开启</el-tag>
+            <el-tag v-else size="small" type="info">{{
+              t('datasetPage.list.cacheDisabled')
+            }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="SQL / 数据文件" min-width="280" show-overflow-tooltip>
+        <el-table-column
+          :label="t('datasetPage.list.colSql')"
+          min-width="280"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             <template v-if="row.type === 'file'">
               <code class="sql-code"
-                >{{ row.fileData?.fileName || '-' }} ({{ row.fileData?.rowCount ?? 0 }} 行)</code
+                >{{ row.fileData?.fileName || '-' }}
+                {{ t('datasetPage.list.fileRows', { count: row.fileData?.rowCount ?? 0 }) }}</code
               >
             </template>
             <code v-else class="sql-code">{{ row.sql }}</code>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="420" fixed="right" align="center">
+        <el-table-column
+          :label="t('datasetPage.list.colActions')"
+          width="420"
+          fixed="right"
+          align="center"
+        >
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="previewRow(row)">预览</el-button>
-            <el-button link type="primary" size="small" @click="openEditDialog(row)"
-              >编辑</el-button
-            >
-            <el-button link type="primary" size="small" @click="openRowPermissions(row)"
-              >行级权限</el-button
-            >
-            <el-button link type="primary" size="small" @click="openColumnPermissions(row)"
-              >列级权限</el-button
-            >
-            <el-button link type="primary" size="small" @click="openAlerts(row)">告警</el-button>
+            <el-button link type="primary" size="small" @click="previewRow(row)">{{
+              t('datasetPage.list.preview')
+            }}</el-button>
+            <el-button link type="primary" size="small" @click="openEditDialog(row)">{{
+              t('common.edit')
+            }}</el-button>
+            <el-button link type="primary" size="small" @click="openRowPermissions(row)">{{
+              t('datasetPage.list.rowPermission')
+            }}</el-button>
+            <el-button link type="primary" size="small" @click="openColumnPermissions(row)">{{
+              t('datasetPage.list.columnPermission')
+            }}</el-button>
+            <el-button link type="primary" size="small" @click="openAlerts(row)">{{
+              t('datasetPage.list.alerts')
+            }}</el-button>
             <el-dropdown
               trigger="click"
               @command="(cmd: string) => handleExport(row, cmd as ExportFormat)"
             >
               <el-button link type="primary" size="small">
-                导出<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                {{ t('datasetPage.list.export')
+                }}<el-icon class="el-icon--right"><ArrowDown /></el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
@@ -125,12 +144,14 @@
               </template>
             </el-dropdown>
             <el-popconfirm
-              title="确定删除该数据集吗?"
+              :title="t('datasetPage.list.deleteConfirm')"
               confirm-button-type="danger"
               @confirm="handleDelete(row)"
             >
               <template #reference
-                ><el-button link type="danger" size="small">删除</el-button></template
+                ><el-button link type="danger" size="small">{{
+                  t('common.delete')
+                }}</el-button></template
               >
             </el-popconfirm>
           </template>
@@ -185,7 +206,7 @@
     <DatasetAlerts v-model="alertVisible" :dataset="alertDataset" />
 
     <!-- 预览对话框 -->
-    <el-dialog v-model="previewVisible" title="数据预览 (最多 100 行)" width="720px">
+    <el-dialog v-model="previewVisible" :title="t('datasetPage.list.previewTitle')" width="720px">
       <div v-loading="previewLoading" style="max-height: 420px; overflow: auto">
         <el-table
           v-if="previewData.rows && previewData.rows.length"
@@ -203,10 +224,10 @@
             show-overflow-tooltip
           />
         </el-table>
-        <el-empty v-else-if="!previewLoading" description="查询结果为空" />
+        <el-empty v-else-if="!previewLoading" :description="t('datasetPage.list.previewEmpty')" />
       </div>
       <div style="margin-top: 8px; color: #6b7280; font-size: 13px">
-        总行数: {{ previewData.rowCount ?? '-' }}
+        {{ t('datasetPage.list.totalRows', { count: previewData.rowCount ?? '-' }) }}
       </div>
     </el-dialog>
 
@@ -217,6 +238,7 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Search, Refresh, Plus, Upload, ArrowDown, Connection } from '@element-plus/icons-vue'
 import DataLineage from './components/DataLineage.vue'
@@ -229,6 +251,8 @@ import { exportDatasetByFormat, saveAs, type ExportFormat } from '@/api/export'
 import DatasetRowPermissions from './components/DatasetRowPermissions.vue'
 import DatasetColumnPermissions from './components/DatasetColumnPermissions.vue'
 import DatasetAlerts from './components/DatasetAlerts.vue'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const list = ref<any[]>([])
@@ -304,7 +328,7 @@ function openUploadDialog() {
 async function handleDelete(row: any) {
   try {
     await deleteDataset(row.id)
-    ElMessage.success('删除成功')
+    ElMessage.success(t('datasetPage.list.deleteSuccess'))
     if (list.value.length === 1 && page.value > 1) page.value -= 1
     loadList()
   } catch {
@@ -353,13 +377,18 @@ async function handleExport(row: any, format: ExportFormat) {
     saveAs(result.blob, `${safeName}_${dateStamp()}.${format}`)
     if (result.truncated) {
       ElMessage.warning(
-        `数据量超过导出行数上限${result.limit ? `（${result.limit} 行）` : ''}，已导出 ${result.rowCount ?? ''} 行，请缩小筛选范围后重试`,
+        result.limit
+          ? t('datasetPage.list.exportTruncatedWithLimit', {
+              limit: result.limit,
+              count: result.rowCount ?? '',
+            })
+          : t('datasetPage.list.exportTruncated', { count: result.rowCount ?? '' }),
       )
     } else {
-      ElMessage.success('导出已开始')
+      ElMessage.success(t('datasetPage.list.exportStarted'))
     }
   } catch (e: any) {
-    ElMessage.error(e?.message || '导出失败')
+    ElMessage.error(e?.message || t('datasetPage.list.exportFailed'))
   }
 }
 
@@ -397,7 +426,7 @@ async function previewSqlAdHoc(params: { datasourceId: number; sql: string }) {
   try {
     const res = await previewSql({ ...params, limit: 100 })
     previewData.value = res.data || { columns: [], rows: [], rowCount: 0 }
-    ElMessage.success('SQL 校验通过')
+    ElMessage.success(t('datasetPage.list.sqlValidated'))
   } finally {
     previewLoading.value = false
   }

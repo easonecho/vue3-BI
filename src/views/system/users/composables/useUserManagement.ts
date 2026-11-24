@@ -1,4 +1,5 @@
 import { onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { getUserList, deleteUser, getRoles } from '@/api/user'
 import type { User, Role } from '@/api/types'
@@ -8,6 +9,7 @@ import type { User, Role } from '@/api/types'
  *   新增/编辑/改角色/重置密码由各自的对话框组件处理。
  */
 export function useUserManagement() {
+  const { t } = useI18n()
   const loading = ref(false)
   const list = ref<User[]>([])
   const total = ref(0)
@@ -63,7 +65,7 @@ export function useUserManagement() {
   async function handleDelete(row: User) {
     try {
       await deleteUser(row.id)
-      ElMessage.success('删除成功')
+      ElMessage.success(t('userPage.deleteSuccess'))
       if (list.value.length === 1 && page.value > 1) page.value -= 1
       loadList()
     } catch {

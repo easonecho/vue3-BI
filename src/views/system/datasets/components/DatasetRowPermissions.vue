@@ -1,44 +1,68 @@
 <template>
   <el-dialog
     v-model="visible"
-    :title="dataset ? `行级权限 - ${dataset.name}` : '行级权限'"
+    :title="
+      dataset
+        ? t('datasetPage.rowPermission.titleWithName', { name: dataset.name })
+        : t('datasetPage.rowPermission.title')
+    "
     width="880px"
     destroy-on-close
     @closed="handleClosed"
   >
     <div class="rls-toolbar">
       <el-button type="primary" size="small" @click="openCreate">
-        <el-icon><Plus /></el-icon>&nbsp;新增规则
+        <el-icon><Plus /></el-icon>&nbsp;{{ t('datasetPage.rowPermission.add') }}
       </el-button>
       <span class="rls-hint">
-        单条规则内多条件为 AND，多条规则为 OR；未命中规则时不做过滤
+        {{ t('datasetPage.rowPermission.hint') }}
       </span>
     </div>
 
     <el-table v-loading="loading" :data="rules" size="small" border>
-      <el-table-column prop="name" label="规则名称" min-width="140" show-overflow-tooltip />
-      <el-table-column label="适用对象" width="190">
+      <el-table-column
+        prop="name"
+        :label="t('datasetPage.rowPermission.colName')"
+        min-width="140"
+        show-overflow-tooltip
+      />
+      <el-table-column :label="t('datasetPage.rowPermission.colSubject')" width="190">
         <template #default="{ row }">
           <el-tag size="small" effect="plain">{{ subjectLabel(row, options) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="过滤条件" min-width="260">
+      <el-table-column :label="t('datasetPage.rowPermission.colConditions')" min-width="260">
         <template #default="{ row }">
           <span class="cond-text">{{ conditionsLabel(row) }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="priority" label="优先级" width="80" align="center" />
-      <el-table-column label="启用" width="80" align="center">
+      <el-table-column
+        prop="priority"
+        :label="t('datasetPage.rowPermission.colPriority')"
+        width="80"
+        align="center"
+      />
+      <el-table-column :label="t('datasetPage.rowPermission.colEnabled')" width="80" align="center">
         <template #default="{ row }">
           <el-switch v-model="row.enabled" size="small" @change="toggleEnabled(row)" />
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="120" align="center">
+      <el-table-column
+        :label="t('datasetPage.rowPermission.colActions')"
+        width="120"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-          <el-popconfirm title="确定删除该规则吗?" confirm-button-type="danger" @confirm="handleDelete(row)">
+          <el-button link type="primary" size="small" @click="openEdit(row)">{{
+            t('common.edit')
+          }}</el-button>
+          <el-popconfirm
+            :title="t('datasetPage.rowPermission.deleteConfirm')"
+            confirm-button-type="danger"
+            @confirm="handleDelete(row)"
+          >
             <template #reference>
-              <el-button link type="danger" size="small">删除</el-button>
+              <el-button link type="danger" size="small">{{ t('common.delete') }}</el-button>
             </template>
           </el-popconfirm>
         </template>
@@ -46,7 +70,7 @@
     </el-table>
     <el-empty
       v-if="!loading && rules.length === 0"
-      description="暂无行级权限规则"
+      :description="t('datasetPage.rowPermission.empty')"
       :image-size="60"
     />
 
@@ -64,6 +88,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Plus } from '@element-plus/icons-vue'
 import type { RowPermission } from '@/api/dataset'
 import DatasetRowPermissionFormDialog from './DatasetRowPermissionFormDialog.vue'
@@ -87,6 +112,8 @@ const visible = computed({
 
 const formVisible = ref(false)
 const editingRule = ref<RowPermission | null>(null)
+
+const { t } = useI18n()
 
 const { rules, loading, options, handleClosed, toggleEnabled, handleDelete, loadRules } =
   useDatasetRowPermissions({

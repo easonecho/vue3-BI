@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { Router } from 'vue-router'
+import i18n from '@/i18n'
 import { copyDashboard, deleteDashboard, updateDashboard } from '@/api/dashboard'
 import type { Dashboard } from '@/api/types'
 import { removeRecentDashboard, renameRecentDashboard } from '@/utils/recent-dashboards'
@@ -120,7 +121,7 @@ export function useDashboardActions(deps: DashboardActionsDeps) {
     if (!renameTarget.value) return
     const name = renameValue.value.trim()
     if (!name) {
-      ElMessage.warning('看板名称不能为空')
+      ElMessage.warning(i18n.global.t('dashboard.nameRequired'))
       return
     }
     renaming.value = true
@@ -128,7 +129,7 @@ export function useDashboardActions(deps: DashboardActionsDeps) {
       await updateDashboard(renameTarget.value.id, { name })
       renameRecentDashboard(renameTarget.value.id, name)
       onRecentChanged?.()
-      ElMessage.success('重命名成功')
+      ElMessage.success(i18n.global.t('dashboard.renameSuccess'))
       renameVisible.value = false
       void reload()
     } catch {
@@ -141,16 +142,16 @@ export function useDashboardActions(deps: DashboardActionsDeps) {
   async function handleCopy(item: Dashboard) {
     try {
       await ElMessageBox.confirm(
-        `确定复制看板「${item.name}」吗? 副本将作为草稿创建。`,
-        '复制看板',
+        i18n.global.t('dashboard.copyConfirm', { name: item.name }),
+        i18n.global.t('dashboard.copyTitle'),
         {
           type: 'info',
-          confirmButtonText: '复制',
-          cancelButtonText: '取消',
+          confirmButtonText: i18n.global.t('dashboard.copyBtn'),
+          cancelButtonText: i18n.global.t('common.cancel'),
         },
       )
       await copyDashboard(item.id)
-      ElMessage.success('复制成功')
+      ElMessage.success(i18n.global.t('dashboard.copySuccess'))
       void reload()
     } catch {
       // 用户取消或请求失败
@@ -159,10 +160,11 @@ export function useDashboardActions(deps: DashboardActionsDeps) {
 
   async function handleToggleStatus(item: Dashboard) {
     const next = item.status === 1 ? 0 : 1
-    const label = next === 1 ? '发布' : '转为草稿'
     try {
       await updateDashboard(item.id, { status: next })
-      ElMessage.success(`已${label}`)
+      ElMessage.success(
+        i18n.global.t(next === 1 ? 'dashboard.publishedAction' : 'dashboard.draftAction'),
+      )
       void reload()
     } catch {
       // 错误提示由 request 拦截器统一处理
@@ -171,10 +173,11 @@ export function useDashboardActions(deps: DashboardActionsDeps) {
 
   async function handleTogglePublic(item: Dashboard) {
     const next = !item.isPublic
-    const label = next ? '公开' : '私有'
     try {
       await updateDashboard(item.id, { isPublic: next })
-      ElMessage.success(`已设为${label}`)
+      ElMessage.success(
+        i18n.global.t(next ? 'dashboard.setPublicDone' : 'dashboard.setPrivateDone'),
+      )
       void reload()
     } catch {
       // 错误提示由 request 拦截器统一处理
@@ -183,15 +186,19 @@ export function useDashboardActions(deps: DashboardActionsDeps) {
 
   async function handleDelete(item: Dashboard) {
     try {
-      await ElMessageBox.confirm(`确定删除看板「${item.name}」吗?此操作不可恢复。`, '提示', {
-        type: 'warning',
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
-      })
+      await ElMessageBox.confirm(
+        i18n.global.t('dashboard.deleteConfirm', { name: item.name }),
+        i18n.global.t('dashboard.deleteTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: i18n.global.t('dashboard.deleteBtn'),
+          cancelButtonText: i18n.global.t('common.cancel'),
+        },
+      )
       await deleteDashboard(item.id)
       removeRecentDashboard(item.id)
       onRecentChanged?.()
-      ElMessage.success('删除成功')
+      ElMessage.success(i18n.global.t('dashboard.deleteSuccess'))
       void onDeleted()
     } catch {
       // 用户取消删除,无需处理

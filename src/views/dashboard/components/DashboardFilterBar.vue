@@ -3,7 +3,7 @@
     <div class="filter-bar">
       <el-input
         v-model="keyword"
-        placeholder="搜索看板名称/描述"
+        :placeholder="t('dashboard.searchPlaceholder')"
         clearable
         style="width: 240px"
         :prefix-icon="Search"
@@ -12,50 +12,51 @@
       />
       <el-select
         v-model="status"
-        placeholder="按状态筛选"
+        :placeholder="t('dashboard.statusFilter')"
         clearable
         style="width: 140px"
         @change="emit('search')"
       >
-        <el-option label="已发布" :value="1" />
-        <el-option label="草稿" :value="0" />
+        <el-option :label="t('dashboard.published')" :value="1" />
+        <el-option :label="t('dashboard.draft')" :value="0" />
       </el-select>
       <el-select
         v-model="isPublic"
-        placeholder="按公开性筛选"
+        :placeholder="t('dashboard.publicFilter')"
         clearable
         style="width: 140px"
         @change="emit('search')"
       >
-        <el-option label="公开" :value="true" />
-        <el-option label="私有" :value="false" />
+        <el-option :label="t('dashboard.public')" :value="true" />
+        <el-option :label="t('dashboard.private')" :value="false" />
       </el-select>
       <!-- P2-3: 分组筛选 -->
       <el-select
         v-model="groupFilter"
-        placeholder="按分组筛选"
+        :placeholder="t('dashboard.groupFilter')"
         clearable
         style="width: 160px"
         @change="emit('search')"
       >
-        <el-option label="未分组" :value="'ungrouped'" />
+        <el-option :label="t('dashboard.ungrouped')" :value="'ungrouped'" />
         <el-option v-for="g in groups" :key="g.id" :label="g.name" :value="g.id" />
       </el-select>
       <!-- 列表排序 -->
       <el-select v-model="sortBy" style="width: 150px" @change="emit('search')">
-        <el-option label="最近创建" value="createdAt" />
-        <el-option label="最近更新" value="updatedAt" />
-        <el-option label="名称升序" value="name" />
+        <el-option :label="t('dashboard.sortCreatedAt')" value="createdAt" />
+        <el-option :label="t('dashboard.sortUpdatedAt')" value="updatedAt" />
+        <el-option :label="t('dashboard.sortNameAsc')" value="name" />
       </el-select>
       <el-button type="primary" @click="emit('search')">
-        <el-icon><Search /></el-icon>&nbsp;查询
+        <el-icon><Search /></el-icon>&nbsp;{{ t('dashboard.query') }}
       </el-button>
       <el-button @click="emit('reset')">
-        <el-icon><Refresh /></el-icon>&nbsp;重置
+        <el-icon><Refresh /></el-icon>&nbsp;{{ t('dashboard.reset') }}
       </el-button>
       <el-button :type="onlyFavorites ? 'warning' : 'default'" @click="emit('toggle-favorites')">
-        <el-icon><component :is="onlyFavorites ? StarFilled : Star" /></el-icon
-        >&nbsp;我的收藏
+        <el-icon><component :is="onlyFavorites ? StarFilled : Star" /></el-icon>&nbsp;{{
+          t('dashboard.favorites')
+        }}
       </el-button>
       <div class="spacer" />
       <!-- P2-3: 分组管理 + 模板库 -->
@@ -63,7 +64,7 @@
         <el-icon><FolderOpened /></el-icon>&nbsp;{{ t('dashboard.groupManage') }}
       </el-button>
       <el-button type="success" @click="emit('create')">
-        <el-icon><Plus /></el-icon>&nbsp;新建看板
+        <el-icon><Plus /></el-icon>&nbsp;{{ t('dashboard.create') }}
       </el-button>
     </div>
   </div>

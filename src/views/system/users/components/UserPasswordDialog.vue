@@ -1,5 +1,10 @@
 <template>
-  <el-dialog v-model="visible" title="重置密码" width="420px" destroy-on-close>
+  <el-dialog
+    v-model="visible"
+    :title="t('userPage.resetPasswordTitle')"
+    width="420px"
+    destroy-on-close
+  >
     <el-form
       ref="pwdFormRef"
       :model="pwdForm"
@@ -7,32 +12,32 @@
       label-width="86px"
       label-position="right"
     >
-      <el-form-item label="用户">
-        <span>{{ user?.username }} ({{ user?.nickname || '无昵称' }})</span>
+      <el-form-item :label="t('userPage.user')">
+        <span>{{ user?.username }} ({{ user?.nickname || t('userPage.noNickname') }})</span>
       </el-form-item>
-      <el-form-item label="新密码" prop="password">
+      <el-form-item :label="t('userPage.newPassword')" prop="password">
         <el-input
           v-model="pwdForm.password"
           type="password"
           show-password
           maxlength="50"
-          placeholder="6-50 位"
+          :placeholder="t('userPage.newPasswordPlaceholder')"
         />
       </el-form-item>
-      <el-form-item label="确认密码" prop="confirmPassword">
+      <el-form-item :label="t('userPage.confirmPassword')" prop="confirmPassword">
         <el-input
           v-model="pwdForm.confirmPassword"
           type="password"
           show-password
           maxlength="50"
-          placeholder="再次输入新密码"
+          :placeholder="t('userPage.confirmPasswordPlaceholder')"
         />
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
+      <el-button @click="visible = false">{{ t('common.cancel') }}</el-button>
       <el-button type="primary" :loading="submitting" @click="submitResetPassword">
-        确定重置
+        {{ t('userPage.confirmReset') }}
       </el-button>
     </template>
   </el-dialog>
@@ -40,10 +45,13 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, type FormInstance } from 'element-plus'
 import { resetUserPassword } from '@/api/user'
 import type { User } from '@/api/types'
 import { buildPasswordRules } from '../utils/user-utils'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   modelValue: boolean
@@ -63,7 +71,7 @@ const visible = computed({
 const submitting = ref(false)
 const pwdFormRef = ref<FormInstance>()
 const pwdForm = reactive({ password: '', confirmPassword: '' })
-const pwdRules = buildPasswordRules(() => pwdForm.password)
+const pwdRules = computed(() => buildPasswordRules(() => pwdForm.password))
 
 watch(
   () => props.modelValue,
@@ -83,7 +91,7 @@ async function submitResetPassword() {
   submitting.value = true
   try {
     await resetUserPassword(props.user.id, pwdForm.password)
-    ElMessage.success('密码已重置')
+    ElMessage.success(t('userPage.passwordReset'))
     visible.value = false
     emit('saved')
   } finally {

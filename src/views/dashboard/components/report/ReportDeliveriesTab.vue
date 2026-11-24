@@ -1,47 +1,56 @@
 <template>
   <div class="report-tab">
     <div class="report-toolbar">
-      <el-button size="small" :loading="loading" @click="emit('refresh')">刷新</el-button>
-      <span class="report-hint">每次定时生成的数据快照，点击「查看」预览图表数据</span>
+      <el-button size="small" :loading="loading" @click="emit('refresh')">{{
+        t('dashboard.refresh')
+      }}</el-button>
+      <span class="report-hint">{{ t('dashboard.reportDeliveriesHint') }}</span>
     </div>
 
     <el-table v-loading="loading" :data="deliveries" size="small" border>
-      <el-table-column prop="title" label="报表标题" min-width="260" show-overflow-tooltip />
-      <el-table-column label="渠道" width="110" align="center">
+      <el-table-column
+        prop="title"
+        :label="t('dashboard.reportTitle')"
+        min-width="260"
+        show-overflow-tooltip
+      />
+      <el-table-column :label="t('dashboard.reportChannel')" width="110" align="center">
         <template #default="{ row }">
           <el-tag size="small" :type="reportChannelTagType(row.channel)">
             {{ reportChannelLabel(row.channel) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="状态" width="90" align="center">
+      <el-table-column :label="t('dashboard.reportStatus')" width="90" align="center">
         <template #default="{ row }">
           <el-tag size="small" :type="row.status === 'failed' ? 'danger' : 'success'">
-            {{ row.status === 'failed' ? '失败' : '成功' }}
+            {{ row.status === 'failed' ? t('common.failed') : t('common.success') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="接收" width="90" align="center">
+      <el-table-column :label="t('dashboard.reportReceived')" width="90" align="center">
         <template #default="{ row }">
           <el-tag size="small" :type="row.readFlag === 0 ? 'danger' : 'info'" effect="plain">
-            {{ row.readFlag === 0 ? '未读' : '已读' }}
+            {{ row.readFlag === 0 ? t('dashboard.unread') : t('dashboard.read') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="生成时间" width="170">
+      <el-table-column :label="t('dashboard.snapshotGeneratedAt')" width="170">
         <template #default="{ row }">
           <span>{{ formatTime(row.createdAt) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="110" align="center">
+      <el-table-column :label="t('common.actions')" width="110" align="center">
         <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="emit('preview', row)">查看</el-button>
+          <el-button link type="primary" size="small" @click="emit('preview', row)">{{
+            t('dashboard.view')
+          }}</el-button>
         </template>
       </el-table-column>
     </el-table>
     <el-empty
       v-if="!loading && deliveries.length === 0"
-      description="暂无投递记录"
+      :description="t('dashboard.reportDeliveriesEmpty')"
       :image-size="60"
     />
     <div v-if="total > pageSize" class="report-pager">
@@ -59,6 +68,7 @@
 
 <script setup lang="ts">
 import type { ReportDelivery } from '@/api/report'
+import { useI18n } from 'vue-i18n'
 import { formatTime } from '../../utils/report-utils'
 import { reportChannelLabel, reportChannelTagType } from '../../utils/report-channel'
 
@@ -75,6 +85,8 @@ const emit = defineEmits<{
 }>()
 
 const page = defineModel<number>('page', { required: true })
+
+const { t } = useI18n()
 </script>
 
 <style scoped lang="less">

@@ -1,5 +1,6 @@
 /** 定时报表投递渠道展示配置：中文名、标签色、表单项提示 */
 
+import i18n from '@/i18n'
 import type { ReportChannel } from '@/api/report'
 
 export type ReportChannelTagType = 'primary' | 'success' | 'info' | 'warning' | 'danger'
@@ -10,12 +11,33 @@ export interface ReportChannelOption {
   hint: string
 }
 
+const CHANNELS: ReportChannel[] = ['inbox', 'webhook', 'email', 'wecom', 'dingtalk']
+
+function labelOf(channel: ReportChannel): string {
+  return i18n.global.t(`dashboard.channel.${channel}`)
+}
+
+function hintOf(channel: ReportChannel): string {
+  return i18n.global.t(`dashboard.channel.${channel}Hint`)
+}
+
+// 使用 getter 保证语言切换后取值实时更新
 export const REPORT_CHANNEL_LABELS: Record<ReportChannel, string> = {
-  inbox: '站内',
-  webhook: 'Webhook',
-  email: '邮件',
-  wecom: '企业微信',
-  dingtalk: '钉钉',
+  get inbox() {
+    return labelOf('inbox')
+  },
+  get webhook() {
+    return labelOf('webhook')
+  },
+  get email() {
+    return labelOf('email')
+  },
+  get wecom() {
+    return labelOf('wecom')
+  },
+  get dingtalk() {
+    return labelOf('dingtalk')
+  },
 }
 
 export const REPORT_CHANNEL_TAG_TYPES: Record<ReportChannel, ReportChannelTagType> = {
@@ -27,20 +49,32 @@ export const REPORT_CHANNEL_TAG_TYPES: Record<ReportChannel, ReportChannelTagTyp
 }
 
 export const REPORT_CHANNEL_HINTS: Record<ReportChannel, string> = {
-  inbox: '生成快照后落库，可在「投递记录」中查看',
-  webhook: '推送 JSON 摘要到自定义回调地址（带 HMAC 签名）',
-  email: '通过 SMTP 发送 HTML 摘要邮件，需在服务端配置 SMTP',
-  wecom: '推送 markdown 摘要到企业微信群机器人',
-  dingtalk: '推送 markdown 摘要到钉钉群机器人，支持加签校验',
+  get inbox() {
+    return hintOf('inbox')
+  },
+  get webhook() {
+    return hintOf('webhook')
+  },
+  get email() {
+    return hintOf('email')
+  },
+  get wecom() {
+    return hintOf('wecom')
+  },
+  get dingtalk() {
+    return hintOf('dingtalk')
+  },
 }
 
 /** 新增/编辑订阅时的渠道选项 */
-export const REPORT_CHANNEL_OPTIONS: ReportChannelOption[] = (
-  ['inbox', 'webhook', 'email', 'wecom', 'dingtalk'] as ReportChannel[]
-).map((value) => ({
+export const REPORT_CHANNEL_OPTIONS: ReportChannelOption[] = CHANNELS.map((value) => ({
   value,
-  label: REPORT_CHANNEL_LABELS[value],
-  hint: REPORT_CHANNEL_HINTS[value],
+  get label() {
+    return labelOf(value)
+  },
+  get hint() {
+    return hintOf(value)
+  },
 }))
 
 /** 需要填写机器人/回调地址的渠道 */

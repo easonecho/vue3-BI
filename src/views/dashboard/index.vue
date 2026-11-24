@@ -95,7 +95,11 @@
     <DataLineage
       v-model="lineageVisible"
       :dashboard-id="lineageTarget?.id"
-      :title="lineageTarget ? `数据血缘 · ${lineageTarget.name}` : '数据血缘'"
+      :title="
+        lineageTarget
+          ? t('dashboard.dataLineageWithName', { name: lineageTarget.name })
+          : t('dashboard.dataLineage')
+      "
     />
   </div>
 </template>
@@ -103,6 +107,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import DashboardPageHeader from './components/DashboardPageHeader.vue'
 import DashboardRecent from './components/DashboardRecent.vue'
 import DashboardFilterBar from './components/DashboardFilterBar.vue'
@@ -123,6 +128,7 @@ import { useDashboardActions } from './composables/useDashboardActions'
 import { readRecentDashboards, type RecentDashboard } from '@/utils/recent-dashboards'
 
 const router = useRouter()
+const { t } = useI18n()
 const recentDashboards = ref<RecentDashboard[]>([])
 
 const {

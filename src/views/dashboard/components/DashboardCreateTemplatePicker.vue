@@ -27,7 +27,7 @@
                   <!-- hover 遮罩 -->
                   <div class="thumb-overlay">
                     <el-icon class="overlay-icon"><ZoomIn /></el-icon>
-                    <span class="overlay-text">预览</span>
+                    <span class="overlay-text">{{ t('dashboard.preview') }}</span>
                   </div>
                   <!-- 选中徽标 -->
                   <div v-if="selectedId === tpl.id" class="selected-badge">
@@ -44,9 +44,9 @@
                     <el-tag v-if="tpl.category" size="small" effect="plain" type="primary">{{
                       tpl.category
                     }}</el-tag>
-                    <el-tag v-if="tpl.isSystem" size="small" type="warning" effect="dark"
-                      >预置</el-tag
-                    >
+                    <el-tag v-if="tpl.isSystem" size="small" type="warning" effect="dark">{{
+                      t('dashboard.presetTag')
+                    }}</el-tag>
                     <el-tag
                       v-else
                       size="small"
@@ -141,7 +141,9 @@ const templateTab = ref<'user'>('user')
 
   &.active {
     border-color: var(--bi-accent);
-    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2), 0 8px 24px -8px rgba(64, 158, 255, 0.3);
+    box-shadow:
+      0 0 0 2px rgba(64, 158, 255, 0.2),
+      0 8px 24px -8px rgba(64, 158, 255, 0.3);
 
     .selected-badge {
       opacity: 1;

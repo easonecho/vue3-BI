@@ -1,48 +1,73 @@
 <template>
   <el-dialog
     v-model="visible"
-    :title="mode === 'create' ? '新增用户' : '编辑用户'"
+    :title="mode === 'create' ? t('userPage.create') : t('userPage.editTitle')"
     width="520px"
     destroy-on-close
   >
-    <el-form ref="formRef" :model="form" :rules="formRules" label-width="86px" label-position="right">
-      <el-form-item label="用户名" prop="username">
+    <el-form
+      ref="formRef"
+      :model="form"
+      :rules="formRules"
+      label-width="86px"
+      label-position="right"
+    >
+      <el-form-item :label="t('userPage.username')" prop="username">
         <el-input
           v-model="form.username"
           :disabled="mode === 'edit'"
           maxlength="50"
           show-word-limit
-          placeholder="登录用,创建后不可改"
+          :placeholder="t('userPage.usernamePlaceholder')"
         />
       </el-form-item>
-      <el-form-item v-if="mode === 'create'" label="密码" prop="password">
-        <el-input v-model="form.password" type="password" show-password maxlength="50" placeholder="6-50位" />
+      <el-form-item v-if="mode === 'create'" :label="t('userPage.password')" prop="password">
+        <el-input
+          v-model="form.password"
+          type="password"
+          show-password
+          maxlength="50"
+          :placeholder="t('userPage.passwordPlaceholder')"
+        />
       </el-form-item>
-      <el-form-item label="昵称" prop="nickname">
-        <el-input v-model="form.nickname" maxlength="50" show-word-limit placeholder="显示名" />
+      <el-form-item :label="t('userPage.nickname')" prop="nickname">
+        <el-input
+          v-model="form.nickname"
+          maxlength="50"
+          show-word-limit
+          :placeholder="t('userPage.nicknamePlaceholder')"
+        />
       </el-form-item>
-      <el-form-item label="邮箱" prop="email">
+      <el-form-item :label="t('userPage.email')" prop="email">
         <el-input v-model="form.email" placeholder="example@mail.com" />
       </el-form-item>
-      <el-form-item label="手机号" prop="phone">
-        <el-input v-model="form.phone" maxlength="20" placeholder="11位手机号" />
+      <el-form-item :label="t('userPage.phone')" prop="phone">
+        <el-input
+          v-model="form.phone"
+          maxlength="20"
+          :placeholder="t('userPage.phonePlaceholder')"
+        />
       </el-form-item>
-      <el-form-item label="角色" prop="roleId">
-        <el-select v-model="form.roleId" placeholder="请选择角色" style="width: 100%">
+      <el-form-item :label="t('userPage.role')" prop="roleId">
+        <el-select
+          v-model="form.roleId"
+          :placeholder="t('userPage.rolePlaceholder')"
+          style="width: 100%"
+        >
           <el-option v-for="r in roleOptions" :key="r.id" :label="r.name" :value="r.id" />
         </el-select>
       </el-form-item>
-      <el-form-item label="状态" prop="status">
+      <el-form-item :label="t('userPage.status')" prop="status">
         <el-radio-group v-model="form.status">
-          <el-radio :value="1">启用</el-radio>
-          <el-radio :value="0">禁用</el-radio>
+          <el-radio :value="1">{{ t('userPage.enabled') }}</el-radio>
+          <el-radio :value="0">{{ t('userPage.disabled') }}</el-radio>
         </el-radio-group>
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
+      <el-button @click="visible = false">{{ t('common.cancel') }}</el-button>
       <el-button type="primary" :loading="submitting" @click="submitForm">
-        {{ mode === 'create' ? '创建' : '保存' }}
+        {{ mode === 'create' ? t('userPage.createBtn') : t('common.save') }}
       </el-button>
     </template>
   </el-dialog>
@@ -50,10 +75,13 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, type FormInstance } from 'element-plus'
 import { createUser, updateUser, type CreateUserPayload } from '@/api/user'
 import type { User, Role } from '@/api/types'
-import { userFormRules } from '../utils/user-utils'
+import { buildUserFormRules } from '../utils/user-utils'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   modelValue: boolean
@@ -74,7 +102,7 @@ const visible = computed({
 
 const submitting = ref(false)
 const formRef = ref<FormInstance>()
-const formRules = userFormRules
+const formRules = computed(() => buildUserFormRules())
 
 const form = reactive<CreateUserPayload & { id?: number }>({
   id: undefined,
@@ -136,7 +164,7 @@ async function submitForm() {
         roleId: form.roleId,
         status: form.status,
       })
-      ElMessage.success('创建用户成功')
+      ElMessage.success(t('userPage.createUserSuccess'))
     } else if (form.id) {
       await updateUser(form.id, {
         nickname: form.nickname || null,
@@ -145,7 +173,7 @@ async function submitForm() {
         roleId: form.roleId,
         status: form.status,
       })
-      ElMessage.success('保存成功')
+      ElMessage.success(t('userPage.saveSuccess'))
     }
     visible.value = false
     emit('saved')

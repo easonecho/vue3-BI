@@ -1,7 +1,16 @@
 /**
  * English (US) language pack
+ *
+ * Base messages live here; per-module messages live in fragments/en-US/*.ts
+ * and are deep-merged automatically via import.meta.glob.
  */
-export default {
+import { mergeLocales, type LocaleTree } from './merge'
+
+const fragments = import.meta.glob<{ default: LocaleTree }>('./fragments/en-US/*.ts', {
+  eager: true,
+})
+
+const base: LocaleTree = {
   common: {
     confirm: 'Confirm',
     cancel: 'Cancel',
@@ -292,3 +301,8 @@ export default {
     retry: 'Retry',
   },
 }
+
+export default Object.values(fragments).reduce<LocaleTree>(
+  (acc, fragment) => mergeLocales(acc, fragment.default),
+  base,
+)
