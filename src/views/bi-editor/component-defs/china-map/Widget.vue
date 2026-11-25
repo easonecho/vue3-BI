@@ -15,10 +15,11 @@ import { getDefinition } from '../index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import { registerMap } from 'echarts/core'
 import type { ComponentInstance } from '@/views/bi-editor/types'
+import { buildChinaMapNameMap, chinaMapRegionName } from './province-names'
 
 import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const props = defineProps<{ comp: ComponentInstance }>()
 const dataSourceRef = computed(() => props.comp.dataSource)
@@ -103,7 +104,18 @@ function applyChartOption() {
     const mergedProps = { ...deriveDefaultPropsCached(def), ...props?.comp?.props }
 
     const boundMapData = buildBoundMapData()
-    const mapData = boundMapData ?? (Array.isArray(mergedProps.data) ? mergedProps.data : [])
+    const rawMapData: Array<Record<string, unknown>> = boundMapData
+      ? boundMapData
+      : Array.isArray(mergedProps.data)
+        ? (mergedProps.data as Array<Record<string, unknown>>)
+        : []
+    // 🔑 GeoJSON 区域名为全称（北京市），数据集常用简称（北京），这里统一换算
+    const currentLocale = locale.value
+    const mapData = rawMapData.map((item) => ({
+      ...item,
+      name: chinaMapRegionName(String(item.name ?? ''), currentLocale),
+    }))
+    const nameMap = buildChinaMapNameMap(currentLocale)
     // 绑定数据集时按实际最大值映射颜色，静态示例保持 0-100
     const visualMax = boundMapData ? Math.max(...boundMapData.map((d) => d.value), 1) : 100
     const mapColor = String(mergedProps.mapColor)
@@ -121,6 +133,7 @@ function applyChartOption() {
         {
           type: 'map',
           map: 'china',
+          nameMap,
           data: mapData,
           roam: false,
           label: { show: labelShow, color: labelColor },
@@ -179,6 +192,11 @@ onMounted(async () => {
 })
 
 watch([() => JSON.stringify(props.comp.props), () => props.comp.dataConfig, rows], () => {
+  applyChartOption()
+})
+
+// 语言切换后刷新区域名（中文全称 / 英文名）
+watch(locale, () => {
   applyChartOption()
 })
 
