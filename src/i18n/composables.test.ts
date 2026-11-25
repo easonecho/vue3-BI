@@ -19,4 +19,13 @@ describe('useLang 语言切换', () => {
     expect(locale.value).toBe('zh-CN')
     expect(document.documentElement.lang).toBe('zh-CN')
   })
+
+  it('其他标签页切换语言时本页同步', () => {
+    const { locale } = useLang()
+
+    window.dispatchEvent(new StorageEvent('storage', { key: 'bi_locale', newValue: 'en-US' }))
+
+    expect(locale.value).toBe('en-US')
+    expect(document.documentElement.lang).toBe('en-US')
+  })
 })

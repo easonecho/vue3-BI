@@ -4,9 +4,7 @@
  * 提供 reactive locale ref + setter，切换语言时同步到 localStorage 和 i18n.global
  */
 import { computed } from 'vue'
-import i18n from './index'
-
-const LOCALE_KEY = 'bi_locale'
+import i18n, { LOCALE_KEY } from './index'
 
 export function useLang() {
   const locale = computed<string>({
