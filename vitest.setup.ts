@@ -7,6 +7,11 @@
  */
 import { vi } from 'vitest'
 
+// 统一测试基线语言: 避免语言自动识别受测试环境 navigator.language 影响
+if (typeof localStorage !== 'undefined') {
+  localStorage.setItem('bi_locale', 'zh-CN')
+}
+
 vi.mock('vue-i18n', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-i18n')>()
   const { default: zhCN } = await import('@/i18n/locales/zh-CN')

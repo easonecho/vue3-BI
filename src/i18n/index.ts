@@ -12,11 +12,26 @@ export type AppLocale = 'zh-CN' | 'en-US'
 
 export const LOCALE_KEY = 'bi_locale'
 
-/** 获取默认语言：localStorage → 环境变量 → zh-CN */
-function getDefaultLocale(): string {
-  const saved = localStorage.getItem(LOCALE_KEY)
-  if (saved) return saved
-  return import.meta.env.VITE_DEFAULT_LANG || 'zh-CN'
+/**
+ * 解析初始语言：用户已保存 → 部署默认(VITE_DEFAULT_LANG) → 浏览器语言 → zh-CN
+ *
+ * 导出为纯函数便于单测；自动识别让英文浏览器首次访问即可看到英文界面。
+ */
+export function resolveInitialLocale(
+  saved: string | null,
+  envDefault: string | undefined,
+  browserLang: string | undefined,
+): AppLocale {
+  if (saved === 'zh-CN' || saved === 'en-US') return saved
+  if (envDefault === 'zh-CN' || envDefault === 'en-US') return envDefault
+  if (browserLang?.toLowerCase().startsWith('en')) return 'en-US'
+  return 'zh-CN'
+}
+
+function getDefaultLocale(): AppLocale {
+  const saved = typeof localStorage !== 'undefined' ? localStorage.getItem(LOCALE_KEY) : null
+  const browser = typeof navigator !== 'undefined' ? navigator.language : undefined
+  return resolveInitialLocale(saved, import.meta.env.VITE_DEFAULT_LANG, browser)
 }
 
 const i18n = createI18n({
