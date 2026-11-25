@@ -325,6 +325,11 @@ function goHome() {
     gap: 8px;
   }
 
+  /* 窄屏仅保留语言图标，避免标题被挤压 */
+  .share-header .share-actions :deep(.lang-switcher .lang-label) {
+    display: none;
+  }
+
   .password-card {
     width: calc(100vw - 32px);
   }

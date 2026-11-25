@@ -1,9 +1,5 @@
 <template>
   <div class="login-page">
-    <!-- 语言切换：未登录也可切换中英文 -->
-    <div class="login-lang">
-      <LangSwitcher />
-    </div>
     <!-- 登录卡片 -->
     <div class="login-card">
       <div class="card-content">
@@ -113,8 +109,9 @@
       </div>
     </div>
 
-    <!-- 右上角主题切换 -->
+    <!-- 右上角语言与主题切换（未登录也可切换中英文） -->
     <div class="theme-area">
+      <LangSwitcher />
       <ThemeSwitcher />
     </div>
   </div>
@@ -184,14 +181,6 @@ async function handleLogin() {
   position: relative;
   overflow: hidden;
   background: var(--bi-bg);
-}
-
-/* 右上角语言切换：登录页无顶部导航，单独放置入口 */
-.login-lang {
-  position: absolute;
-  top: 20px;
-  right: 24px;
-  z-index: 2;
 }
 
 /* ========== 登录卡片 ========== */
@@ -308,6 +297,9 @@ async function handleLogin() {
   top: 24px;
   right: 24px;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* ========== 移动端适配 ========== */
