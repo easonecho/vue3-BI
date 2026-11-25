@@ -76,6 +76,7 @@ const base: LocaleTree = {
     enterEditor: '进入看板编辑器',
     dataScreen: '数据大屏',
     user: '用户',
+    userMenu: '用户菜单',
   },
   menu: {
     dashboard: '看板管理',

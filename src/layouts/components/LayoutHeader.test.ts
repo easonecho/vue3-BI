@@ -18,6 +18,7 @@ const { userStoreMock, layoutMessages } = vi.hoisted(() => ({
     'layout.expandMenu': '展开菜单',
     'layout.globalSearchShortcut': '全局搜索 (Ctrl+K)',
     'layout.search': '搜索',
+    'layout.userMenu': '用户菜单',
   } as Record<string, string>,
 }))
 
@@ -124,6 +125,15 @@ describe('LayoutHeader 用户信息与时钟', () => {
     const fallback = mountHeader()
     expect(fallback.find('.user-name').text()).toBe('layout.user')
     expect(fallback.find('.avatar-stub').text()).toContain('U')
+  })
+
+  it('用户菜单触发器为可键盘聚焦的按钮', () => {
+    const wrapper = mountHeader()
+    const trigger = wrapper.find('.user-info')
+
+    expect(trigger.element.tagName).toBe('BUTTON')
+    expect(trigger.attributes('type')).toBe('button')
+    expect(trigger.attributes('aria-label')).toBe('用户菜单')
   })
 })
 

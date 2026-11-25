@@ -1,6 +1,11 @@
 <template>
   <el-dropdown trigger="click" @command="handleCommand">
-    <button class="lang-switcher" :title="t('layout.language')">
+    <button
+      type="button"
+      class="lang-switcher"
+      :title="t('layout.language')"
+      :aria-label="t('layout.language')"
+    >
       <el-icon class="icon"><Promotion /></el-icon>
       <span class="lang-label">{{ currentLabel }}</span>
     </button>
@@ -65,6 +70,11 @@ function handleCommand(val: string) {
     border-color: var(--bi-border-accent);
     background: var(--bi-component-hover-bg);
     color: var(--bi-accent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--bi-accent);
+    outline-offset: 2px;
   }
 
   .icon {

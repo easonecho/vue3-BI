@@ -1,7 +1,9 @@
 <template>
   <button
+    type="button"
     class="theme-switcher"
     :title="isLight ? t('layout.switchToDark') : t('layout.switchToLight')"
+    :aria-label="isLight ? t('layout.switchToDark') : t('layout.switchToLight')"
     @click="toggle"
   >
     <el-icon class="icon">
@@ -48,6 +50,11 @@ function toggle() {
     border-color: var(--bi-border-accent);
     background: var(--bi-component-hover-bg);
     color: var(--bi-accent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--bi-accent);
+    outline-offset: 2px;
   }
 
   .icon {

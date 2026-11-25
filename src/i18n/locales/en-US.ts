@@ -76,6 +76,7 @@ const base: LocaleTree = {
     enterEditor: 'Dashboard Editor',
     dataScreen: 'Data Screen',
     user: 'User',
+    userMenu: 'User menu',
   },
   menu: {
     dashboard: 'Dashboards',

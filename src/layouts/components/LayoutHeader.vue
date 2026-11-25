@@ -38,7 +38,7 @@
       <ThemeSwitcher />
       <LangSwitcher />
       <el-dropdown trigger="click" @command="emit('user-command', $event)">
-        <div class="user-info">
+        <button type="button" class="user-info" :aria-label="t('layout.userMenu')">
           <el-avatar :size="28" :src="userStore.userInfo?.avatar">
             {{ userStore.userInfo?.nickname?.[0] || userStore.userInfo?.username?.[0] || 'U' }}
           </el-avatar>
@@ -46,7 +46,7 @@
             {{ userStore.userInfo?.nickname || userStore.userInfo?.username || t('layout.user') }}
           </span>
           <el-icon class="arrow-icon"><ArrowDown /></el-icon>
-        </div>
+        </button>
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item command="editor">
@@ -183,6 +183,8 @@ const userStore = useUserStore()
   border-radius: 18px;
   background: var(--bi-component-bg);
   border: 1px solid var(--bi-border-color);
+  font-family: inherit;
+  color: inherit;
   transition:
     border-color 0.15s ease,
     background-color 0.15s ease;
@@ -190,6 +192,11 @@ const userStore = useUserStore()
   &:hover {
     border-color: var(--bi-border-accent);
     background: var(--bi-component-hover-bg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--bi-accent);
+    outline-offset: 2px;
   }
 
   :deep(.el-avatar) {
