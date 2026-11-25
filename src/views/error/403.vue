@@ -1,5 +1,8 @@
 <template>
   <div class="error-page">
+    <div class="error-lang">
+      <LangSwitcher />
+    </div>
     <el-result icon="warning" :title="t('error.title403')" :sub-title="t('error.desc403')">
       <template #extra>
         <el-button type="primary" @click="goBack">{{ t('error.backPrev') }}</el-button>
@@ -12,6 +15,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import LangSwitcher from '@/components/LangSwitcher.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -31,10 +35,18 @@ function goLogin(): void {
 
 <style scoped>
 .error-page {
+  position: relative;
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* 错误页无导航栏，单独提供语言切换入口 */
+.error-lang {
+  position: absolute;
+  top: 20px;
+  right: 24px;
 }
 </style>
