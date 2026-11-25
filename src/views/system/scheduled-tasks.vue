@@ -201,6 +201,7 @@ import {
   type ScheduledTask,
   type ScheduledTaskForm,
 } from '@/api/scheduled-task'
+import { formatDateTime } from '@/utils/locale-format'
 
 const { t } = useI18n()
 
@@ -227,8 +228,7 @@ async function loadList() {
 }
 
 function formatTime(t: string) {
-  const d = new Date(t)
-  return d.toLocaleString('zh-CN', { hour12: false })
+  return formatDateTime(t)
 }
 
 const dialogVisible = ref(false)

@@ -241,6 +241,7 @@ import {
   type ProcessMemory,
   type MetricsSnapshot,
 } from '@/api/monitor'
+import { formatDateTime } from '@/utils/locale-format'
 
 const { t } = useI18n()
 
@@ -443,7 +444,7 @@ const uptimeText = computed(() => {
 })
 
 function formatTime(t: string) {
-  return new Date(t).toLocaleString('zh-CN', { hour12: false })
+  return formatDateTime(t)
 }
 
 async function handleKick(row: OnlineUser) {

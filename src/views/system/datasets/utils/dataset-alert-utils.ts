@@ -3,6 +3,7 @@
  */
 import i18n from '@/i18n'
 import type { AlertAggregate, AlertOperator, AlertRule } from '@/api/alert'
+import { formatDateTime } from '@/utils/locale-format'
 
 /** 选项文案随语言切换动态取词 */
 function translate(key: string): string {
@@ -139,5 +140,5 @@ export function conditionLabel(
 /** 告警时间格式化（空值回退 '-'） */
 export function formatAlertTime(value: string | null): string {
   if (!value) return '-'
-  return new Date(value).toLocaleString('zh-CN', { hour12: false })
+  return formatDateTime(value)
 }

@@ -1,6 +1,7 @@
 import i18n from '@/i18n'
 import type { CreateDatasetParams, DatasetField } from '@/api/dataset'
 import type { Dataset } from '@/api/types'
+import { formatDateTime } from '@/utils/locale-format'
 
 /** 数据集编辑对话框的 UI 表单状态（比接口入参多了编辑态字段） */
 export type DatasetEditForm = CreateDatasetParams & {
@@ -23,8 +24,7 @@ export function normalizeFieldForEdit(field: any): DatasetField {
 
 export function formatFileTime(s?: string): string {
   if (!s) return '-'
-  const d = new Date(s)
-  return Number.isNaN(d.getTime()) ? '-' : d.toLocaleString('zh-CN', { hour12: false })
+  return formatDateTime(s)
 }
 
 export interface UploadValidation {

@@ -172,6 +172,7 @@ import {
   type Tenant,
   type TenantQuery,
 } from '@/api/tenant'
+import { formatDateTime } from '@/utils/locale-format'
 
 const { t } = useI18n()
 
@@ -311,7 +312,7 @@ async function toggleStatus(row: Tenant) {
 
 function formatTime(value: string | null) {
   if (!value) return '—'
-  return new Date(value).toLocaleString('zh-CN', { hour12: false })
+  return formatDateTime(value)
 }
 
 onMounted(loadList)

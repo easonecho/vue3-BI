@@ -20,6 +20,7 @@ import CanvasArea from './components/canvas/CanvasArea.vue'
 import RightPanel from './components/RightPanel.vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import { recordRecentDashboard } from '@/utils/recent-dashboards'
+import { formatDateTime } from '@/utils/locale-format'
 import { useKeyboardShortcuts } from './composables/useCanvas'
 import type { ComponentMeta } from './types'
 
@@ -81,7 +82,7 @@ let draftTimer: ReturnType<typeof setInterval> | null = null
 async function maybeRestoreDraft() {
   const draft = store.loadDraft()
   if (!draft) return
-  const savedAt = new Date(draft.savedAt).toLocaleString()
+  const savedAt = formatDateTime(draft.savedAt)
   const restore = await ElMessageBox.confirm(
     t('editorUi.doc.draftFoundConfirm', { time: savedAt }),
     t('editorUi.doc.restoreDraftTitle'),

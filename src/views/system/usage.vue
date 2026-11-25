@@ -179,6 +179,7 @@ import { LineChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { getUsageOverview, type UsageOverview } from '@/api/usage'
+import { formatDateTime } from '@/utils/locale-format'
 
 // 🔑 ECharts 按需注册（模块级执行一次）：折线图 + 直角坐标系/提示框 + Canvas 渲染器
 use([LineChart, GridComponent, TooltipComponent, CanvasRenderer])
@@ -234,9 +235,7 @@ function percent(value: number): number {
 
 function formatTime(value?: string | null): string {
   if (!value) return '-'
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return '-'
-  return d.toLocaleString('zh-CN', { hour12: false })
+  return formatDateTime(value)
 }
 
 /** x 轴显示 MM-DD, tooltip 显示完整日期 */

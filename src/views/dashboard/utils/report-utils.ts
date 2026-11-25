@@ -1,11 +1,13 @@
 /** 定时报表相关的纯展示函数，便于单测与跨组件复用 */
 
+import { formatDateTime } from '@/utils/locale-format'
+
 const EMAIL_PATTERN = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/
 
-/** 时间格式化：空值显示 -，使用 zh-CN 24 小时制 */
+/** 时间格式化：空值显示 -，按当前应用语言使用 24 小时制 */
 export function formatTime(value: string | null): string {
   if (!value) return '-'
-  return new Date(value).toLocaleString('zh-CN', { hour12: false })
+  return formatDateTime(value)
 }
 
 /**
