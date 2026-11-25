@@ -14,6 +14,10 @@ export function useLang() {
     set: (val: string) => {
       i18n.global.locale.value = val as 'zh-CN' | 'en-US'
       localStorage.setItem(LOCALE_KEY, val)
+      // 🔑 同步 <html lang>，便于无障碍读屏与搜索引擎识别页面语言
+      if (typeof document !== 'undefined') {
+        document.documentElement.lang = val
+      }
     },
   })
 
