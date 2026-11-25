@@ -27,6 +27,7 @@ import type { ComponentInstance } from '@/views/bi-editor/types'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import { useMetricAggregation } from '../../composables/useMetricAggregation'
 import { resolveComponentMetricMapping } from '../aggregate-spec'
+import { formatNumber } from '@/utils/locale-format'
 
 import { useI18n } from 'vue-i18n'
 
@@ -48,7 +49,7 @@ const { rows: datasetRows } = useDatasetBinding(dataSource, true, metricRequest)
 function formatMetricValue(v: unknown): string {
   if (v === null || v === undefined || v === '') return '—'
   if (typeof v === 'number' && Number.isFinite(v)) {
-    return v.toLocaleString('zh-CN', { maximumFractionDigits: 2 })
+    return formatNumber(v, { maximumFractionDigits: 2 })
   }
   return String(v)
 }

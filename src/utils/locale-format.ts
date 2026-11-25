@@ -11,3 +11,8 @@ export function formatDateTime(value: string | number | Date): string {
   if (Number.isNaN(date.getTime())) return '-'
   return date.toLocaleString(i18n.global.locale.value, { hour12: false })
 }
+
+/** 数字格式化（千分位/小数位），跟随当前应用语言 */
+export function formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
+  return value.toLocaleString(i18n.global.locale.value, options)
+}

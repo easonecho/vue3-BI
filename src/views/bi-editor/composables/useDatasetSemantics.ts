@@ -17,6 +17,7 @@ import { ref } from 'vue'
 import { getDatasetList, type DatasetField, type DatasetFieldFormat } from '@/api/dataset'
 import type { Dataset } from '@/api/types'
 import i18n from '@/i18n'
+import { formatNumber } from '@/utils/locale-format'
 
 /** datasetId → 字段定义 */
 const semantics = ref<Map<number, DatasetField[]>>(new Map())
@@ -161,7 +162,7 @@ export function formatSemanticValue(value: unknown, format?: DatasetFieldFormat)
   }
 
   const decimals = format.decimals ?? (format.type === 'currency' ? 2 : 0)
-  const text = n.toLocaleString('zh-CN', {
+  const text = formatNumber(n, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   })

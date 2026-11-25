@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { useLang } from '@/i18n/composables'
-import { formatDateTime } from './locale-format'
+import { formatDateTime, formatNumber } from './locale-format'
 
 const VALUE = '2026-01-02T03:04:05Z'
 
@@ -22,5 +22,12 @@ describe('formatDateTime 按当前语言格式化', () => {
 
   it('非法日期返回占位符', () => {
     expect(formatDateTime('not-a-date')).toBe('-')
+  })
+
+  it('数字按当前语言格式化', () => {
+    useLang().setLocale('en-US')
+    expect(formatNumber(1234567.891, { maximumFractionDigits: 2 })).toBe(
+      (1234567.891).toLocaleString('en-US', { maximumFractionDigits: 2 }),
+    )
   })
 })

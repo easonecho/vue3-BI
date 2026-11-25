@@ -34,4 +34,11 @@ describe('i18n 语言包', () => {
   it('不存在空文案', () => {
     expect([...emptyKeys('zh-CN', zhCN), ...emptyKeys('en-US', enUS)]).toEqual([])
   })
+
+  it('英文语言包不包含中文字符', () => {
+    const chineseKeys = Object.entries(flatten(enUS))
+      .filter(([, text]) => /[\u4e00-\u9fa5]/.test(text))
+      .map(([key]) => key)
+    expect(chineseKeys).toEqual([])
+  })
 })
