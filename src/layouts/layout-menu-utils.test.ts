@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { DataBoard, User, Grid } from '@element-plus/icons-vue'
-import { MENU_TITLE, buildBreadcrumbs, iconComp, resolvePath } from './layout-menu-utils'
+import {
+  MENU_TITLE,
+  buildBreadcrumbs,
+  iconComp,
+  menuDisplayName,
+  resolvePath,
+} from './layout-menu-utils'
 
 describe('resolvePath 单段路径', () => {
   it('child 为空时回退到父路径或根路径', () => {
@@ -47,6 +53,17 @@ describe('iconComp 图标映射', () => {
 
   it('未知图标回退到 DataBoard', () => {
     expect(iconComp('NotExists')).toBe(DataBoard)
+  })
+})
+
+describe('menuDisplayName 动态菜单名', () => {
+  it('内置默认名按当前语言输出（zh-CN 保持原文）', () => {
+    expect(menuDisplayName('用户管理')).toBe('用户管理')
+    expect(menuDisplayName('BI编辑器')).toBe('BI编辑器')
+  })
+
+  it('管理员自定义名称原样返回', () => {
+    expect(menuDisplayName('我的看板')).toBe('我的看板')
   })
 })
 

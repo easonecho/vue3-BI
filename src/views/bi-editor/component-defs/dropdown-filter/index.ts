@@ -35,7 +35,9 @@ export const dropdownFilterDefinition: ComponentDefinition = {
         return t('editorMaterial.ui.options')
       },
       type: 'textarea',
-      default: '选项1,选项2,选项3',
+      get default() {
+        return t('demoData.dropdownFilter.defaultOptions')
+      },
       get group() {
         return t('editorMaterial.ui.content')
       },

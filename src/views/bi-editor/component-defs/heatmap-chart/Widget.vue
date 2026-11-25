@@ -10,6 +10,7 @@ import { getBaseOption, applyUserChartConfig } from '../_shared/echarts-options'
 import { fontWeightOf, fontStyleOf } from '../_shared/props'
 import { deriveDefaultPropsCached } from '../types'
 import { getDefinition } from '../index'
+import { getHeatmapDefaultX, getHeatmapDefaultY } from './index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
@@ -85,14 +86,10 @@ function getChartSpecificOption(): {
 
   const xCategories =
     mappedData.value?.xCategories ??
-    (Array.isArray(mergedProps.heatmapX)
-      ? mergedProps.heatmapX
-      : ['周一', '周二', '周三', '周四', '周五', '周六', '周日'])
+    (Array.isArray(mergedProps.heatmapX) ? mergedProps.heatmapX : getHeatmapDefaultX())
   const yCategories =
     mappedData.value?.yCategories ??
-    (Array.isArray(mergedProps.heatmapY)
-      ? mergedProps.heatmapY
-      : ['0点', '4点', '8点', '12点', '16点', '20点'])
+    (Array.isArray(mergedProps.heatmapY) ? mergedProps.heatmapY : getHeatmapDefaultY())
   const points: [number, number, number][] =
     mappedData.value?.points ??
     (Array.isArray(mergedProps.heatmapData) ? mergedProps.heatmapData : [])

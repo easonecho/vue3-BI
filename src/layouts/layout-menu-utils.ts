@@ -80,6 +80,41 @@ export const MENU_TITLE: Record<string, string> = {
 }
 
 /**
+ * 后端菜单默认中文名 -> i18n key
+ *
+ * 仅当菜单名与内置默认名完全一致时才翻译；管理员在「菜单管理」中
+ * 自定义的名称保持原样，避免覆盖业务自定义。
+ */
+const MENU_NAME_KEYS: Record<string, string> = {
+  看板管理: 'menu.dashboard',
+  模板管理: 'menu.manageTemplates',
+  BI编辑器: 'menu.editor',
+  数据大屏: 'menu.screen',
+  素材管理: 'menu.material',
+  用户管理: 'menu.users',
+  角色管理: 'menu.roles',
+  菜单管理: 'menu.menus',
+  部门管理: 'menu.departments',
+  数据源管理: 'menu.datasources',
+  数据集管理: 'menu.datasets',
+  数据字典: 'menu.dicts',
+  操作日志: 'menu.logs',
+  系统配置: 'menu.configs',
+  岗位管理: 'menu.positions',
+  定时任务: 'menu.scheduledTasks',
+  系统监控: 'menu.monitor',
+  使用分析: 'menu.usage',
+  租户管理: 'menu.tenants',
+  系统管理: 'menu.system',
+}
+
+/** 动态菜单名按当前语言显示（未命中的自定义名称原样返回） */
+export function menuDisplayName(name: string): string {
+  const key = MENU_NAME_KEYS[name]
+  return key ? i18n.global.t(key) : name
+}
+
+/**
  * 拼接菜单路由
  *
  * 兼容两种调用方式:

@@ -13,14 +13,28 @@ import i18n from '@/i18n'
 const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 双轴组合图默认真实数据 */
-export const COMBO_DEFAULT_CATEGORIES = ['1月', '2月', '3月', '4月', '5月', '6月', '7月']
-export const COMBO_DEFAULT_BAR = {
-  name: t('editorMaterial.series.sales'),
-  data: [120, 200, 150, 80, 70, 110, 130],
+export function getComboDefaultCategories(): string[] {
+  return [
+    t('demoData.months.jan'),
+    t('demoData.months.feb'),
+    t('demoData.months.mar'),
+    t('demoData.months.apr'),
+    t('demoData.months.may'),
+    t('demoData.months.jun'),
+    t('demoData.months.jul'),
+  ]
 }
-export const COMBO_DEFAULT_LINE = {
-  name: t('editorMaterial.series.growthRate'),
-  data: [10, 15, 8, 12, 18, 22, 25],
+export function getComboDefaultBar() {
+  return {
+    name: t('editorMaterial.series.sales'),
+    data: [120, 200, 150, 80, 70, 110, 130],
+  }
+}
+export function getComboDefaultLine() {
+  return {
+    name: t('editorMaterial.series.growthRate'),
+    data: [10, 15, 8, 12, 18, 22, 25],
+  }
 }
 
 const definition: ComponentDefinition = {
@@ -126,9 +140,15 @@ const definition: ComponentDefinition = {
     ...buildSeriesLabelSchema('top'),
   ],
   extraDefaults: {
-    categories: COMBO_DEFAULT_CATEGORIES,
-    barSeries: COMBO_DEFAULT_BAR,
-    lineSeries: COMBO_DEFAULT_LINE,
+    get categories() {
+      return getComboDefaultCategories()
+    },
+    get barSeries() {
+      return getComboDefaultBar()
+    },
+    get lineSeries() {
+      return getComboDefaultLine()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

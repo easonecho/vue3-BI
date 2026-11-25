@@ -13,13 +13,15 @@ import i18n from '@/i18n'
 const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 饼图默认真实数据（[{name, value}, ...]） */
-export const PIE_DEFAULT_DATA = [
-  { name: '直接访问', value: 335 },
-  { name: '搜索引擎', value: 310 },
-  { name: '邮件营销', value: 234 },
-  { name: '联盟广告', value: 135 },
-  { name: '视频广告', value: 1548 },
-]
+export function getPieDefaultData() {
+  return [
+    { name: t('demoData.pie.directVisit'), value: 335 },
+    { name: t('demoData.pie.searchEngine'), value: 310 },
+    { name: t('demoData.pie.emailMarketing'), value: 234 },
+    { name: t('demoData.pie.affiliateAds'), value: 135 },
+    { name: t('demoData.pie.videoAds'), value: 1548 },
+  ]
+}
 
 export const pieChartDefinition: ComponentDefinition = {
   type: 'pie-chart',
@@ -106,7 +108,9 @@ export const pieChartDefinition: ComponentDefinition = {
     ...buildSeriesLabelSchema('outside'),
   ],
   extraDefaults: {
-    pieData: PIE_DEFAULT_DATA,
+    get pieData() {
+      return getPieDefaultData()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

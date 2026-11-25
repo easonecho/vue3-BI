@@ -73,12 +73,12 @@ function getChartSpecificOption(): {
           value: item.value,
         }))
       : [
-          { name: '展现', value: 900 },
-          { name: '点击', value: 600 },
-          { name: '访问', value: 380 },
-          { name: '咨询', value: 220 },
-          { name: '订单', value: 120 },
-          { name: '成交', value: 60 },
+          { name: t('demoData.funnel.impression'), value: 900 },
+          { name: t('demoData.funnel.click'), value: 600 },
+          { name: t('demoData.funnel.visit'), value: 380 },
+          { name: t('demoData.funnel.consult'), value: 220 },
+          { name: t('demoData.funnel.order'), value: 120 },
+          { name: t('demoData.funnel.deal'), value: 60 },
         ])
 
   const sort = String(mergedProps.sort) as 'descending' | 'ascending' | 'none'

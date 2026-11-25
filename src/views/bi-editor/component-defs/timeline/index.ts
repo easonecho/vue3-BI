@@ -5,6 +5,31 @@ import i18n from '@/i18n'
 
 const t = (key: string) => i18n.global.t(key)
 
+function getTimelineDefaultEvents() {
+  return [
+    {
+      time: '2024-01-15 10:00',
+      title: t('demoData.timeline.projectKickoff'),
+      content: t('demoData.timeline.projectKickoffContent'),
+    },
+    {
+      time: '2024-02-20 14:30',
+      title: t('demoData.timeline.devKickoff'),
+      content: t('demoData.timeline.devKickoffContent'),
+    },
+    {
+      time: '2024-04-01 09:15',
+      title: t('demoData.timeline.betaRelease'),
+      content: t('demoData.timeline.betaReleaseContent'),
+    },
+    {
+      time: '2024-05-10 16:00',
+      title: t('demoData.timeline.goLive'),
+      content: t('demoData.timeline.goLiveContent'),
+    },
+  ]
+}
+
 export const timelineDefinition: ComponentDefinition = {
   type: 'timeline',
   meta: {
@@ -149,12 +174,9 @@ export const timelineDefinition: ComponentDefinition = {
     },
   ],
   extraDefaults: {
-    events: [
-      { time: '2024-01-15 10:00', title: '项目启动', content: '完成需求评审与技术选型' },
-      { time: '2024-02-20 14:30', title: '开发启动', content: '前端框架搭建完成' },
-      { time: '2024-04-01 09:15', title: '内测发布', content: '核心功能开发完毕，开始内部测试' },
-      { time: '2024-05-10 16:00', title: '正式上线', content: '通过验收，正式部署到生产环境' },
-    ],
+    get events() {
+      return getTimelineDefaultEvents()
+    },
   },
   defaultStyle: {},
 }

@@ -11,7 +11,10 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { ComponentInstance } from '@/views/bi-editor/types'
+
+const { t } = useI18n()
 
 const props = defineProps<{ comp: ComponentInstance }>()
 
@@ -27,9 +30,19 @@ const dateFontSize = computed(() => props.comp.props?.dateFontSize ?? 14)
 const color = computed(() => props.comp.props?.color ?? '#ffffff')
 const weekColor = computed(() => props.comp.props?.weekColor ?? '#94a3b8')
 const fontWeight = computed(() => props.comp.props?.fontWeight ?? 'bold')
-const fontFamily = computed(() => props.comp.props?.fontFamily ?? 'Consolas, "Courier New", monospace')
+const fontFamily = computed(
+  () => props.comp.props?.fontFamily ?? 'Consolas, "Courier New", monospace',
+)
 
-const WEEKS = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
+const WEEKS = computed(() => [
+  t('demoData.clock.sunday'),
+  t('demoData.clock.monday'),
+  t('demoData.clock.tuesday'),
+  t('demoData.clock.wednesday'),
+  t('demoData.clock.thursday'),
+  t('demoData.clock.friday'),
+  t('demoData.clock.saturday'),
+])
 
 function pad(n: number) {
   return n < 10 ? `0${n}` : `${n}`
@@ -52,7 +65,7 @@ const dateStr = computed(() => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 })
 
-const weekStr = computed(() => WEEKS[now.value.getDay()])
+const weekStr = computed(() => WEEKS.value[now.value.getDay()])
 
 const containerStyle = computed(() => ({
   fontFamily: fontFamily.value,

@@ -7,18 +7,20 @@ import i18n from '@/i18n'
 const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 象形柱图默认真实数据：7 天 + 1 系列 */
-export const PICTORIAL_BAR_DEFAULT_CATEGORIES = [
-  '周一',
-  '周二',
-  '周三',
-  '周四',
-  '周五',
-  '周六',
-  '周日',
-]
-export const PICTORIAL_BAR_DEFAULT_SERIES = [
-  { name: t('editorMaterial.series.visits'), data: [120, 200, 150, 80, 70, 110, 130] },
-]
+export function getPictorialBarDefaultCategories(): string[] {
+  return [
+    t('demoData.weekdays.shortMon'),
+    t('demoData.weekdays.shortTue'),
+    t('demoData.weekdays.shortWed'),
+    t('demoData.weekdays.shortThu'),
+    t('demoData.weekdays.shortFri'),
+    t('demoData.weekdays.shortSat'),
+    t('demoData.weekdays.shortSun'),
+  ]
+}
+export function getPictorialBarDefaultSeries() {
+  return [{ name: t('editorMaterial.series.visits'), data: [120, 200, 150, 80, 70, 110, 130] }]
+}
 
 export const PICTORIAL_SYMBOL_MIN_SIZE = 5
 export const PICTORIAL_SYMBOL_MAX_SIZE = 50
@@ -151,8 +153,12 @@ export const pictorialBarChartDefinition: ComponentDefinition = {
     ...buildSeriesLabelSchema('top'),
   ],
   extraDefaults: {
-    categories: PICTORIAL_BAR_DEFAULT_CATEGORIES,
-    series: PICTORIAL_BAR_DEFAULT_SERIES,
+    get categories() {
+      return getPictorialBarDefaultCategories()
+    },
+    get series() {
+      return getPictorialBarDefaultSeries()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

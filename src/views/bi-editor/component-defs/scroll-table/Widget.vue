@@ -131,9 +131,9 @@ function rowStyleVars(idx: number) {
 
 function levelStyle(value: any) {
   const v = String(value ?? '')
-  if (v === '严重') return { color: '#ef4444', fontWeight: 600 }
-  if (v === '警告') return { color: '#f59e0b', fontWeight: 600 }
-  if (v === '提示') return { color: '#3b82f6', fontWeight: 600 }
+  if (v === t('demoData.scrollTable.critical')) return { color: '#ef4444', fontWeight: 600 }
+  if (v === t('demoData.scrollTable.warning')) return { color: '#f59e0b', fontWeight: 600 }
+  if (v === t('demoData.scrollTable.info')) return { color: '#3b82f6', fontWeight: 600 }
   return null
 }
 

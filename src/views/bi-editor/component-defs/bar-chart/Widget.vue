@@ -10,7 +10,7 @@ import { getBaseOption, applyUserChartConfig, getXAxisData } from '../_shared/ec
 import { fontWeightOf, fontStyleOf, labelPositionOf } from '../_shared/props'
 import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
-import { BAR_MAX_WIDTH } from './index'
+import { BAR_MAX_WIDTH, getBarDefaultCategories } from './index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import { useChartAggregation } from '../../composables/useChartAggregation'
 import { resolveComponentFieldMapping } from '../aggregate-spec'
@@ -98,9 +98,7 @@ function getChartSpecificOption(): {
 
   const categories =
     mappedData.value?.categories ??
-    (Array.isArray(mergedProps.categories)
-      ? mergedProps.categories
-      : ['周一', '周二', '周三', '周四', '周五', '周六', '周日'])
+    (Array.isArray(mergedProps.categories) ? mergedProps.categories : getBarDefaultCategories())
   const seriesData =
     mappedData.value?.series ??
     (Array.isArray(mergedProps.series)

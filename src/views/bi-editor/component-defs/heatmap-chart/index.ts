@@ -7,8 +7,27 @@ import i18n from '@/i18n'
 const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 热力图默认真实数据 (小时 x 星期 矩阵) */
-export const HEATMAP_DEFAULT_X = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-export const HEATMAP_DEFAULT_Y = ['0点', '4点', '8点', '12点', '16点', '20点']
+export function getHeatmapDefaultX(): string[] {
+  return [
+    t('demoData.weekdays.shortMon'),
+    t('demoData.weekdays.shortTue'),
+    t('demoData.weekdays.shortWed'),
+    t('demoData.weekdays.shortThu'),
+    t('demoData.weekdays.shortFri'),
+    t('demoData.weekdays.shortSat'),
+    t('demoData.weekdays.shortSun'),
+  ]
+}
+export function getHeatmapDefaultY(): string[] {
+  return [
+    t('demoData.heatmap.hour0'),
+    t('demoData.heatmap.hour4'),
+    t('demoData.heatmap.hour8'),
+    t('demoData.heatmap.hour12'),
+    t('demoData.heatmap.hour16'),
+    t('demoData.heatmap.hour20'),
+  ]
+}
 export const HEATMAP_DEFAULT_DATA = (() => {
   const list: [number, number, number][] = []
   const matrix = [
@@ -124,8 +143,12 @@ const definition: ComponentDefinition = {
     ...buildSeriesLabelSchema('top'),
   ],
   extraDefaults: {
-    heatmapX: HEATMAP_DEFAULT_X,
-    heatmapY: HEATMAP_DEFAULT_Y,
+    get heatmapX() {
+      return getHeatmapDefaultX()
+    },
+    get heatmapY() {
+      return getHeatmapDefaultY()
+    },
     heatmapData: HEATMAP_DEFAULT_DATA,
   },
   defaultStyle: {},

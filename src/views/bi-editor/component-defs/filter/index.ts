@@ -153,7 +153,9 @@ export const filterDefinition: ComponentDefinition = {
         return t('editorMaterial.ui.staticOptionsUsedWithoutADatasetOneLabelValuePerLine')
       },
       type: 'textarea',
-      default: '北京:bj\n上海:sh\n广州:gz\n深圳:sz',
+      get default() {
+        return t('demoData.filter.defaultOptions')
+      },
       get group() {
         return t('editorMaterial.ui.options')
       },

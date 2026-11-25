@@ -5,6 +5,16 @@ import i18n from '@/i18n'
 
 const t = (key: string) => i18n.global.t(key)
 
+function getTableDefaultData() {
+  return [
+    { name: t('demoData.table.indicatorA'), value: 1280, ratio: '32%' },
+    { name: t('demoData.table.indicatorB'), value: 960, ratio: '24%' },
+    { name: t('demoData.table.indicatorC'), value: 720, ratio: '18%' },
+    { name: t('demoData.table.indicatorD'), value: 540, ratio: '14%' },
+    { name: t('demoData.table.indicatorE'), value: 480, ratio: '12%' },
+  ]
+}
+
 export const tableDefinition: ComponentDefinition = {
   type: 'table',
   meta: {
@@ -441,13 +451,9 @@ export const tableDefinition: ComponentDefinition = {
       { key: 'value', title: t('editorMaterial.ui.value'), width: 100, align: 'right' },
       { key: 'ratio', title: t('editorMaterial.ui.ratioLabel'), width: 100, align: 'right' },
     ],
-    data: [
-      { name: '指标 A', value: 1280, ratio: '32%' },
-      { name: '指标 B', value: 960, ratio: '24%' },
-      { name: '指标 C', value: 720, ratio: '18%' },
-      { name: '指标 D', value: 540, ratio: '14%' },
-      { name: '指标 E', value: 480, ratio: '12%' },
-    ],
+    get data() {
+      return getTableDefaultData()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

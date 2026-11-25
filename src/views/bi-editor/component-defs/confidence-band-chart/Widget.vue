@@ -130,10 +130,10 @@ function getChartSpecificOption(): {
     seriesData.find((s: { name: string }) => String(s.name || '').trim() === name) as
       { name: string; data: number[] } | undefined
 
-  const actualSeries = findSeries('实际值')
-  const forecastSeries = findSeries('预测值')
-  const upperSeries = findSeries('上界')
-  const lowerSeries = findSeries('下界')
+  const actualSeries = findSeries(t('demoData.confidenceBand.actual'))
+  const forecastSeries = findSeries(t('demoData.confidenceBand.predicted'))
+  const upperSeries = findSeries(t('demoData.confidenceBand.upperBound'))
+  const lowerSeries = findSeries(t('demoData.confidenceBand.lowerBound'))
 
   const bandFill = applyAlpha(bandColor, bandOpacity)
 
@@ -160,7 +160,7 @@ function getChartSpecificOption(): {
     })
     // 下界（基准,带 stack,展示底线）
     seriesList.push({
-      name: '下界',
+      name: t('demoData.confidenceBand.lowerBound'),
       type: 'line',
       data: lowerSeries.data,
       lineStyle: { opacity: 0 },
@@ -173,7 +173,7 @@ function getChartSpecificOption(): {
     })
     // 差值（叠在下界上,areaStyle 形成填充带）
     seriesList.push({
-      name: '区间带',
+      name: t('demoData.confidenceBand.band'),
       type: 'line',
       data: diffData,
       lineStyle: { opacity: 0 },
@@ -190,11 +190,11 @@ function getChartSpecificOption(): {
   if (showActual && actualSeries) {
     const style = seriesStyles.find(
       (x: { seriesName: string; color: string; labelShow: boolean }) =>
-        String(x.seriesName || '').trim() === '实际值',
+        String(x.seriesName || '').trim() === t('demoData.confidenceBand.actual'),
     )
     const color = style?.color || actualColor
     seriesList.push({
-      name: '实际值',
+      name: t('demoData.confidenceBand.actual'),
       type: 'line',
       data: actualSeries.data,
       smooth: true,
@@ -212,11 +212,11 @@ function getChartSpecificOption(): {
   if (showForecast && forecastSeries) {
     const style = seriesStyles.find(
       (x: { seriesName: string; color: string; labelShow: boolean }) =>
-        String(x.seriesName || '').trim() === '预测值',
+        String(x.seriesName || '').trim() === t('demoData.confidenceBand.predicted'),
     )
     const color = style?.color || forecastColor
     seriesList.push({
-      name: '预测值',
+      name: t('demoData.confidenceBand.predicted'),
       type: 'line',
       data: forecastSeries.data,
       smooth: true,

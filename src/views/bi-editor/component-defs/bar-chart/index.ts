@@ -17,12 +17,24 @@ export const BAR_MAX_WIDTH = 50
 export const BAR_DEFAULT_WIDTH = 10
 
 /** 🔑 柱状图默认真实数据（后续将用于 seriesStyles 初始化 + Widget 默认渲染） */
-export const BAR_DEFAULT_CATEGORIES = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-export const BAR_DEFAULT_SERIES = [
-  { name: t('editorMaterial.series.visits'), data: [120, 200, 150, 80, 70, 110, 130] },
-  { name: t('editorMaterial.series.orders'), data: [60, 140, 90, 50, 40, 70, 85] },
-  { name: t('editorMaterial.series.sales'), data: [220, 380, 300, 160, 140, 210, 260] },
-]
+export function getBarDefaultCategories(): string[] {
+  return [
+    t('demoData.weekdays.shortMon'),
+    t('demoData.weekdays.shortTue'),
+    t('demoData.weekdays.shortWed'),
+    t('demoData.weekdays.shortThu'),
+    t('demoData.weekdays.shortFri'),
+    t('demoData.weekdays.shortSat'),
+    t('demoData.weekdays.shortSun'),
+  ]
+}
+export function getBarDefaultSeries() {
+  return [
+    { name: t('editorMaterial.series.visits'), data: [120, 200, 150, 80, 70, 110, 130] },
+    { name: t('editorMaterial.series.orders'), data: [60, 140, 90, 50, 40, 70, 85] },
+    { name: t('editorMaterial.series.sales'), data: [220, 380, 300, 160, 140, 210, 260] },
+  ]
+}
 
 export const barChartDefinition: ComponentDefinition = {
   type: 'bar-chart',
@@ -110,8 +122,12 @@ export const barChartDefinition: ComponentDefinition = {
   ],
   /** 🔑 复杂数据默认值（不适合表单编辑的字段），仅在此声明一次 */
   extraDefaults: {
-    categories: BAR_DEFAULT_CATEGORIES,
-    series: BAR_DEFAULT_SERIES,
+    get categories() {
+      return getBarDefaultCategories()
+    },
+    get series() {
+      return getBarDefaultSeries()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

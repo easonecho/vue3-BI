@@ -56,7 +56,7 @@ const mappedData = computed(() => {
     links.push({ source: s, target: t, value: v })
   }
   // 🔑 简单分类:所有节点归为单一类别（用户可在静态数据中扩展 categories）
-  const categories = [{ name: '关联节点' }]
+  const categories = [{ name: t('demoData.forceGraph.relatedNode') }]
   const nodes = Array.from(nodeMap.entries()).map(([name, value]) => ({
     name,
     value,

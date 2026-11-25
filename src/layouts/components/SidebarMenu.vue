@@ -6,7 +6,15 @@
           <rect x="6" y="6" width="12" height="12" rx="2" fill="var(--bi-accent)" opacity="0.9" />
           <rect x="22" y="6" width="12" height="12" rx="2" fill="var(--bi-accent)" opacity="0.45" />
           <rect x="6" y="22" width="12" height="12" rx="2" fill="var(--bi-accent)" opacity="0.55" />
-          <rect x="22" y="22" width="12" height="12" rx="2" fill="var(--bi-accent)" opacity="0.25" />
+          <rect
+            x="22"
+            y="22"
+            width="12"
+            height="12"
+            rx="2"
+            fill="var(--bi-accent)"
+            opacity="0.25"
+          />
         </svg>
       </div>
       <div class="logo-text">
@@ -17,30 +25,19 @@
 
     <div class="aside-divider" />
 
-    <el-menu
-      :default-active="activeMenu"
-      router
-      class="layout-menu"
-      @select="emit('select')"
-    >
+    <el-menu :default-active="activeMenu" router class="layout-menu" @select="emit('select')">
       <template v-if="menuTree.length">
         <template v-for="m in menuTree" :key="m.id">
-          <el-sub-menu
-            v-if="m.children && m.children.length"
-            :index="m.path || String(m.id)"
-          >
+          <el-sub-menu v-if="m.children && m.children.length" :index="m.path || String(m.id)">
             <template #title>
               <el-icon><component :is="iconComp(m.icon)" /></el-icon>
-              <span>{{ m.name }}</span>
+              <span>{{ menuDisplayName(m.name) }}</span>
             </template>
             <template v-for="c in m.children" :key="c.id">
-              <el-sub-menu
-                v-if="c.children && c.children.length"
-                :index="c.path || String(c.id)"
-              >
+              <el-sub-menu v-if="c.children && c.children.length" :index="c.path || String(c.id)">
                 <template #title>
                   <el-icon><component :is="iconComp(c.icon)" /></el-icon>
-                  <span>{{ c.name }}</span>
+                  <span>{{ menuDisplayName(c.name) }}</span>
                 </template>
                 <el-menu-item
                   v-for="g in c.children"
@@ -48,7 +45,7 @@
                   :index="resolvePath(m.path, c.path, g.path)"
                 >
                   <el-icon><component :is="iconComp(g.icon)" /></el-icon>
-                  <span>{{ g.name }}</span>
+                  <span>{{ menuDisplayName(g.name) }}</span>
                 </el-menu-item>
               </el-sub-menu>
               <el-menu-item v-else :index="resolvePath(m.path, c.path)">
@@ -150,7 +147,7 @@ import {
   Grid,
 } from '@element-plus/icons-vue'
 import type { MenuTreeNode } from '@/api/menu'
-import { iconComp, resolvePath } from '../layout-menu-utils'
+import { iconComp, menuDisplayName, resolvePath } from '../layout-menu-utils'
 
 defineProps<{
   menuTree: MenuTreeNode[]

@@ -12,6 +12,7 @@ import { getBaseOption, applyUserChartConfig, getXAxisData } from '../_shared/ec
 import { fontWeightOf, fontStyleOf, labelPositionOf } from '../_shared/props'
 import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
+import { getPictorialBarDefaultCategories } from './index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import type { ComponentInstance } from '@/views/bi-editor/types'
 
@@ -79,7 +80,7 @@ function getChartSpecificOption(): {
     mappedData.value?.categories ??
     (Array.isArray(mergedProps.categories)
       ? mergedProps.categories
-      : ['周一', '周二', '周三', '周四', '周五', '周六', '周日'])
+      : getPictorialBarDefaultCategories())
   const seriesData =
     mappedData.value?.series ??
     (Array.isArray(mergedProps.series)

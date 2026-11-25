@@ -6,27 +6,36 @@ import i18n from '@/i18n'
 
 const t = (key: string) => i18n.global.t(key)
 
-/** 🔑 关系图默认分类 */
-export const GRAPH_DEFAULT_CATEGORIES = [{ name: '核心' }, { name: '上游' }, { name: '下游' }]
-
-/** 🔑 关系图默认节点（关联网络） */
-export const GRAPH_DEFAULT_NODES = [
-  { name: '公司', category: 0, value: 30, symbolSize: 40 },
-  { name: '供应商A', category: 1, value: 20, symbolSize: 30 },
-  { name: '供应商B', category: 1, value: 15, symbolSize: 25 },
-  { name: '客户A', category: 2, value: 20, symbolSize: 30 },
-  { name: '客户B', category: 2, value: 15, symbolSize: 25 },
-  { name: '合作伙伴', category: 2, value: 10, symbolSize: 20 },
-]
-
-/** 🔑 关系图默认连线（拓扑关系） */
-export const GRAPH_DEFAULT_LINKS = [
-  { source: '供应商A', target: '公司' },
-  { source: '供应商B', target: '公司' },
-  { source: '公司', target: '客户A' },
-  { source: '公司', target: '客户B' },
-  { source: '合作伙伴', target: '公司' },
-]
+/** 🔑 关系图默认分类/节点/连线（名称共用同一套本地化文案） */
+export function getGraphDefaultData() {
+  const core = t('demoData.graph.core')
+  const upstream = t('demoData.graph.upstream')
+  const downstream = t('demoData.graph.downstream')
+  const company = t('demoData.graph.company')
+  const supplierA = t('demoData.graph.supplierA')
+  const supplierB = t('demoData.graph.supplierB')
+  const customerA = t('demoData.graph.customerA')
+  const customerB = t('demoData.graph.customerB')
+  const partner = t('demoData.graph.partner')
+  return {
+    categories: [{ name: core }, { name: upstream }, { name: downstream }],
+    nodes: [
+      { name: company, category: 0, value: 30, symbolSize: 40 },
+      { name: supplierA, category: 1, value: 20, symbolSize: 30 },
+      { name: supplierB, category: 1, value: 15, symbolSize: 25 },
+      { name: customerA, category: 2, value: 20, symbolSize: 30 },
+      { name: customerB, category: 2, value: 15, symbolSize: 25 },
+      { name: partner, category: 2, value: 10, symbolSize: 20 },
+    ],
+    links: [
+      { source: supplierA, target: company },
+      { source: supplierB, target: company },
+      { source: company, target: customerA },
+      { source: company, target: customerB },
+      { source: partner, target: company },
+    ],
+  }
+}
 
 export const graphChartDefinition: ComponentDefinition = {
   type: 'graph-chart',
@@ -115,9 +124,15 @@ export const graphChartDefinition: ComponentDefinition = {
     },
   ],
   extraDefaults: {
-    categories: GRAPH_DEFAULT_CATEGORIES,
-    nodes: GRAPH_DEFAULT_NODES,
-    links: GRAPH_DEFAULT_LINKS,
+    get categories() {
+      return getGraphDefaultData().categories
+    },
+    get nodes() {
+      return getGraphDefaultData().nodes
+    },
+    get links() {
+      return getGraphDefaultData().links
+    },
   },
   defaultStyle: {},
 }

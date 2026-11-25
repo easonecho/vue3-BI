@@ -5,6 +5,42 @@ import i18n from '@/i18n'
 
 const t = (key: string) => i18n.global.t(key)
 
+function getDescriptionListDefaultItems() {
+  return [
+    {
+      get label() {
+        return t('editorMaterial.ui.deviceName')
+      },
+      value: t('demoData.descriptionList.server01'),
+    },
+    {
+      get label() {
+        return t('editorMaterial.ui.ipAddress')
+      },
+      value: '192.168.1.100',
+    },
+    {
+      get label() {
+        return t('editorMaterial.ui.status')
+      },
+      value: t('demoData.descriptionList.running'),
+    },
+    { label: 'CPU', value: '45%' },
+    {
+      get label() {
+        return t('editorMaterial.ui.memory')
+      },
+      value: '8.2 GB',
+    },
+    {
+      get label() {
+        return t('editorMaterial.ui.position')
+      },
+      value: t('demoData.descriptionList.roomA3'),
+    },
+  ]
+}
+
 export const descriptionListDefinition: ComponentDefinition = {
   type: 'description-list',
   meta: {
@@ -161,39 +197,9 @@ export const descriptionListDefinition: ComponentDefinition = {
     },
   ],
   extraDefaults: {
-    items: [
-      {
-        get label() {
-          return t('editorMaterial.ui.deviceName')
-        },
-        value: '服务器-01',
-      },
-      {
-        get label() {
-          return t('editorMaterial.ui.ipAddress')
-        },
-        value: '192.168.1.100',
-      },
-      {
-        get label() {
-          return t('editorMaterial.ui.status')
-        },
-        value: '运行中',
-      },
-      { label: 'CPU', value: '45%' },
-      {
-        get label() {
-          return t('editorMaterial.ui.memory')
-        },
-        value: '8.2 GB',
-      },
-      {
-        get label() {
-          return t('editorMaterial.ui.position')
-        },
-        value: '机房A-机柜3',
-      },
-    ],
+    get items() {
+      return getDescriptionListDefaultItems()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

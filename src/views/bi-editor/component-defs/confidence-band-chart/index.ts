@@ -8,24 +8,23 @@ const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 置信区间图默认数据：12 个月,实际值/预测值/上下界各 1 组
  *  data 允许 null：折线在缺口处（实际值与预测值衔接处）用 null 断开 */
-function buildConfidenceBandDefaults(): {
-  categories: string[]
-  series: { name: string; data: (number | null)[] }[]
-} {
-  const categories = [
-    '1月',
-    '2月',
-    '3月',
-    '4月',
-    '5月',
-    '6月',
-    '7月',
-    '8月',
-    '9月',
-    '10月',
-    '11月',
-    '12月',
+export function getConfidenceBandDefaultCategories(): string[] {
+  return [
+    t('demoData.months.jan'),
+    t('demoData.months.feb'),
+    t('demoData.months.mar'),
+    t('demoData.months.apr'),
+    t('demoData.months.may'),
+    t('demoData.months.jun'),
+    t('demoData.months.jul'),
+    t('demoData.months.aug'),
+    t('demoData.months.sep'),
+    t('demoData.months.oct'),
+    t('demoData.months.nov'),
+    t('demoData.months.dec'),
   ]
+}
+export function getConfidenceBandDefaultSeries() {
   // 🔑 实际值（前 8 个月）+ 预测值（后 4 个月,从实际值末尾衔接）
   const actual = [120, 132, 101, 134, 90, 230, 210, 182]
   const forecast = [182, 191, 234, 220]
@@ -45,21 +44,13 @@ function buildConfidenceBandDefaults(): {
     null,
     ...forecast,
   ]
-  return {
-    categories,
-    series: [
-      { name: t('editorMaterial.series.actual'), data: actualFull },
-      { name: t('editorMaterial.series.predicted'), data: forecastFull },
-      { name: t('editorMaterial.series.upperBound'), data: upper },
-      { name: t('editorMaterial.series.lowerBound'), data: lower },
-    ],
-  }
+  return [
+    { name: t('demoData.confidenceBand.actual'), data: actualFull },
+    { name: t('demoData.confidenceBand.predicted'), data: forecastFull },
+    { name: t('demoData.confidenceBand.upperBound'), data: upper },
+    { name: t('demoData.confidenceBand.lowerBound'), data: lower },
+  ]
 }
-
-const confidenceBandDefaults = buildConfidenceBandDefaults()
-
-export const CONFIDENCE_BAND_DEFAULT_CATEGORIES = confidenceBandDefaults.categories
-export const CONFIDENCE_BAND_DEFAULT_SERIES = confidenceBandDefaults.series
 
 export const CONFIDENCE_BAND_DEFAULT_BAND_COLOR = 'rgba(84,112,198,0.2)'
 export const CONFIDENCE_BAND_DEFAULT_ACTUAL_COLOR = '#5470c6'
@@ -165,8 +156,12 @@ export const confidenceBandChartDefinition: ComponentDefinition = {
     ...buildSeriesLabelSchema('top'),
   ],
   extraDefaults: {
-    categories: CONFIDENCE_BAND_DEFAULT_CATEGORIES,
-    series: CONFIDENCE_BAND_DEFAULT_SERIES,
+    get categories() {
+      return getConfidenceBandDefaultCategories()
+    },
+    get series() {
+      return getConfidenceBandDefaultSeries()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

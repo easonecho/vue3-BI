@@ -10,6 +10,7 @@ import { getBaseOption, applyUserChartConfig, getXAxisData } from '../_shared/ec
 import { fontWeightOf, fontStyleOf, labelPositionOf } from '../_shared/props'
 import { deriveDefaultPropsCached, ECHARTS_DEFAULT_PALETTE } from '../types'
 import { getDefinition } from '../index'
+import { getComboDefaultCategories } from './index'
 import { useDatasetBinding } from '../../composables/useDatasetBinding'
 import { useChartAggregation } from '../../composables/useChartAggregation'
 import { resolveComponentFieldMapping } from '../aggregate-spec'
@@ -99,9 +100,7 @@ function getChartSpecificOption(): {
 
   const categories =
     mappedData.value?.categories ??
-    (Array.isArray(mergedProps.categories)
-      ? mergedProps.categories
-      : ['1月', '2月', '3月', '4月', '5月', '6月', '7月'])
+    (Array.isArray(mergedProps.categories) ? mergedProps.categories : getComboDefaultCategories())
   const barSeries =
     mappedData.value?.barSeries ??
     (mergedProps.barSeries

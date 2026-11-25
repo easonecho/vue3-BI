@@ -6,36 +6,47 @@ import i18n from '@/i18n'
 
 const t = (key: string) => i18n.global.t(key)
 
-/** 🔑 力导向图默认分组：3 个分组（开发/测试/产品） */
-export const FORCE_GRAPH_DEFAULT_CATEGORIES = [{ name: '开发' }, { name: '测试' }, { name: '产品' }]
-
-/** 🔑 力导向图默认节点：8 个节点 */
-export const FORCE_GRAPH_DEFAULT_NODES = [
-  { name: '前端', category: 0, value: 30 },
-  { name: '后端', category: 0, value: 30 },
-  { name: '架构师', category: 0, value: 40 },
-  { name: '测试工程师', category: 1, value: 25 },
-  { name: '自动化测试', category: 1, value: 20 },
-  { name: '产品经理', category: 2, value: 35 },
-  { name: '交互设计', category: 2, value: 25 },
-  { name: 'UI设计', category: 2, value: 25 },
-]
-
-/** 🔑 力导向图默认关系（12 条边） */
-export const FORCE_GRAPH_DEFAULT_LINKS = [
-  { source: '前端', target: '架构师', value: 5 },
-  { source: '后端', target: '架构师', value: 5 },
-  { source: '前端', target: '后端', value: 3 },
-  { source: '前端', target: '产品经理', value: 4 },
-  { source: '后端', target: '产品经理', value: 4 },
-  { source: '架构师', target: '产品经理', value: 6 },
-  { source: '测试工程师', target: '前端', value: 3 },
-  { source: '测试工程师', target: '后端', value: 3 },
-  { source: '自动化测试', target: '测试工程师', value: 4 },
-  { source: '产品经理', target: '交互设计', value: 5 },
-  { source: '交互设计', target: 'UI设计', value: 5 },
-  { source: '产品经理', target: 'UI设计', value: 3 },
-]
+/** 🔑 力导向图默认分组/节点/关系（名称共用同一套本地化文案） */
+export function getForceGraphDefaultData() {
+  const dev = t('demoData.forceGraph.dev')
+  const test = t('demoData.forceGraph.test')
+  const product = t('demoData.forceGraph.product')
+  const frontend = t('demoData.forceGraph.frontend')
+  const backend = t('demoData.forceGraph.backend')
+  const architect = t('demoData.forceGraph.architect')
+  const testEngineer = t('demoData.forceGraph.testEngineer')
+  const automationTest = t('demoData.forceGraph.automationTest')
+  const productManager = t('demoData.forceGraph.productManager')
+  const interactionDesign = t('demoData.forceGraph.interactionDesign')
+  const uiDesign = t('demoData.forceGraph.uiDesign')
+  return {
+    categories: [{ name: dev }, { name: test }, { name: product }],
+    nodes: [
+      { name: frontend, category: 0, value: 30 },
+      { name: backend, category: 0, value: 30 },
+      { name: architect, category: 0, value: 40 },
+      { name: testEngineer, category: 1, value: 25 },
+      { name: automationTest, category: 1, value: 20 },
+      { name: productManager, category: 2, value: 35 },
+      { name: interactionDesign, category: 2, value: 25 },
+      { name: uiDesign, category: 2, value: 25 },
+    ],
+    links: [
+      { source: frontend, target: architect, value: 5 },
+      { source: backend, target: architect, value: 5 },
+      { source: frontend, target: backend, value: 3 },
+      { source: frontend, target: productManager, value: 4 },
+      { source: backend, target: productManager, value: 4 },
+      { source: architect, target: productManager, value: 6 },
+      { source: testEngineer, target: frontend, value: 3 },
+      { source: testEngineer, target: backend, value: 3 },
+      { source: automationTest, target: testEngineer, value: 4 },
+      { source: productManager, target: interactionDesign, value: 5 },
+      { source: interactionDesign, target: uiDesign, value: 5 },
+      { source: productManager, target: uiDesign, value: 3 },
+    ],
+  }
+}
 
 export const FORCE_GRAPH_DEFAULT_LAYOUT = 'force'
 export const FORCE_GRAPH_DEFAULT_SYMBOL_SIZE = 20
@@ -193,9 +204,15 @@ export const forceGraphChartDefinition: ComponentDefinition = {
     ...buildSeriesLabelSchema('top'),
   ],
   extraDefaults: {
-    categories: FORCE_GRAPH_DEFAULT_CATEGORIES,
-    nodes: FORCE_GRAPH_DEFAULT_NODES,
-    links: FORCE_GRAPH_DEFAULT_LINKS,
+    get categories() {
+      return getForceGraphDefaultData().categories
+    },
+    get nodes() {
+      return getForceGraphDefaultData().nodes
+    },
+    get links() {
+      return getForceGraphDefaultData().links
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

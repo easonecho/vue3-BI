@@ -7,14 +7,16 @@ import i18n from '@/i18n'
 const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 漏斗图默认真实数据 */
-export const FUNNEL_DEFAULT_DATA = [
-  { name: '展现', value: 900 },
-  { name: '点击', value: 600 },
-  { name: '访问', value: 380 },
-  { name: '咨询', value: 220 },
-  { name: '订单', value: 120 },
-  { name: '成交', value: 60 },
-]
+export function getFunnelDefaultData() {
+  return [
+    { name: t('demoData.funnel.impression'), value: 900 },
+    { name: t('demoData.funnel.click'), value: 600 },
+    { name: t('demoData.funnel.visit'), value: 380 },
+    { name: t('demoData.funnel.consult'), value: 220 },
+    { name: t('demoData.funnel.order'), value: 120 },
+    { name: t('demoData.funnel.deal'), value: 60 },
+  ]
+}
 
 const definition: ComponentDefinition = {
   type: 'funnel-chart',
@@ -149,7 +151,9 @@ const definition: ComponentDefinition = {
     ...buildSeriesLabelSchema('inside'),
   ],
   extraDefaults: {
-    funnelData: FUNNEL_DEFAULT_DATA,
+    get funnelData() {
+      return getFunnelDefaultData()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

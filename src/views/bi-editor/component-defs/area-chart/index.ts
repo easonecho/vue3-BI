@@ -13,11 +13,23 @@ import i18n from '@/i18n'
 const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 面积图默认真实数据 */
-export const AREA_DEFAULT_CATEGORIES = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-export const AREA_DEFAULT_SERIES = [
-  { name: t('editorMaterial.series.revenue'), data: [820, 932, 901, 934, 1290, 1330, 1320] },
-  { name: t('editorMaterial.series.expense'), data: [320, 432, 401, 534, 790, 830, 920] },
-]
+export function getAreaDefaultCategories(): string[] {
+  return [
+    t('demoData.weekdays.shortMon'),
+    t('demoData.weekdays.shortTue'),
+    t('demoData.weekdays.shortWed'),
+    t('demoData.weekdays.shortThu'),
+    t('demoData.weekdays.shortFri'),
+    t('demoData.weekdays.shortSat'),
+    t('demoData.weekdays.shortSun'),
+  ]
+}
+export function getAreaDefaultSeries() {
+  return [
+    { name: t('editorMaterial.series.revenue'), data: [820, 932, 901, 934, 1290, 1330, 1320] },
+    { name: t('editorMaterial.series.expense'), data: [320, 432, 401, 534, 790, 830, 920] },
+  ]
+}
 
 const definition: ComponentDefinition = {
   type: 'area-chart',
@@ -109,8 +121,12 @@ const definition: ComponentDefinition = {
     ...buildSeriesLabelSchema('top'),
   ],
   extraDefaults: {
-    categories: AREA_DEFAULT_CATEGORIES,
-    series: AREA_DEFAULT_SERIES,
+    get categories() {
+      return getAreaDefaultCategories()
+    },
+    get series() {
+      return getAreaDefaultSeries()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

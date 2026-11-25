@@ -6,6 +6,16 @@ import i18n from '@/i18n'
 
 const t = (key: string) => i18n.global.t(key)
 
+function getRankListDefaultItems() {
+  return [
+    { name: t('demoData.rankList.beijing'), value: 1280 },
+    { name: t('demoData.rankList.shanghai'), value: 960 },
+    { name: t('demoData.rankList.guangzhou'), value: 720 },
+    { name: t('demoData.rankList.shenzhen'), value: 540 },
+    { name: t('demoData.rankList.hangzhou'), value: 480 },
+  ]
+}
+
 export const rankListDefinition: ComponentDefinition = {
   type: 'rank-list',
   meta: {
@@ -131,13 +141,9 @@ export const rankListDefinition: ComponentDefinition = {
     aggregatePropField,
   ],
   extraDefaults: {
-    items: [
-      { name: '北京', value: 1280 },
-      { name: '上海', value: 960 },
-      { name: '广州', value: 720 },
-      { name: '深圳', value: 540 },
-      { name: '杭州', value: 480 },
-    ],
+    get items() {
+      return getRankListDefaultItems()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

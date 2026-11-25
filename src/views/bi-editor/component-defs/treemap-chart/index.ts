@@ -7,38 +7,40 @@ import i18n from '@/i18n'
 const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 树图默认真实数据（层级占比） */
-export const TREEMAP_DEFAULT_DATA = [
-  {
-    name: '总公司',
-    value: 1000,
-    children: [
-      {
-        name: '华东区',
-        value: 380,
-        children: [
-          { name: '上海', value: 200 },
-          { name: '江苏', value: 180 },
-        ],
-      },
-      {
-        name: '华南区',
-        value: 320,
-        children: [
-          { name: '广东', value: 200 },
-          { name: '福建', value: 120 },
-        ],
-      },
-      {
-        name: '华北区',
-        value: 300,
-        children: [
-          { name: '北京', value: 180 },
-          { name: '天津', value: 120 },
-        ],
-      },
-    ],
-  },
-]
+export function getTreemapDefaultData() {
+  return [
+    {
+      name: t('demoData.hierarchy.hq'),
+      value: 1000,
+      children: [
+        {
+          name: t('demoData.hierarchy.eastChina'),
+          value: 380,
+          children: [
+            { name: t('demoData.hierarchy.shanghai'), value: 200 },
+            { name: t('demoData.hierarchy.jiangsu'), value: 180 },
+          ],
+        },
+        {
+          name: t('demoData.hierarchy.southChina'),
+          value: 320,
+          children: [
+            { name: t('demoData.hierarchy.guangdong'), value: 200 },
+            { name: t('demoData.hierarchy.fujian'), value: 120 },
+          ],
+        },
+        {
+          name: t('demoData.hierarchy.northChina'),
+          value: 300,
+          children: [
+            { name: t('demoData.hierarchy.beijing'), value: 180 },
+            { name: t('demoData.hierarchy.tianjin'), value: 120 },
+          ],
+        },
+      ],
+    },
+  ]
+}
 
 export const treemapChartDefinition: ComponentDefinition = {
   type: 'treemap-chart',
@@ -127,7 +129,9 @@ export const treemapChartDefinition: ComponentDefinition = {
     },
   ],
   extraDefaults: {
-    data: TREEMAP_DEFAULT_DATA,
+    get data() {
+      return getTreemapDefaultData()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

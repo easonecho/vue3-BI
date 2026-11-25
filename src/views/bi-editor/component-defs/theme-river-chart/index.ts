@@ -17,29 +17,34 @@ export const THEME_RIVER_DEFAULT_DIM = [
   '2024/1/7',
 ]
 
-export const THEME_RIVER_DEFAULT_DATA: Array<[string, number, string]> = [
-  ['2024/1/1', 10, '主题A'],
-  ['2024/1/1', 15, '主题B'],
-  ['2024/1/1', 20, '主题C'],
-  ['2024/1/2', 12, '主题A'],
-  ['2024/1/2', 18, '主题B'],
-  ['2024/1/2', 22, '主题C'],
-  ['2024/1/3', 8, '主题A'],
-  ['2024/1/3', 14, '主题B'],
-  ['2024/1/3', 25, '主题C'],
-  ['2024/1/4', 15, '主题A'],
-  ['2024/1/4', 20, '主题B'],
-  ['2024/1/4', 18, '主题C'],
-  ['2024/1/5', 20, '主题A'],
-  ['2024/1/5', 12, '主题B'],
-  ['2024/1/5', 16, '主题C'],
-  ['2024/1/6', 18, '主题A'],
-  ['2024/1/6', 22, '主题B'],
-  ['2024/1/6', 20, '主题C'],
-  ['2024/1/7', 25, '主题A'],
-  ['2024/1/7', 16, '主题B'],
-  ['2024/1/7', 24, '主题C'],
-]
+export function getThemeRiverDefaultData(): Array<[string, number, string]> {
+  const themeA = t('demoData.themeRiver.themeA')
+  const themeB = t('demoData.themeRiver.themeB')
+  const themeC = t('demoData.themeRiver.themeC')
+  return [
+    ['2024/1/1', 10, themeA],
+    ['2024/1/1', 15, themeB],
+    ['2024/1/1', 20, themeC],
+    ['2024/1/2', 12, themeA],
+    ['2024/1/2', 18, themeB],
+    ['2024/1/2', 22, themeC],
+    ['2024/1/3', 8, themeA],
+    ['2024/1/3', 14, themeB],
+    ['2024/1/3', 25, themeC],
+    ['2024/1/4', 15, themeA],
+    ['2024/1/4', 20, themeB],
+    ['2024/1/4', 18, themeC],
+    ['2024/1/5', 20, themeA],
+    ['2024/1/5', 12, themeB],
+    ['2024/1/5', 16, themeC],
+    ['2024/1/6', 18, themeA],
+    ['2024/1/6', 22, themeB],
+    ['2024/1/6', 20, themeC],
+    ['2024/1/7', 25, themeA],
+    ['2024/1/7', 16, themeB],
+    ['2024/1/7', 24, themeC],
+  ]
+}
 
 export const themeRiverChartDefinition: ComponentDefinition = {
   type: 'theme-river-chart',
@@ -86,7 +91,9 @@ export const themeRiverChartDefinition: ComponentDefinition = {
   ],
   extraDefaults: {
     singleAxisDim: THEME_RIVER_DEFAULT_DIM,
-    data: THEME_RIVER_DEFAULT_DATA,
+    get data() {
+      return getThemeRiverDefaultData()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

@@ -8,28 +8,30 @@ const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 散点图默认真实数据：每个系列是 {name, data: [[x,y], ...]} */
 export const SCATTER_DEFAULT_CATEGORIES = null as unknown as string[] | null
-export const SCATTER_DEFAULT_SERIES = [
-  {
-    name: '男',
-    data: [
-      [160, 52],
-      [165, 55],
-      [170, 60],
-      [175, 65],
-      [180, 70],
-    ],
-  },
-  {
-    name: '女',
-    data: [
-      [155, 45],
-      [160, 50],
-      [165, 53],
-      [170, 58],
-      [175, 62],
-    ],
-  },
-]
+export function getScatterDefaultSeries() {
+  return [
+    {
+      name: t('demoData.scatter.male'),
+      data: [
+        [160, 52],
+        [165, 55],
+        [170, 60],
+        [175, 65],
+        [180, 70],
+      ],
+    },
+    {
+      name: t('demoData.scatter.female'),
+      data: [
+        [155, 45],
+        [160, 50],
+        [165, 53],
+        [170, 58],
+        [175, 62],
+      ],
+    },
+  ]
+}
 
 export const scatterChartDefinition: ComponentDefinition = {
   type: 'scatter-chart',
@@ -102,7 +104,9 @@ export const scatterChartDefinition: ComponentDefinition = {
   ],
   extraDefaults: {
     categories: SCATTER_DEFAULT_CATEGORIES,
-    series: SCATTER_DEFAULT_SERIES,
+    get series() {
+      return getScatterDefaultSeries()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

@@ -97,11 +97,11 @@ function getChartSpecificOption(): {
           value: item.value,
         }))
       : [
-          { name: '直接访问', value: 1048 },
-          { name: '搜索引擎', value: 735 },
-          { name: '邮件营销', value: 580 },
-          { name: '联盟广告', value: 484 },
-          { name: '视频广告', value: 300 },
+          { name: t('demoData.pie.directVisit'), value: 1048 },
+          { name: t('demoData.pie.searchEngine'), value: 735 },
+          { name: t('demoData.pie.emailMarketing'), value: 580 },
+          { name: t('demoData.pie.affiliateAds'), value: 484 },
+          { name: t('demoData.pie.videoAds'), value: 300 },
         ])
 
   const outerRadius = Number(mergedProps.radius)

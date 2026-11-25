@@ -6,27 +6,38 @@ import i18n from '@/i18n'
 
 const t = (key: string) => i18n.global.t(key)
 
-/** 🔑 桑基图默认真实数据（节点 + 流向） */
-export const SANKEY_DEFAULT_NODES = [
-  { name: t('editorMaterial.series.revenue') },
-  { name: t('editorMaterial.series.expense') },
-  { name: '工资', value: 8000 },
-  { name: '奖金', value: 3000 },
-  { name: '房租', value: 3000 },
-  { name: '餐饮', value: 2000 },
-  { name: '储蓄', value: 4000 },
-  { name: '其他', value: 2000 },
-]
-
-export const SANKEY_DEFAULT_LINKS = [
-  { source: '工资', target: '收入', value: 8000 },
-  { source: '奖金', target: '收入', value: 3000 },
-  { source: '收入', target: '支出', value: 5000 },
-  { source: '收入', target: '储蓄', value: 4000 },
-  { source: '收入', target: '其他', value: 2000 },
-  { source: '支出', target: '房租', value: 3000 },
-  { source: '支出', target: '餐饮', value: 2000 },
-]
+/** 🔑 桑基图默认真实数据（节点 + 流向，节点名与连线共用同一套本地化文案） */
+export function getSankeyDefaultData() {
+  const revenue = t('editorMaterial.series.revenue')
+  const expense = t('editorMaterial.series.expense')
+  const salary = t('demoData.sankey.salary')
+  const bonus = t('demoData.sankey.bonus')
+  const rent = t('demoData.sankey.rent')
+  const dining = t('demoData.sankey.dining')
+  const savings = t('demoData.sankey.savings')
+  const other = t('demoData.sankey.other')
+  return {
+    nodes: [
+      { name: revenue },
+      { name: expense },
+      { name: salary, value: 8000 },
+      { name: bonus, value: 3000 },
+      { name: rent, value: 3000 },
+      { name: dining, value: 2000 },
+      { name: savings, value: 4000 },
+      { name: other, value: 2000 },
+    ],
+    links: [
+      { source: salary, target: revenue, value: 8000 },
+      { source: bonus, target: revenue, value: 3000 },
+      { source: revenue, target: expense, value: 5000 },
+      { source: revenue, target: savings, value: 4000 },
+      { source: revenue, target: other, value: 2000 },
+      { source: expense, target: rent, value: 3000 },
+      { source: expense, target: dining, value: 2000 },
+    ],
+  }
+}
 
 export const sankeyChartDefinition: ComponentDefinition = {
   type: 'sankey-chart',
@@ -97,8 +108,12 @@ export const sankeyChartDefinition: ComponentDefinition = {
     },
   ],
   extraDefaults: {
-    nodes: SANKEY_DEFAULT_NODES,
-    links: SANKEY_DEFAULT_LINKS,
+    get nodes() {
+      return getSankeyDefaultData().nodes
+    },
+    get links() {
+      return getSankeyDefaultData().links
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

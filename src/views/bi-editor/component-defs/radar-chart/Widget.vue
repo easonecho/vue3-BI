@@ -89,20 +89,26 @@ function getChartSpecificOption(): {
     (Array.isArray(mergedProps.radarIndicator)
       ? mergedProps.radarIndicator
       : [
-          { name: '销售', max: 6500 },
-          { name: '管理', max: 16000 },
-          { name: '信息技术', max: 30000 },
-          { name: '客服', max: 38000 },
-          { name: '研发', max: 52000 },
-          { name: '市场', max: 25000 },
+          { name: t('demoData.radar.sales'), max: 6500 },
+          { name: t('demoData.radar.management'), max: 16000 },
+          { name: t('demoData.radar.it'), max: 30000 },
+          { name: t('demoData.radar.customerService'), max: 38000 },
+          { name: t('demoData.radar.rnd'), max: 52000 },
+          { name: t('demoData.radar.marketing'), max: 25000 },
         ])
   const seriesData =
     mappedData.value?.series ??
     (Array.isArray(mergedProps.radarSeries)
       ? mergedProps.radarSeries
       : [
-          { name: '预算分配', value: [4200, 8000, 20000, 28000, 32000, 18000] },
-          { name: '实际开销', value: [5000, 9000, 22000, 30000, 35000, 20000] },
+          {
+            name: t('demoData.radar.budgetAllocation'),
+            value: [4200, 8000, 20000, 28000, 32000, 18000],
+          },
+          {
+            name: t('demoData.radar.actualExpense'),
+            value: [5000, 9000, 22000, 30000, 35000, 20000],
+          },
         ])
 
   const shape = String(mergedProps.shape) as 'polygon' | 'circle'

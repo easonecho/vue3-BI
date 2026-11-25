@@ -7,13 +7,15 @@ import i18n from '@/i18n'
 const t = (key: string) => i18n.global.t(key)
 
 /** 平行坐标图默认数据：维度定义 + 多条数据线 */
-export const PARALLEL_DEFAULT_DIMENSIONS = [
-  { name: 'CPU', max: 100 },
-  { name: '内存', max: 100 },
-  { name: '磁盘', max: 100 },
-  { name: '网络', max: 100 },
-  { name: 'QPS', max: 1000 },
-]
+export function getParallelDefaultDimensions() {
+  return [
+    { name: 'CPU', max: 100 },
+    { name: t('demoData.parallel.memory'), max: 100 },
+    { name: t('demoData.parallel.disk'), max: 100 },
+    { name: t('demoData.parallel.network'), max: 100 },
+    { name: 'QPS', max: 1000 },
+  ]
+}
 export const PARALLEL_DEFAULT_DATA = [
   [60, 45, 80, 30, 500],
   [80, 60, 70, 40, 800],
@@ -111,7 +113,9 @@ export const parallelChartDefinition: ComponentDefinition = {
     },
   ],
   extraDefaults: {
-    dimensions: PARALLEL_DEFAULT_DIMENSIONS,
+    get dimensions() {
+      return getParallelDefaultDimensions()
+    },
     data: PARALLEL_DEFAULT_DATA,
   },
   defaultStyle: {},

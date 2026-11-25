@@ -5,6 +5,33 @@ import i18n from '@/i18n'
 
 const t = (key: string) => i18n.global.t(key)
 
+function getTreeTableDefaultData() {
+  const statusNormal = t('demoData.treeTable.statusNormal')
+  const statusDisabled = t('demoData.treeTable.statusDisabled')
+  return [
+    {
+      id: 1,
+      name: t('demoData.treeTable.hq'),
+      count: 100,
+      status: statusNormal,
+      children: [
+        { id: 2, name: t('demoData.treeTable.tech'), count: 50, status: statusNormal },
+        {
+          id: 3,
+          name: t('demoData.treeTable.marketing'),
+          count: 30,
+          status: statusNormal,
+          children: [
+            { id: 4, name: t('demoData.treeTable.domestic'), count: 18, status: statusNormal },
+            { id: 5, name: t('demoData.treeTable.overseas'), count: 12, status: statusDisabled },
+          ],
+        },
+        { id: 6, name: t('demoData.treeTable.finance'), count: 20, status: statusNormal },
+      ],
+    },
+  ]
+}
+
 export const treeTableDefinition: ComponentDefinition = {
   type: 'tree-table',
   meta: {
@@ -168,28 +195,9 @@ export const treeTableDefinition: ComponentDefinition = {
         },
       },
     ],
-    data: [
-      {
-        id: 1,
-        name: '总部',
-        count: 100,
-        status: '正常',
-        children: [
-          { id: 2, name: '技术部', count: 50, status: '正常' },
-          {
-            id: 3,
-            name: '市场部',
-            count: 30,
-            status: '正常',
-            children: [
-              { id: 4, name: '国内组', count: 18, status: '正常' },
-              { id: 5, name: '海外组', count: 12, status: '停用' },
-            ],
-          },
-          { id: 6, name: '财务部', count: 20, status: '正常' },
-        ],
-      },
-    ],
+    get data() {
+      return getTreeTableDefaultData()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: false,

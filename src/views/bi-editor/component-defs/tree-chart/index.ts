@@ -7,22 +7,33 @@ import i18n from '@/i18n'
 const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 树图默认数据：3 层组织架构（CEO → 3 个部门 → 各 2 个小组） */
-export const TREE_DEFAULT_DATA = {
-  name: 'CEO',
-  children: [
-    {
-      name: '研发部',
-      children: [{ name: '前端组' }, { name: '后端组' }],
-    },
-    {
-      name: '产品部',
-      children: [{ name: '设计组' }, { name: '产品组' }],
-    },
-    {
-      name: '运营部',
-      children: [{ name: '推广组' }, { name: '内容组' }],
-    },
-  ],
+export function getTreeDefaultData() {
+  return {
+    name: 'CEO',
+    children: [
+      {
+        name: t('demoData.tree.rnd'),
+        children: [
+          { name: t('demoData.tree.frontendTeam') },
+          { name: t('demoData.tree.backendTeam') },
+        ],
+      },
+      {
+        name: t('demoData.tree.product'),
+        children: [
+          { name: t('demoData.tree.designTeam') },
+          { name: t('demoData.tree.productTeam') },
+        ],
+      },
+      {
+        name: t('demoData.tree.ops'),
+        children: [
+          { name: t('demoData.tree.promotionTeam') },
+          { name: t('demoData.tree.contentTeam') },
+        ],
+      },
+    ],
+  }
 }
 
 export const TREE_DEFAULT_LAYOUT = 'orthogonal'
@@ -239,7 +250,9 @@ export const treeChartDefinition: ComponentDefinition = {
     ...buildSeriesLabelSchema('top'),
   ],
   extraDefaults: {
-    treeData: TREE_DEFAULT_DATA,
+    get treeData() {
+      return getTreeDefaultData()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

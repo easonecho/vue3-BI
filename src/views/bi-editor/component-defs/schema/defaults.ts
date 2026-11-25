@@ -1,5 +1,6 @@
 import type { ComponentDefinition, PropField } from './props'
 import { ECHARTS_DEFAULT_PALETTE } from './options'
+import i18n from '@/i18n'
 
 /**
  * 🔑 从 propsSchema 自动派生 defaultProps。
@@ -32,16 +33,22 @@ export function deriveDefaultProps(
  */
 const deriveDefaultPropsCache = new WeakMap<
   { propsSchema: PropField[]; extraDefaults?: Record<string, any> },
-  Record<string, any>
+  Map<string, Record<string, any>>
 >()
 export function deriveDefaultPropsCached(
   def: { propsSchema: PropField[]; extraDefaults?: Record<string, any> } | undefined,
 ): Record<string, any> {
   if (!def) return {}
-  const cached = deriveDefaultPropsCache.get(def)
+  const locale = String(i18n.global.locale.value)
+  let cacheByLocale = deriveDefaultPropsCache.get(def)
+  if (!cacheByLocale) {
+    cacheByLocale = new Map()
+    deriveDefaultPropsCache.set(def, cacheByLocale)
+  }
+  const cached = cacheByLocale.get(locale)
   if (cached) return { ...cached }
   const result = deriveDefaultProps(def.propsSchema, def.extraDefaults)
-  deriveDefaultPropsCache.set(def, result)
+  cacheByLocale.set(locale, result)
   return { ...result }
 }
 

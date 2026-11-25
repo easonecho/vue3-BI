@@ -11,7 +11,15 @@ export const BOXPLOT_MAX_WIDTH = 50
 export const BOXPLOT_DEFAULT_WIDTH = 20
 
 /** 🔑 箱线图默认真实数据：5 个类别,每类一个 [min, Q1, median, Q3, max] 箱线数据 */
-export const BOXPLOT_DEFAULT_CATEGORIES = ['类别1', '类别2', '类别3', '类别4', '类别5']
+export function getBoxplotDefaultCategories(): string[] {
+  return [
+    t('demoData.boxplot.category1'),
+    t('demoData.boxplot.category2'),
+    t('demoData.boxplot.category3'),
+    t('demoData.boxplot.category4'),
+    t('demoData.boxplot.category5'),
+  ]
+}
 export const BOXPLOT_DEFAULT_SERIES = [
   {
     name: t('editorMaterial.ui.distribution'),
@@ -71,7 +79,9 @@ export const boxplotChartDefinition: ComponentDefinition = {
     ...buildSeriesLabelSchema('top'),
   ],
   extraDefaults: {
-    categories: BOXPLOT_DEFAULT_CATEGORIES,
+    get categories() {
+      return getBoxplotDefaultCategories()
+    },
     series: BOXPLOT_DEFAULT_SERIES,
   },
   defaultStyle: {},

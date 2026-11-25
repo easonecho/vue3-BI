@@ -7,14 +7,21 @@ import i18n from '@/i18n'
 const t = (key: string) => i18n.global.t(key)
 
 /** 甘特图默认任务数据 */
-export const GANTT_DEFAULT_TASKS = [
-  { name: '需求分析', start: '2024-05-01', end: '2024-05-05', progress: 100 },
-  { name: 'UI设计', start: '2024-05-04', end: '2024-05-10', progress: 80 },
-  { name: '前端开发', start: '2024-05-08', end: '2024-05-20', progress: 60 },
-  { name: '后端开发', start: '2024-05-08', end: '2024-05-22', progress: 55 },
-  { name: '测试', start: '2024-05-18', end: '2024-05-28', progress: 20 },
-  { name: '上线', start: '2024-05-28', end: '2024-05-30', progress: 0 },
-]
+export function getGanttDefaultTasks() {
+  return [
+    {
+      name: t('demoData.gantt.requirementAnalysis'),
+      start: '2024-05-01',
+      end: '2024-05-05',
+      progress: 100,
+    },
+    { name: t('demoData.gantt.uiDesign'), start: '2024-05-04', end: '2024-05-10', progress: 80 },
+    { name: t('demoData.gantt.frontendDev'), start: '2024-05-08', end: '2024-05-20', progress: 60 },
+    { name: t('demoData.gantt.backendDev'), start: '2024-05-08', end: '2024-05-22', progress: 55 },
+    { name: t('demoData.gantt.testing'), start: '2024-05-18', end: '2024-05-28', progress: 20 },
+    { name: t('demoData.gantt.launch'), start: '2024-05-28', end: '2024-05-30', progress: 0 },
+  ]
+}
 
 export const ganttChartDefinition: ComponentDefinition = {
   type: 'gantt-chart',
@@ -135,7 +142,9 @@ export const ganttChartDefinition: ComponentDefinition = {
     },
   ],
   extraDefaults: {
-    tasks: GANTT_DEFAULT_TASKS,
+    get tasks() {
+      return getGanttDefaultTasks()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

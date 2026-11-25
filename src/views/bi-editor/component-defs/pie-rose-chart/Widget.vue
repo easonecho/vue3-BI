@@ -96,11 +96,11 @@ function getChartSpecificOption(): {
           value: item.value,
         }))
       : [
-          { name: '类别A', value: 40 },
-          { name: '类别B', value: 30 },
-          { name: '类别C', value: 20 },
-          { name: '类别D', value: 15 },
-          { name: '类别E', value: 10 },
+          { name: t('demoData.pieRose.categoryA'), value: 40 },
+          { name: t('demoData.pieRose.categoryB'), value: 30 },
+          { name: t('demoData.pieRose.categoryC'), value: 20 },
+          { name: t('demoData.pieRose.categoryD'), value: 15 },
+          { name: t('demoData.pieRose.categoryE'), value: 10 },
         ])
 
   const roseType = String(mergedProps.roseType) as 'radius' | 'area'

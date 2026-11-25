@@ -13,11 +13,23 @@ import i18n from '@/i18n'
 const t = (key: string) => i18n.global.t(key)
 
 /** 🔑 折线图默认真实数据 */
-export const LINE_DEFAULT_CATEGORIES = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-export const LINE_DEFAULT_SERIES = [
-  { name: 'PV', data: [820, 932, 901, 934, 1290, 1330, 1320] },
-  { name: 'UV', data: [320, 432, 401, 534, 790, 830, 920] },
-]
+export function getLineDefaultCategories(): string[] {
+  return [
+    t('demoData.weekdays.shortMon'),
+    t('demoData.weekdays.shortTue'),
+    t('demoData.weekdays.shortWed'),
+    t('demoData.weekdays.shortThu'),
+    t('demoData.weekdays.shortFri'),
+    t('demoData.weekdays.shortSat'),
+    t('demoData.weekdays.shortSun'),
+  ]
+}
+export function getLineDefaultSeries() {
+  return [
+    { name: 'PV', data: [820, 932, 901, 934, 1290, 1330, 1320] },
+    { name: 'UV', data: [320, 432, 401, 534, 790, 830, 920] },
+  ]
+}
 
 export const lineChartDefinition: ComponentDefinition = {
   type: 'line-chart',
@@ -110,8 +122,12 @@ export const lineChartDefinition: ComponentDefinition = {
     ...buildSeriesLabelSchema('top'),
   ],
   extraDefaults: {
-    categories: LINE_DEFAULT_CATEGORIES,
-    series: LINE_DEFAULT_SERIES,
+    get categories() {
+      return getLineDefaultCategories()
+    },
+    get series() {
+      return getLineDefaultSeries()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

@@ -5,6 +5,56 @@ import i18n from '@/i18n'
 
 const t = (key: string) => i18n.global.t(key)
 
+function getScrollTableDefaultData() {
+  const critical = t('demoData.scrollTable.critical')
+  const warning = t('demoData.scrollTable.warning')
+  const info = t('demoData.scrollTable.info')
+  return [
+    {
+      time: '2024-05-20 10:23:15',
+      level: critical,
+      source: 'DB-Server',
+      message: t('demoData.scrollTable.dbConnectionExceeded'),
+    },
+    {
+      time: '2024-05-20 10:21:08',
+      level: warning,
+      source: 'App-Server',
+      message: t('demoData.scrollTable.cpuUsageHigh'),
+    },
+    {
+      time: '2024-05-20 10:18:42',
+      level: critical,
+      source: 'Redis',
+      message: t('demoData.scrollTable.memoryOverflowRisk'),
+    },
+    {
+      time: '2024-05-20 10:15:30',
+      level: info,
+      source: 'Nginx',
+      message: t('demoData.scrollTable.configUpdated'),
+    },
+    {
+      time: '2024-05-20 10:12:11',
+      level: warning,
+      source: 'MQ',
+      message: t('demoData.scrollTable.messageBacklog'),
+    },
+    {
+      time: '2024-05-20 10:08:55',
+      level: critical,
+      source: 'Storage',
+      message: t('demoData.scrollTable.diskSpaceLow'),
+    },
+    {
+      time: '2024-05-20 10:05:20',
+      level: info,
+      source: 'Monitor',
+      message: t('demoData.scrollTable.agentRestarted'),
+    },
+  ]
+}
+
 export const scrollTableDefinition: ComponentDefinition = {
   type: 'scroll-table',
   meta: {
@@ -188,35 +238,9 @@ export const scrollTableDefinition: ComponentDefinition = {
       { key: 'source', title: t('editorMaterial.ui.sourceLabel'), width: 120 },
       { key: 'message', title: t('editorMaterial.ui.alertMessage') },
     ],
-    data: [
-      {
-        time: '2024-05-20 10:23:15',
-        level: '严重',
-        source: 'DB-Server',
-        message: '数据库连接数超过阈值',
-      },
-      {
-        time: '2024-05-20 10:21:08',
-        level: '警告',
-        source: 'App-Server',
-        message: 'CPU 使用率 85%',
-      },
-      { time: '2024-05-20 10:18:42', level: '严重', source: 'Redis', message: '内存溢出风险' },
-      { time: '2024-05-20 10:15:30', level: '提示', source: 'Nginx', message: '配置文件已更新' },
-      { time: '2024-05-20 10:12:11', level: '警告', source: 'MQ', message: '消息积压 1000+' },
-      {
-        time: '2024-05-20 10:08:55',
-        level: '严重',
-        source: 'Storage',
-        message: '磁盘剩余空间 < 10%',
-      },
-      {
-        time: '2024-05-20 10:05:20',
-        level: '提示',
-        source: 'Monitor',
-        message: '监控 agent 已重启',
-      },
-    ],
+    get data() {
+      return getScrollTableDefaultData()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,

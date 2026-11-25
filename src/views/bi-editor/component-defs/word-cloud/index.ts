@@ -5,6 +5,33 @@ import i18n from '@/i18n'
 
 const t = (key: string) => i18n.global.t(key)
 
+function getWordCloudDefaultWords() {
+  return [
+    { name: t('demoData.wordCloud.dataAnalysis'), value: 100 },
+    { name: t('demoData.wordCloud.visualization'), value: 90 },
+    { name: t('demoData.wordCloud.bigScreen'), value: 85 },
+    { name: 'BI', value: 80 },
+    { name: ' dashboard', value: 75 },
+    { name: t('demoData.wordCloud.realtime'), value: 70 },
+    { name: t('demoData.wordCloud.monitoring'), value: 65 },
+    { name: t('demoData.wordCloud.alerting'), value: 60 },
+    { name: t('demoData.wordCloud.trend'), value: 55 },
+    { name: t('demoData.wordCloud.forecast'), value: 50 },
+    { name: 'AI', value: 48 },
+    { name: t('demoData.wordCloud.machineLearning'), value: 45 },
+    { name: t('demoData.wordCloud.cloudNative'), value: 42 },
+    { name: t('demoData.wordCloud.microservices'), value: 40 },
+    { name: t('demoData.wordCloud.containerization'), value: 38 },
+    { name: 'DevOps', value: 35 },
+    { name: t('demoData.wordCloud.middlePlatform'), value: 32 },
+    { name: t('demoData.wordCloud.lowCode'), value: 30 },
+    { name: t('demoData.wordCloud.iot'), value: 28 },
+    { name: '5G', value: 26 },
+    { name: t('demoData.wordCloud.blockchain'), value: 24 },
+    { name: t('demoData.wordCloud.metaverse'), value: 22 },
+  ]
+}
+
 export const wordCloudDefinition: ComponentDefinition = {
   type: 'word-cloud',
   meta: {
@@ -184,30 +211,9 @@ export const wordCloudDefinition: ComponentDefinition = {
     },
   ],
   extraDefaults: {
-    words: [
-      { name: '数据分析', value: 100 },
-      { name: '可视化', value: 90 },
-      { name: '大屏', value: 85 },
-      { name: 'BI', value: 80 },
-      { name: ' dashboard', value: 75 },
-      { name: '实时', value: 70 },
-      { name: '监控', value: 65 },
-      { name: '告警', value: 60 },
-      { name: '趋势', value: 55 },
-      { name: '预测', value: 50 },
-      { name: 'AI', value: 48 },
-      { name: '机器学习', value: 45 },
-      { name: '云原生', value: 42 },
-      { name: '微服务', value: 40 },
-      { name: '容器化', value: 38 },
-      { name: 'DevOps', value: 35 },
-      { name: '中台', value: 32 },
-      { name: '低代码', value: 30 },
-      { name: '物联网', value: 28 },
-      { name: '5G', value: 26 },
-      { name: '区块链', value: 24 },
-      { name: '元宇宙', value: 22 },
-    ],
+    get words() {
+      return getWordCloudDefaultWords()
+    },
   },
   defaultStyle: {},
   supportsDataBinding: true,
