@@ -38,6 +38,7 @@
           <p v-if="dashboard.description">{{ dashboard.description }}</p>
         </div>
         <div class="share-actions">
+          <LangSwitcher />
           <el-tag type="success" size="small" effect="dark">{{
             t('sharePage.publicShare')
           }}</el-tag>
@@ -59,6 +60,11 @@
       <DashboardScreen />
     </template>
 
+    <!-- 密码/错误状态下无顶部栏，仍需可切换语言 -->
+    <div v-if="!isEmbed && (needPassword || loadError) && !loading" class="share-lang">
+      <LangSwitcher />
+    </div>
+
     <!-- 错误提示 -->
     <div v-if="loadError && !loading" class="error-panel">
       <el-empty :description="loadError">
@@ -73,6 +79,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowDown, Lock, Key } from '@element-plus/icons-vue'
+import LangSwitcher from '@/components/LangSwitcher.vue'
 import { useBiEditorStore } from '@/stores/bi-editor'
 import { useLinkageStore } from '@/stores/linkage'
 import DashboardScreen from '@/views/preview/components/DashboardScreen.vue'
@@ -249,6 +256,13 @@ function goHome() {
     gap: 12px;
     flex-shrink: 0;
   }
+}
+
+.share-lang {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  z-index: 10;
 }
 
 .password-panel {

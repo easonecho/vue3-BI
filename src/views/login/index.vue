@@ -1,5 +1,9 @@
 <template>
   <div class="login-page">
+    <!-- 语言切换：未登录也可切换中英文 -->
+    <div class="login-lang">
+      <LangSwitcher />
+    </div>
     <!-- 登录卡片 -->
     <div class="login-card">
       <div class="card-content">
@@ -124,6 +128,7 @@ import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { User, Lock, InfoFilled, OfficeBuilding } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
+import LangSwitcher from '@/components/LangSwitcher.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -179,6 +184,14 @@ async function handleLogin() {
   position: relative;
   overflow: hidden;
   background: var(--bi-bg);
+}
+
+/* 右上角语言切换：登录页无顶部导航，单独放置入口 */
+.login-lang {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  z-index: 2;
 }
 
 /* ========== 登录卡片 ========== */
