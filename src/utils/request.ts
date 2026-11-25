@@ -84,6 +84,21 @@ if (typeof localStorage !== 'undefined') {
 const TOAST_INTERVAL = 2000
 const toastSeen = new Map<string, ReturnType<typeof setTimeout>>()
 
+/**
+ * 业务错误码 -> 当前语言文案
+ * - 中文环境优先后端原文，保留参数/字段等动态细节
+ * - 其他语言优先用错误码映射，未收录时回退后端原文
+ */
+export function localizedErrorMessage(code: unknown, fallback?: string): string {
+  const mapped = typeof code === 'number' && i18n.global.te(`apiErrors.${code}`)
+  const backend = fallback?.trim()
+  const generic = i18n.global.t('appMessages.request.failed')
+  if (i18n.global.locale.value.startsWith('zh')) {
+    return backend || (mapped ? i18n.global.t(`apiErrors.${code}`) : generic)
+  }
+  return mapped ? i18n.global.t(`apiErrors.${code}`) : backend || generic
+}
+
 function showToast(message: string): void {
   const key = message || i18n.global.t('appMessages.request.failed')
   if (toastSeen.has(key)) return
@@ -248,8 +263,9 @@ request.interceptors.response.use(
     if (res.code === 0) {
       return res as unknown as AxiosResponse<ApiResult>
     }
-    showToast(res.message || i18n.global.t('appMessages.request.failed'))
-    return Promise.reject(new Error(res.message || 'Error'))
+    const message = localizedErrorMessage(res.code, res.message)
+    showToast(message)
+    return Promise.reject(new Error(message))
   },
   async (error) => {
     // 取消的请求不提示错误
@@ -321,11 +337,14 @@ request.interceptors.response.use(
         case 500:
           showToast(i18n.global.t('appMessages.request.serverError'))
           break
-        default:
+        default: {
+          const data = response.data as { code?: number; message?: string } | undefined
           showToast(
-            response.data?.message ||
-              i18n.global.t('appMessages.request.statusError', { status: response.status }),
+            data?.message || typeof data?.code === 'number'
+              ? localizedErrorMessage(data?.code, data?.message)
+              : i18n.global.t('appMessages.request.statusError', { status: response.status }),
           )
+        }
       }
     } else if (error.message?.includes('timeout')) {
       showToast(i18n.global.t('appMessages.request.timeout'))

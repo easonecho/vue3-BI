@@ -35,7 +35,13 @@ vi.mock('@/utils/progress', () => progressMock)
 
 // 本文件只验证刷新队列逻辑, 语言包替换为 key 直出, 避免加载真实 i18n 拖慢用例
 vi.mock('@/i18n', () => ({
-  default: { global: { t: (key: string) => key } },
+  default: {
+    global: {
+      t: (key: string) => key,
+      te: () => false,
+      locale: { value: 'zh-CN' },
+    },
+  },
 }))
 
 interface Deferred<T> {
