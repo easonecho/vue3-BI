@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import i18n from '@/i18n'
 import {
   toNumericValue,
   extractSeriesValues,
@@ -31,13 +32,7 @@ describe('toNumericValue', () => {
 
 describe('extractSeriesValues', () => {
   it('保持索引对齐并填充 null', () => {
-    expect(extractSeriesValues([1, null, '-', { value: 4 }, '5'])).toEqual([
-      1,
-      null,
-      null,
-      4,
-      5,
-    ])
+    expect(extractSeriesValues([1, null, '-', { value: 4 }, '5'])).toEqual([1, null, null, 4, 5])
   })
 
   it('非数组返回空数组', () => {
@@ -84,7 +79,7 @@ describe('computeYoy', () => {
     const result = computeYoy(values, 3)
     expect(result.slice(0, 3)).toEqual([null, null, null])
     expect(result[3]).toBeCloseTo(50)
-    expect(result[4]).toBeCloseTo(160 / 110 * 100 - 100)
+    expect(result[4]).toBeCloseTo((160 / 110) * 100 - 100)
     expect(result[5]).toBeCloseTo(50)
   })
 
@@ -125,14 +120,16 @@ describe('buildSeriesAnalysis', () => {
       { type: 'line', data: [10, 20, 30] },
       { showPercent: true, showCompare: true, yoyLag: 2 },
     )
-    expect(result?.percent).toEqual([10 / 60 * 100, 20 / 60 * 100, 30 / 60 * 100])
+    expect(result?.percent).toEqual([(10 / 60) * 100, (20 / 60) * 100, (30 / 60) * 100])
     expect(result?.mom?.[2]).toBeCloseTo(50)
     expect(result?.yoy?.[2]).toBeCloseTo(200)
   })
 
   it('不支持的系列类型/空数据返回 null', () => {
     expect(buildSeriesAnalysis({ type: 'pie', data: [1, 2] }, { showPercent: true })).toBeNull()
-    expect(buildSeriesAnalysis({ type: 'scatter', data: [[1, 2]] }, { showCompare: true })).toBeNull()
+    expect(
+      buildSeriesAnalysis({ type: 'scatter', data: [[1, 2]] }, { showCompare: true }),
+    ).toBeNull()
     expect(buildSeriesAnalysis({ type: 'bar', data: [] }, { showPercent: true })).toBeNull()
   })
 })
@@ -148,9 +145,9 @@ describe('buildSeriesAnalyses', () => {
       { showPercent: true },
     )
     expect(result).toHaveLength(3)
-    expect(result[0]?.percent).toEqual([1 / 3 * 100, 2 / 3 * 100])
+    expect(result[0]?.percent).toEqual([(1 / 3) * 100, (2 / 3) * 100])
     expect(result[1]).toBeNull()
-    expect(result[2]?.percent).toEqual([3 / 7 * 100, 4 / 7 * 100])
+    expect(result[2]?.percent).toEqual([(3 / 7) * 100, (4 / 7) * 100])
   })
 })
 
@@ -176,15 +173,25 @@ describe('buildAnalysisLines', () => {
 
   it('无分析结果/无对应索引时返回空', () => {
     expect(buildAnalysisLines(null, 0, { showPercent: true })).toEqual([])
-    expect(buildAnalysisLines(analysis, 0, { showCompare: true })).toEqual([
-      '环比：-',
-      '同比：-',
-    ])
+    expect(buildAnalysisLines(analysis, 0, { showCompare: true })).toEqual(['环比：-', '同比：-'])
     expect(buildAnalysisLines(analysis, 99, { showPercent: true, showCompare: true })).toEqual([
       '占比：-',
       '环比：-',
       '同比：-',
     ])
+  })
+
+  it('文案跟随界面语言', () => {
+    i18n.global.locale.value = 'en-US'
+    try {
+      expect(buildAnalysisLines(analysis, 1, { showPercent: true, showCompare: true })).toEqual([
+        'Share: 20.0%',
+        'MoM: +15.0%',
+        'YoY: +30.0%',
+      ])
+    } finally {
+      i18n.global.locale.value = 'zh-CN'
+    }
   })
 })
 

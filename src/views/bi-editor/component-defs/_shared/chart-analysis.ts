@@ -9,6 +9,9 @@
  * 只用于 tooltip 展示，不修改 series 原始数据，因此不影响图表渲染与导出。
  * 纯函数，便于单测。
  */
+import i18n from '@/i18n'
+
+const t = (key: string) => i18n.global.t(key)
 
 export type NullableNumberArray = (number | null)[]
 
@@ -120,13 +123,13 @@ export function buildAnalysisLines(
   if (!analysis) return []
   const lines: string[] = []
   if (config.showPercent && analysis.percent) {
-    lines.push(`占比：${formatPercent(analysis.percent[dataIndex])}`)
+    lines.push(`${t('analysisTooltip.percent')}${formatPercent(analysis.percent[dataIndex])}`)
   }
   if (config.showCompare && analysis.mom) {
-    lines.push(`环比：${formatPercent(analysis.mom[dataIndex], true)}`)
+    lines.push(`${t('analysisTooltip.mom')}${formatPercent(analysis.mom[dataIndex], true)}`)
   }
   if (config.showCompare && analysis.yoy) {
-    lines.push(`同比：${formatPercent(analysis.yoy[dataIndex], true)}`)
+    lines.push(`${t('analysisTooltip.yoy')}${formatPercent(analysis.yoy[dataIndex], true)}`)
   }
   return lines
 }

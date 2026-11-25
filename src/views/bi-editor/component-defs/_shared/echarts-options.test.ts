@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import i18n from '@/i18n'
 import {
   applyUserChartConfig,
   deepMerge,
@@ -147,12 +148,7 @@ describe('buildReferenceLineMarkLine', () => {
 
 describe('applyUserChartConfig 图表注释', () => {
   function merge(props: PropBag, series: Array<Record<string, unknown>>) {
-    return applyUserChartConfig(
-      {},
-      props,
-      { series } as unknown as ECOption,
-      { hasAxes: true },
-    )
+    return applyUserChartConfig({}, props, { series } as unknown as ECOption, { hasAxes: true })
   }
 
   it('文本注释注入 graphic', () => {
@@ -200,10 +196,7 @@ describe('applyUserChartConfig 条件着色', () => {
 })
 
 describe('buildAnalysisTooltipHtml', () => {
-  const analyses = [
-    { percent: [25, 75], mom: [null, 100], yoy: [null, -50] },
-    null,
-  ]
+  const analyses = [{ percent: [25, 75], mom: [null, 100], yoy: [null, -50] }, null]
   const params = [
     {
       seriesIndex: 0,
@@ -233,13 +226,28 @@ describe('buildAnalysisTooltipHtml', () => {
     expect(html).toContain('#dc2626')
   })
 
+  it('英文环境下文案与涨跌配色正常', () => {
+    i18n.global.locale.value = 'en-US'
+    try {
+      const html = buildAnalysisTooltipHtml(
+        params,
+        analyses,
+        { showPercent: true, showCompare: true },
+        true,
+      )
+      expect(html).toContain('Share: 75.0%')
+      expect(html).toContain('MoM: +100.0%')
+      expect(html).toContain('YoY: -50.0%')
+      // 着色不依赖中文前缀：英文环/同比同样绿涨红跌
+      expect(html).toContain('#16a34a')
+      expect(html).toContain('#dc2626')
+    } finally {
+      i18n.global.locale.value = 'zh-CN'
+    }
+  })
+
   it('includeBase=false 时只输出分析行', () => {
-    const html = buildAnalysisTooltipHtml(
-      params,
-      analyses,
-      { showPercent: true },
-      false,
-    )
+    const html = buildAnalysisTooltipHtml(params, analyses, { showPercent: true }, false)
     expect(html).not.toContain('2月')
     expect(html).not.toContain('销售额')
     expect(html).toContain('占比：75.0%')
@@ -278,9 +286,7 @@ describe('applyAnalysisTooltip', () => {
   }
 
   function paramsOf(axisValue = '3月') {
-    return [
-      { seriesIndex: 0, dataIndex: 2, seriesName: '销售额', value: 70, axisValue },
-    ]
+    return [{ seriesIndex: 0, dataIndex: 2, seriesName: '销售额', value: 70, axisValue }]
   }
 
   it('未开启时保持 tooltip 原样', () => {
@@ -306,7 +312,10 @@ describe('applyAnalysisTooltip', () => {
 
   it('已有函数 formatter 时保留原内容并追加分析行', () => {
     const option = makeOption({
-      tooltip: { trigger: 'axis', formatter: (p: Array<{ axisValue: string }>) => `raw:${p[0].axisValue}` },
+      tooltip: {
+        trigger: 'axis',
+        formatter: (p: Array<{ axisValue: string }>) => `raw:${p[0].axisValue}`,
+      },
     })
     applyAnalysisTooltip(option, {
       sharePercentShow: true,

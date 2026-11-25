@@ -517,24 +517,15 @@ function formatTooltipValue(value: unknown): string {
 }
 
 function resolveTooltipCategory(params: unknown): string {
-  const first = (Array.isArray(params) ? params[0] : params) as
-    | Record<string, unknown>
-    | undefined
+  const first = (Array.isArray(params) ? params[0] : params) as Record<string, unknown> | undefined
   const value = first?.axisValueLabel ?? first?.axisValue ?? first?.name ?? ''
   return escapeHtml(String(value))
 }
 
 function analysisLineHtml(line: string): string {
-  const match = line.match(/([+-]?\d+(?:\.\d+)?)%$/)
-  const comparable = line.startsWith('环比：') || line.startsWith('同比：')
-  const color =
-    comparable && match
-      ? match[1].startsWith('-')
-        ? ANALYSIS_DOWN_COLOR
-        : match[1].startsWith('+')
-          ? ANALYSIS_UP_COLOR
-          : 'inherit'
-      : 'inherit'
+  // 环比/同比带正负号：按符号着色，不依赖中文前缀，中英文文案下表现一致
+  const match = line.match(/([+-])\d[\d,]*(?:\.\d+)?%$/)
+  const color = !match ? 'inherit' : match[1] === '-' ? ANALYSIS_DOWN_COLOR : ANALYSIS_UP_COLOR
   return `<div style="font-size:12px;line-height:18px;opacity:.86;color:${color}">${escapeHtml(line)}</div>`
 }
 
@@ -604,9 +595,9 @@ export function applyAnalysisTooltip(option: ECOption, p: PropBag) {
   })
   if (!analyses.some(Boolean)) return
 
-  const tooltip = (Array.isArray(option.tooltip) ? option.tooltip[0] : option.tooltip) as unknown as
-    | Record<string, unknown>
-    | undefined
+  const tooltip = (Array.isArray(option.tooltip)
+    ? option.tooltip[0]
+    : option.tooltip) as unknown as Record<string, unknown> | undefined
   if (!tooltip || typeof tooltip !== 'object') return
 
   const config: AnalysisTooltipConfig = { showPercent, showCompare }
