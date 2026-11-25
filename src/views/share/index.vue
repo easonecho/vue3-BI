@@ -174,11 +174,13 @@ async function loadPublicDashboard(token: string, password?: string) {
     store.applyLayout(layout)
   } catch (e) {
     const msg = e instanceof Error ? e.message : ''
-    if (msg.includes('过期')) {
+    // 优先按错误码判断（文案会随语言变化），文案匹配仅兼容无 code 的旧服务端
+    const code = (e as { code?: number }).code
+    if (code === 50004 || msg.includes('过期')) {
       loadError.value = t('sharePage.expiredLink')
-    } else if (msg.includes('不存在')) {
+    } else if (code === 50003 || msg.includes('不存在')) {
       loadError.value = t('sharePage.notFoundLink')
-    } else if (msg.includes('密码错误')) {
+    } else if (code === 50006 || msg.includes('密码错误')) {
       passwordError.value = t('sharePage.passwordIncorrect')
       return
     } else {

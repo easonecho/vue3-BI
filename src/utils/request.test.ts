@@ -141,6 +141,20 @@ describe('request 401 静默刷新', () => {
     expect(instance.request).not.toHaveBeenCalled()
   })
 
+  it('业务错误 reject 时携带错误码', async () => {
+    vi.resetModules()
+    await import('./request')
+    const calls = instance.interceptors.response.use.mock.calls
+    const onFulfilled = calls[calls.length - 1]?.[0] as (response: unknown) => unknown
+
+    const result = onFulfilled({
+      config: { url: '/api/share/x', headers: {} },
+      data: { code: 50004, message: '分享链接已过期' },
+    })
+
+    await expect(result).rejects.toMatchObject({ message: '分享链接已过期', code: 50004 })
+  })
+
   it('刷新失败复位刷新状态，下一次 401 会重新发起刷新', async () => {
     instance.post.mockRejectedValueOnce(new Error('refresh failed'))
     instance.request.mockResolvedValue({ code: 0, data: 'ok' })

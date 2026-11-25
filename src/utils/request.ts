@@ -84,6 +84,17 @@ if (typeof localStorage !== 'undefined') {
 const TOAST_INTERVAL = 2000
 const toastSeen = new Map<string, ReturnType<typeof setTimeout>>()
 
+/** 业务错误: 携带后端错误码，调用方按码分支而非匹配文案（文案会随语言变化） */
+export interface ApiError extends Error {
+  code?: number
+}
+
+function createApiError(message: string, code: unknown): ApiError {
+  const error = new Error(message) as ApiError
+  if (typeof code === 'number') error.code = code
+  return error
+}
+
 /**
  * 业务错误码 -> 当前语言文案
  * - 中文环境优先后端原文，保留参数/字段等动态细节
@@ -265,7 +276,7 @@ request.interceptors.response.use(
     }
     const message = localizedErrorMessage(res.code, res.message)
     showToast(message)
-    return Promise.reject(new Error(message))
+    return Promise.reject(createApiError(message, res.code))
   },
   async (error) => {
     // 取消的请求不提示错误
