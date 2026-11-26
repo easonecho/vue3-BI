@@ -1,9 +1,26 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import i18n from '@/i18n'
-import { localizedErrorMessage } from './request'
+import { getApiErrorCode, localizedErrorMessage } from './request'
 
 afterEach(() => {
   i18n.global.locale.value = 'zh-CN'
+})
+
+describe('业务错误码提取', () => {
+  it('优先读取 HTTP 错误上挂载的业务码', () => {
+    const error = Object.assign(new Error('Request failed with status code 400'), { bizCode: 50006 })
+    expect(getApiErrorCode(error)).toBe(50006)
+  })
+
+  it('兼容 createApiError 产生的 code', () => {
+    const error = Object.assign(new Error('访问密码错误'), { code: 50006 })
+    expect(getApiErrorCode(error)).toBe(50006)
+  })
+
+  it('无错误码时返回 undefined', () => {
+    expect(getApiErrorCode(new Error('network error'))).toBeUndefined()
+    expect(getApiErrorCode(null)).toBeUndefined()
+  })
 })
 
 describe('业务错误文案本地化', () => {

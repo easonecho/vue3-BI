@@ -96,6 +96,27 @@ function createApiError(message: string, code: unknown): ApiError {
 }
 
 /**
+ * HTTP 非 2xx 错误: 把响应体中的业务错误码挂到原始错误对象上。
+ * 拦截器 reject 的是 AxiosError(本身没有业务 code)，调用方只能匹配文案；
+ * 挂载 bizCode 后可继续按码分支，不受当前语言文案影响。
+ */
+function attachBusinessCode(error: unknown, response: AxiosResponse): void {
+  const data = response.data as { code?: unknown } | undefined
+  if (typeof data?.code !== 'number') return
+  if (typeof error !== 'object' || error === null) return
+  ;(error as { bizCode?: number }).bizCode = data.code
+}
+
+/** 读取接口错误上的业务错误码（兼容业务拒绝与 HTTP 错误两种来源） */
+export function getApiErrorCode(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null) return undefined
+  const bizCode = (error as { bizCode?: unknown }).bizCode
+  if (typeof bizCode === 'number') return bizCode
+  const code = (error as { code?: unknown }).code
+  return typeof code === 'number' ? code : undefined
+}
+
+/**
  * 业务错误码 -> 当前语言文案
  * - 中文环境优先后端原文，保留参数/字段等动态细节
  * - 其他语言优先用错误码映射，未收录时回退后端原文
@@ -297,6 +318,7 @@ request.interceptors.response.use(
 
     const { response } = error
     if (response) {
+      attachBusinessCode(error, response)
       switch (response.status) {
         case 401: {
           const originalConfig = error.config

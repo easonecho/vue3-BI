@@ -89,6 +89,7 @@ import {
   setPublicDashboardContext,
   clearPublicDashboardContext,
 } from '@/utils/public-dashboard-context'
+import { getApiErrorCode } from '@/utils/request'
 import type { DashboardLayout } from '@/views/bi-editor/types'
 import { useDashboardExport } from '@/views/preview/composables/useDashboardExport'
 
@@ -175,7 +176,7 @@ async function loadPublicDashboard(token: string, password?: string) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : ''
     // 优先按错误码判断（文案会随语言变化），文案匹配仅兼容无 code 的旧服务端
-    const code = (e as { code?: number }).code
+    const code = getApiErrorCode(e)
     if (code === 50004 || msg.includes('过期')) {
       loadError.value = t('sharePage.expiredLink')
     } else if (code === 50003 || msg.includes('不存在')) {

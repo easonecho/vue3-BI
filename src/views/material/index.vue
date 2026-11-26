@@ -47,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import MaterialFilterBar from './components/MaterialFilterBar.vue'
 import MaterialGrid from './components/MaterialGrid.vue'
 import MaterialUploadDialog from './components/MaterialUploadDialog.vue'
@@ -72,6 +72,9 @@ const {
 const { previewVisible, previewMaterial, openPreview, handleDownload } = useMaterialPreview()
 
 const uploadVisible = ref(false)
+
+// 首次进入即加载素材列表（此前需手动点击「查询」）
+onMounted(loadList)
 </script>
 
 <style scoped lang="less">
