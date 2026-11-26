@@ -268,6 +268,37 @@ describe('buildAnalysisTooltipHtml', () => {
   it('空参数返回空字符串', () => {
     expect(buildAnalysisTooltipHtml([], analyses, { showPercent: true }, true)).toBe('')
   })
+
+  it('大数值按当前语言加千分位', () => {
+    const html = buildAnalysisTooltipHtml(
+      [{ ...params[0], value: 1234 }],
+      [{ percent: [25, 75] }, null],
+      { showPercent: true },
+      true,
+    )
+    expect(html).toContain('1,234')
+  })
+})
+
+describe('数值千分位本地化', () => {
+  it('默认 tooltip 与数值轴刻度格式化, 类目轴不受影响', () => {
+    const option = applyUserChartConfig({}, undefined, {}, { hasAxes: true, xAxisData: ['A'] })
+    const tooltip = option.tooltip as unknown as {
+      valueFormatter?: (value: unknown) => string
+    }
+    expect(tooltip.valueFormatter?.(1234)).toBe('1,234')
+    expect(tooltip.valueFormatter?.('abc')).toBe('abc')
+
+    const yAxis = (Array.isArray(option.yAxis) ? option.yAxis[0] : option.yAxis) as {
+      axisLabel?: { formatter?: (value: number) => string }
+    }
+    expect(yAxis.axisLabel?.formatter?.(1234)).toBe('1,234')
+
+    const xAxis = (Array.isArray(option.xAxis) ? option.xAxis[0] : option.xAxis) as {
+      axisLabel?: { formatter?: unknown }
+    }
+    expect(xAxis.axisLabel?.formatter).toBeUndefined()
+  })
 })
 
 describe('applyAnalysisTooltip', () => {

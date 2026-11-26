@@ -26,6 +26,7 @@ import {
 } from './chart-analysis'
 import { applyChartAnnotation } from './chart-annotation'
 import { applyChartConditionalFormat } from './chart-conditional-format'
+import { formatNumber } from '@/utils/locale-format'
 
 // ================= 公共默认配置 =================
 
@@ -165,6 +166,12 @@ function titleTopStyle(top: string): string | number {
   return top
 }
 
+/** 数值轴刻度：千分位跟随当前语言；非数值保持原样 */
+function numericAxisLabel(value: string | number): string {
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? formatNumber(numeric) : String(value)
+}
+
 function hexToRgba(hex: string, alpha: number): string {
   const clean = String(hex || '').replace('#', '')
   const full =
@@ -252,6 +259,11 @@ export function applyUserChartConfig(
       fontStyle: fontStyleOf(p.tooltipTextFontStyle),
     },
     extraCssText: 'box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 4px;',
+    // 默认 tooltip 数值按当前语言加千分位；自定义 formatter 时由 formatter 自行处理
+    valueFormatter: (value: unknown) => {
+      const numeric = toNumericValue(value)
+      return numeric === null ? String(value ?? '-') : formatNumber(numeric)
+    },
   }
 
   // ============ 5. Animation ============
@@ -273,9 +285,11 @@ export function applyUserChartConfig(
   // ============ 7. X / Y 轴（hasAxes 为 true 时才生成）============
   const axesOption: ECOption = {}
   if (hasAxes) {
+    const xAxisType = axisTypeOf(p.xAxisType)
+    const yAxisType = axisTypeOf(p.yAxisType, 'value')
     axesOption.xAxis = {
       show: Boolean(p.xAxisShow),
-      type: axisTypeOf(p.xAxisType),
+      type: xAxisType,
       data: xAxisData,
       inverse: Boolean(p.xAxisInverse),
       axisLabel: {
@@ -285,6 +299,7 @@ export function applyUserChartConfig(
         fontSize: Number(p.xAxisLabelFontSize),
         fontWeight: fontWeightOf(p.xAxisLabelFontWeight),
         fontStyle: fontStyleOf(p.xAxisLabelFontStyle),
+        ...(xAxisType === 'value' ? { formatter: numericAxisLabel } : {}),
       },
       axisLine: {
         show: Boolean(p.xAxisAxisLineShow),
@@ -298,7 +313,7 @@ export function applyUserChartConfig(
     }
     axesOption.yAxis = {
       show: Boolean(p.yAxisShow),
-      type: axisTypeOf(p.yAxisType, 'value'),
+      type: yAxisType,
       inverse: Boolean(p.yAxisInverse),
       axisLabel: {
         show: Boolean(p.yAxisLabelShow),
@@ -307,6 +322,7 @@ export function applyUserChartConfig(
         fontSize: Number(p.yAxisLabelFontSize),
         fontWeight: fontWeightOf(p.yAxisLabelFontWeight),
         fontStyle: fontStyleOf(p.yAxisLabelFontStyle),
+        ...(yAxisType === 'value' ? { formatter: numericAxisLabel } : {}),
       },
       axisLine: {
         show: Boolean(p.yAxisAxisLineShow),
@@ -513,7 +529,7 @@ const ANALYSIS_DOWN_COLOR = '#dc2626'
 
 function formatTooltipValue(value: unknown): string {
   const numeric = toNumericValue(value)
-  return numeric === null ? escapeHtml(String(value ?? '-')) : String(numeric)
+  return numeric === null ? escapeHtml(String(value ?? '-')) : formatNumber(numeric)
 }
 
 function resolveTooltipCategory(params: unknown): string {

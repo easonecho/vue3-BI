@@ -1,8 +1,15 @@
 <template>
   <div class="tpl-card" :style="{ animationDelay: `${index * 0.04}s` }">
     <div class="tpl-inner">
-      <!-- 缩略图区域 (主体), 点击跳转预览; hover 显示操作遮罩 -->
-      <div class="tpl-thumb" @click="emit('preview', item)">
+      <!-- 缩略图区域 (主体), 点击/回车预览; hover 显示操作遮罩 -->
+      <div
+        class="tpl-thumb"
+        role="button"
+        tabindex="0"
+        :aria-label="t('templateManage.preview')"
+        @click="emit('preview', item)"
+        @keydown="onThumbKeydown"
+      >
         <img
           v-if="item.thumbnail && item.thumbnail.startsWith('data:')"
           :src="item.thumbnail"
@@ -54,7 +61,9 @@
                     <el-icon><CopyDocument /></el-icon>&nbsp;{{ t('templateManage.copy') }}
                   </el-dropdown-item>
                   <el-dropdown-item command="togglePublic" divided>
-                    <el-icon><Share /></el-icon>&nbsp;{{ item.isPublic ? t('dashboard.setPrivate') : t('dashboard.setPublic') }}
+                    <el-icon><Share /></el-icon>&nbsp;{{
+                      item.isPublic ? t('dashboard.setPrivate') : t('dashboard.setPublic')
+                    }}
                   </el-dropdown-item>
                   <el-dropdown-item command="delete" divided>
                     <el-icon><Delete /></el-icon>&nbsp;{{ t('common.delete') }}
@@ -65,7 +74,9 @@
           </el-dropdown>
         </div>
         <!-- 描述行: 1 行截断, 无描述时显示占位 -->
-        <p class="tpl-desc" :title="item.description || ''">{{ item.description || t('dashboard.noDesc') }}</p>
+        <p class="tpl-desc" :title="item.description || ''">
+          {{ item.description || t('dashboard.noDesc') }}
+        </p>
         <!-- 标签行: 分类标签 + 公开/私有标签 -->
         <div class="tpl-tags">
           <el-tag v-if="item.category" size="small" type="primary" effect="plain">
@@ -82,9 +93,7 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import {
-  Plus, MoreFilled, Edit, View, CopyDocument, Delete, Share,
-} from '@element-plus/icons-vue'
+import { Plus, MoreFilled, Edit, View, CopyDocument, Delete, Share } from '@element-plus/icons-vue'
 import type { DashboardTemplate } from '@/api/dashboard-template'
 
 const props = defineProps<{
@@ -105,6 +114,14 @@ const { t } = useI18n()
 function onCommand(cmd: string) {
   emit('command', cmd, props.item)
 }
+
+/** 缩略图支持 Enter / Space 预览; 忽略缩略图内部按钮的冒泡事件 */
+function onThumbKeydown(event: KeyboardEvent) {
+  if (event.target !== event.currentTarget) return
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  event.preventDefault()
+  emit('preview', props.item)
+}
 </script>
 
 <style scoped lang="less">
@@ -115,7 +132,9 @@ function onCommand(cmd: string) {
   background: var(--bi-card-bg);
   border: 1px solid var(--bi-card-border);
   overflow: hidden;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
   animation: cardEnter 0.3s ease both;
 
   &:hover {
@@ -176,6 +195,11 @@ function onCommand(cmd: string) {
 
   &:hover .thumb-overlay {
     opacity: 1;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--bi-accent);
+    outline-offset: -2px;
   }
 }
 

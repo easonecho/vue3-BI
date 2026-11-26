@@ -1,6 +1,11 @@
 <template>
   <div class="material-card">
-    <div class="card-thumb" @click="emit('preview', material)">
+    <button
+      type="button"
+      class="card-thumb"
+      :aria-label="t('materialPage.preview')"
+      @click="emit('preview', material)"
+    >
       <img
         v-if="(material.type === 'image' || material.type === 'decor') && material.url"
         :src="material.url"
@@ -14,15 +19,15 @@
         muted
         preload="metadata"
       />
-      <div v-else class="thumb-placeholder">
+      <span v-else class="thumb-placeholder">
         <el-icon><Box /></el-icon>
         <span>{{ material.type.toUpperCase() }}</span>
-      </div>
-      <div class="thumb-mask">
+      </span>
+      <span class="thumb-mask">
         <el-icon class="mask-icon"><ZoomIn /></el-icon>
         <span>{{ t('materialPage.preview') }}</span>
-      </div>
-    </div>
+      </span>
+    </button>
     <div class="card-body">
       <div class="card-name" :title="material.name">{{ material.name }}</div>
       <div class="card-meta">
@@ -91,11 +96,22 @@ const emit = defineEmits<{
 
 .card-thumb {
   position: relative;
+  display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
+  padding: 0;
+  border: 0;
   background: #0f172a;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
   overflow: hidden;
   cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--bi-accent);
+    outline-offset: -2px;
+  }
 
   img,
   video {
