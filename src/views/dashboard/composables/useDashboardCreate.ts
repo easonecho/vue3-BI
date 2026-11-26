@@ -78,7 +78,7 @@ export function useDashboardCreate(deps: DashboardCreateDeps) {
     if (selectedUserTplId.value !== null) {
       const tpl = userTemplates.value.find((x) => x.id === selectedUserTplId.value)
       if (tpl && !createForm.name) {
-        createForm.name = `${tpl.name}_${t('dashboard.title')}`
+        createForm.name = tpl.name
       }
     }
     createStep.value = 2

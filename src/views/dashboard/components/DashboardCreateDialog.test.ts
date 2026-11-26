@@ -125,7 +125,7 @@ describe('DashboardCreateDialog 步骤切换', () => {
 
     await findButton(wrapper, 'common.next')!.trigger('click')
     expect(wrapper.find('.form-stub').exists()).toBe(true)
-    expect(wrapper.findComponent(FormStub).props('name')).toBe('销售模板_dashboard.title')
+    expect(wrapper.findComponent(FormStub).props('name')).toBe('销售模板')
 
     await findButton(wrapper, 'common.back')!.trigger('click')
     expect(wrapper.find('.picker-stub').exists()).toBe(true)
@@ -183,7 +183,7 @@ describe('DashboardCreateDialog 创建', () => {
     await flush()
 
     expect(applyMock).toHaveBeenCalledWith(3, {
-      name: '销售模板_dashboard.title',
+      name: '销售模板',
       description: undefined,
       isPublic: false,
     })

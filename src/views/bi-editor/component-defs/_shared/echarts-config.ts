@@ -55,6 +55,8 @@ import {
   ParallelComponent,
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
+// ECharts 6 将 grid.containLabel 标记为废弃, 需显式注册该兼容特性保持旧布局行为
+import { LegacyGridContainLabel } from 'echarts/features'
 
 use([
   BarChart,
@@ -81,6 +83,7 @@ use([
   GeoComponent,
   ParallelComponent,
   CanvasRenderer,
+  LegacyGridContainLabel,
 ])
 
 // 🔑 注意：ParallelSeriesOption / ParallelComponentOption 不加入 ECOption 联合。

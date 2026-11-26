@@ -118,7 +118,7 @@ describe('useDashboardCreate 步骤切换', () => {
 
     api.goToCreateStep2()
 
-    expect(api.createForm.name).toBe('销售模板_dashboard.title')
+    expect(api.createForm.name).toBe('销售模板')
     expect(api.createStep.value).toBe(2)
   })
 
