@@ -144,6 +144,7 @@
   "POST /api/export/chart/{id}/csv",
   "POST /api/export/chart/{id}/json",
   "POST /api/export/chart/{id}/xlsx",
+  "POST /api/export/dashboard/pdf",
   "POST /api/export/dataset/{id}/csv",
   "POST /api/export/dataset/{id}/json",
   "POST /api/export/dataset/{id}/xlsx",

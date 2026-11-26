@@ -39,6 +39,17 @@ export function exportChartJson(id: number, params?: ExportParams) {
   return downloadWithMeta(`/api/export/chart/${id}/json`, params)
 }
 
+/** 画布 PDF 导出参数: image 为 PNG data URL */
+export interface DashboardPdfParams {
+  name?: string
+  image: string
+}
+
+/** 画布导出 PDF（服务端将 PNG 排版为 PDF） */
+export function exportDashboardPdf(params: DashboardPdfParams) {
+  return downloadWithMeta('/api/export/dashboard/pdf', params)
+}
+
 export type ExportFormat = 'csv' | 'json' | 'xlsx'
 
 /** 按格式导出数据集 */

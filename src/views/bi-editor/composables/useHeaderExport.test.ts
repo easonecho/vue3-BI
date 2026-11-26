@@ -75,13 +75,13 @@ describe('useHeaderExport PDF', () => {
     const { api, raw } = setup()
     await api.handleExportPdf()
     expect(raw.exportCanvasAsPdf).toHaveBeenCalledTimes(1)
-    expect(ElMessageMock.success).toHaveBeenCalledWith('已打开打印窗口，请选择「另存为 PDF」')
+    expect(ElMessageMock.success).toHaveBeenCalledWith('PDF 已导出')
   })
 
   it('导出返回 false 时提示失败', async () => {
     const { api } = setup({ pdf: async () => false })
     await api.handleExportPdf()
-    expect(ElMessageMock.error).toHaveBeenCalledWith('导出 PDF 失败（若浏览器拦截弹窗，请允许后重试）')
+    expect(ElMessageMock.error).toHaveBeenCalledWith('导出 PDF 失败，请重试')
   })
 
   it('导出抛错时捕获并提示', async () => {

@@ -1,5 +1,6 @@
 import type { Ref } from 'vue'
 import i18n from '@/i18n'
+import { exportDashboardPdf, saveAs } from '@/api/export'
 
 export interface CanvasExportDeps {
   dashboardName: Ref<string>
@@ -41,6 +42,19 @@ export function createCanvasExport(deps: CanvasExportDeps): CanvasExportApi {
     document.body.removeChild(a)
   }
 
+  /** 看板名 + 时间戳文件名，非法字符替换为下划线 */
+  function buildFilename(ext: string): string {
+    const safeName = (
+      dashboardName.value || i18n.global.t('appMessages.editor.defaultName')
+    ).replace(/[\\/:*?"<>|]/g, '_')
+    const ts = new Date()
+    const pad = (n: number) => n.toString().padStart(2, '0')
+    const stamp = `${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}_${pad(
+      ts.getHours(),
+    )}${pad(ts.getMinutes())}${pad(ts.getSeconds())}`
+    return `${safeName}_${stamp}.${ext}`
+  }
+
   async function exportCanvasAsPng() {
     if (!exportPngCallback) {
       console.warn('[bi-editor] 导出 PNG：CanvasArea 未注册导出回调')
@@ -50,15 +64,7 @@ export function createCanvasExport(deps: CanvasExportDeps): CanvasExportApi {
     try {
       const dataUrl = await exportPngCallback()
       if (!dataUrl) return false
-      const safeName = (
-        dashboardName.value || i18n.global.t('appMessages.editor.defaultName')
-      ).replace(/[\\/:*?"<>|]/g, '_')
-      const ts = new Date()
-      const pad = (n: number) => n.toString().padStart(2, '0')
-      const stamp = `${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}_${pad(
-        ts.getHours(),
-      )}${pad(ts.getMinutes())}${pad(ts.getSeconds())}`
-      triggerDownload(dataUrl, `${safeName}_${stamp}.png`)
+      triggerDownload(dataUrl, buildFilename('png'))
       return true
     } finally {
       isExportingPng.value = false
@@ -66,46 +72,26 @@ export function createCanvasExport(deps: CanvasExportDeps): CanvasExportApi {
   }
 
   /**
-   * 🔑 导出 PDF：复用 PNG 回调拿到整张画布图片，写入新窗口后用浏览器打印
-   *    （用户在打印对话框选择「另存为 PDF」，不引入服务端 PDF 重依赖）。
-   *    注意: 必须在 await 之前同步打开窗口，否则会被浏览器弹窗拦截。
+   * 🔑 导出 PDF：复用 PNG 回调拿到整张画布图片，交由服务端排版为 PDF 后下载。
+   *    服务端使用 pdfkit 嵌入 PNG，不依赖 Chromium，也不会触发浏览器打印弹窗。
    */
   async function exportCanvasAsPdf() {
     if (!exportPngCallback) {
       console.warn('[bi-editor] 导出 PDF：CanvasArea 未注册导出回调')
       return false
     }
-    const win = window.open('', '_blank')
-    if (!win) return false
-
     isExportingPng.value = true
     try {
       const dataUrl = await exportPngCallback()
-      if (!dataUrl) {
-        win.close()
-        return false
-      }
-      const escapeHtml = (s: string) =>
-        s.replace(
-          /[&<>"]/g,
-          (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] ?? c,
-        )
-      const title = escapeHtml(
-        dashboardName.value || i18n.global.t('appMessages.editor.defaultName'),
-      )
-      win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
-        <style>
-          @page { size: auto; margin: 0; }
-          html, body { margin: 0; padding: 0; background: #fff; }
-          img { display: block; width: 100%; height: auto; }
-        </style></head>
-        <body><img src="${dataUrl}" alt="${title}"
-          onload="setTimeout(function(){ window.focus(); window.print(); }, 200)" /></body></html>`)
-      win.document.close()
+      if (!dataUrl) return false
+      const { blob } = await exportDashboardPdf({
+        name: dashboardName.value || undefined,
+        image: dataUrl,
+      })
+      saveAs(blob, buildFilename('pdf'))
       return true
     } catch (e) {
       console.error('[bi-editor] export PDF failed', e)
-      win.close()
       return false
     } finally {
       isExportingPng.value = false

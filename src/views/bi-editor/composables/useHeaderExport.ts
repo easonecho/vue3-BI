@@ -43,7 +43,7 @@ export function useHeaderExport(store: BiEditorStore): HeaderExportApi {
     try {
       const ok = await store.exportCanvasAsPdf()
       if (ok) {
-        ElMessage.success(t('editorUi.header.pdfPrintHint'))
+        ElMessage.success(t('editorUi.header.pdfSuccess'))
       } else {
         ElMessage.error(t('editorUi.header.pdfFailedRetry'))
       }
